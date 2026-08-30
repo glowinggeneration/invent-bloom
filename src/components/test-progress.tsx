@@ -79,9 +79,9 @@ export function TestProgress({ label, phase = "analysis" }: { label?: string; ph
         <div className="relative">
           <span className="absolute inset-0 animate-ping rounded-full bg-primary/15" />
           <img
-            src="/fkf-logo.png"
-            alt="Football Kenya Federation crest"
-            className="relative size-20 animate-pulse object-contain"
+            src="/smait-logo.svg"
+            alt="SMAIT logo"
+            className="relative h-14 w-auto animate-pulse object-contain"
           />
         </div>
 

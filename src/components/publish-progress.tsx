@@ -35,9 +35,9 @@ export function PublishProgress({ label }: { label?: string }) {
         <div className="relative shrink-0">
           <span className="absolute inset-0 animate-ping rounded-full bg-primary/15" />
           <img
-            src="/fkf-logo.png"
-            alt="Football Kenya Federation crest"
-            className="relative size-9 animate-pulse object-contain"
+            src="/smait-logo.svg"
+            alt="SMAIT logo"
+            className="relative h-8 w-auto animate-pulse object-contain"
           />
         </div>
 

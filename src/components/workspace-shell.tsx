@@ -146,7 +146,7 @@ function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-3">
         <Link to="/overview" className="flex items-center gap-3">
-          <img src="/fkf-logo.png" alt="FKF crest" className="size-9 shrink-0 object-contain" />
+          <img src="/smait-logo.svg" alt="SMAIT logo" className="h-7 w-auto shrink-0 object-contain" />
           <span className="min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="block truncate type-card font-semibold">
               FKF <span className="text-primary">CommsIQ</span>

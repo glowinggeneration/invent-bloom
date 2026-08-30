@@ -81,7 +81,7 @@ function Consent() {
     <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl">
         <div className="flex flex-col items-center text-center">
-          <img src="/fkf-logo.png" alt="Football Kenya Federation crest" className="size-12" />
+          <img src="/smait-logo.svg" alt="SMAIT logo" className="h-10 w-auto" />
           <h1 className="type-section mt-4">Connect {clientName}</h1>
           <p className="type-meta mt-1 text-muted-foreground">
             {clientName} will read your FKF CommsIQ message tests, campaigns and personas as you.
