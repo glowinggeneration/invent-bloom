@@ -37,7 +37,7 @@ export const CHART_COLORS: RGB[] = [
 ];
 
 /** Fetches the crest once so covers can carry it without blocking the export. */
-export async function loadBrandLogo(url = "/smait-logo.svg"): Promise<string | null> {
+export async function loadBrandLogo(url = "/smait-logo.png"): Promise<string | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
