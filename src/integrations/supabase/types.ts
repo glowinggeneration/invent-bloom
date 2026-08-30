@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_profiles: {
+        Row: {
+          avatar_url: string | null
+          banner_url: string | null
+          created_at: string
+          description: string
+          display_name: string
+          favourites_count: number
+          fetched_at: string
+          followers: number
+          following: number
+          handle: string
+          id: string
+          is_verified: boolean
+          location: string
+          media_count: number
+          profile_created_at: string | null
+          tweet_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          description?: string
+          display_name?: string
+          favourites_count?: number
+          fetched_at?: string
+          followers?: number
+          following?: number
+          handle: string
+          id?: string
+          is_verified?: boolean
+          location?: string
+          media_count?: number
+          profile_created_at?: string | null
+          tweet_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          description?: string
+          display_name?: string
+          favourites_count?: number
+          fetched_at?: string
+          followers?: number
+          following?: number
+          handle?: string
+          id?: string
+          is_verified?: boolean
+          location?: string
+          media_count?: number
+          profile_created_at?: string | null
+          tweet_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       campaign_replies: {
         Row: {
           account_id: string | null
@@ -75,6 +138,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      campaign_skip_audit: {
+        Row: {
+          account_id: string | null
+          campaign_id: string | null
+          created_at: string
+          detail: string
+          handle: string
+          id: string
+          job_id: string | null
+          persona_name: string
+          reason: string
+          run_ref: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          detail?: string
+          handle?: string
+          id?: string
+          job_id?: string | null
+          persona_name?: string
+          reason: string
+          run_ref?: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          detail?: string
+          handle?: string
+          id?: string
+          job_id?: string | null
+          persona_name?: string
+          reason?: string
+          run_ref?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      external_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          description: string
+          display_name: string
+          fetched_at: string
+          followers: number
+          following: number
+          handle: string
+          is_verified: boolean
+          tweet_count: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string
+          display_name?: string
+          fetched_at?: string
+          followers?: number
+          following?: number
+          handle: string
+          is_verified?: boolean
+          tweet_count?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string
+          display_name?: string
+          fetched_at?: string
+          followers?: number
+          following?: number
+          handle?: string
+          is_verified?: boolean
+          tweet_count?: number
+        }
+        Relationships: []
       }
       legal_reviews: {
         Row: {
@@ -155,6 +302,7 @@ export type Database = {
           max_replies_per_run: number
           name: string
           spread_hours: number
+          summary: string
           updated_at: string
           user_id: string
         }
@@ -173,6 +321,7 @@ export type Database = {
           max_replies_per_run?: number
           name: string
           spread_hours?: number
+          summary?: string
           updated_at?: string
           user_id: string
         }
@@ -191,8 +340,36 @@ export type Database = {
           max_replies_per_run?: number
           name?: string
           spread_hours?: number
+          summary?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      mention_keywords: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_refreshed_at: string | null
+          source: string
+          term: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_refreshed_at?: string | null
+          source?: string
+          term: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_refreshed_at?: string | null
+          source?: string
+          term?: string
         }
         Relationships: []
       }
@@ -236,6 +413,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      news_articles: {
+        Row: {
+          category: string[]
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          link: string
+          matched_query: string
+          provider: string
+          pub_date: string | null
+          source_id: string
+          title: string
+          title_key: string
+        }
+        Insert: {
+          category?: string[]
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          link: string
+          matched_query?: string
+          provider?: string
+          pub_date?: string | null
+          source_id?: string
+          title: string
+          title_key?: string
+        }
+        Update: {
+          category?: string[]
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          link?: string
+          matched_query?: string
+          provider?: string
+          pub_date?: string | null
+          source_id?: string
+          title?: string
+          title_key?: string
+        }
+        Relationships: []
       }
       persona_daily_plans: {
         Row: {
@@ -588,9 +810,12 @@ export type Database = {
           image_urls: string[]
           link_url: string | null
           mode: string
+          name: string
+          name_is_custom: boolean
           objective_mode: boolean
           objective_text: string
           status: string
+          summary: string
           target_tweet_url: string | null
           tweet_text: string
           updated_at: string
@@ -605,9 +830,12 @@ export type Database = {
           image_urls?: string[]
           link_url?: string | null
           mode?: string
+          name?: string
+          name_is_custom?: boolean
           objective_mode?: boolean
           objective_text?: string
           status?: string
+          summary?: string
           target_tweet_url?: string | null
           tweet_text?: string
           updated_at?: string
@@ -622,9 +850,12 @@ export type Database = {
           image_urls?: string[]
           link_url?: string | null
           mode?: string
+          name?: string
+          name_is_custom?: boolean
           objective_mode?: boolean
           objective_text?: string
           status?: string
+          summary?: string
           target_tweet_url?: string | null
           tweet_text?: string
           updated_at?: string
@@ -878,10 +1109,14 @@ export type Database = {
           created_at: string
           display_name: string
           handle: string
+          handle_synced_at: string | null
           id: string
           is_active: boolean
+          is_verified: boolean
           persona_label: string
+          previous_handle: string | null
           proxy: string | null
+          suspended: boolean
           updated_at: string
           user_id: string
         }
@@ -897,10 +1132,14 @@ export type Database = {
           created_at?: string
           display_name?: string
           handle: string
+          handle_synced_at?: string | null
           id?: string
           is_active?: boolean
+          is_verified?: boolean
           persona_label?: string
+          previous_handle?: string | null
           proxy?: string | null
+          suspended?: boolean
           updated_at?: string
           user_id: string
         }
@@ -916,10 +1155,14 @@ export type Database = {
           created_at?: string
           display_name?: string
           handle?: string
+          handle_synced_at?: string | null
           id?: string
           is_active?: boolean
+          is_verified?: boolean
           persona_label?: string
+          previous_handle?: string | null
           proxy?: string | null
+          suspended?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -975,6 +1218,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      campaign_action_stats: {
+        Args: never
+        Returns: {
+          campaign_id: string
+          kind: string
+          last_at: string
+          n: number
+          next_run: string
+          source: string
+          status: string
+        }[]
+      }
       can_read_thread: { Args: { _thread_id: string }; Returns: boolean }
       current_org: { Args: never; Returns: string }
       has_role: {
