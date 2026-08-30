@@ -16,7 +16,7 @@ import { ContactSupportButton } from "@/components/contact-support";
 export const Route = createFileRoute("/_authenticated/governance")({
   head: () => ({
     meta: [
-      { title: "Governance & Data - FKF CommsIQ" },
+      { title: "Governance & Data - CommsIQ" },
       {
         name: "description",
         content:

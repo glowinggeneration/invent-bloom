@@ -6,7 +6,7 @@ export default defineTool({
   name: "list_campaigns",
   title: "List campaigns",
   description:
-    "List the signed-in user's publishing campaigns in FKF CommsIQ with their goal, status and copy, newest first.",
+    "List the signed-in user's publishing campaigns in CommsIQ with their goal, status and copy, newest first.",
   inputSchema: {
     status: z
       .string()

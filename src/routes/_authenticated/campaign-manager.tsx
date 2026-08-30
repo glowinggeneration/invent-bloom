@@ -63,7 +63,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/campaign-manager")({
   head: () => ({
     meta: [
-      { title: "Campaign Manager - FKF CommsIQ" },
+      { title: "Campaign Manager - CommsIQ" },
       {
         name: "description",
         content:
@@ -71,7 +71,7 @@ export const Route = createFileRoute("/_authenticated/campaign-manager")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Campaign Manager - FKF CommsIQ" },
+      { property: "og:title", content: "Campaign Manager - CommsIQ" },
       {
         property: "og:description",
         content: "Live status, progress and controls for every campaign on the platform.",

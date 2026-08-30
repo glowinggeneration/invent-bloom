@@ -34,7 +34,7 @@ import { LegalSafetyBadge } from "@/components/legal-safety-badge";
 export const Route = createFileRoute("/_authenticated/recommendations/$threadId")({
   head: () => ({
     meta: [
-      { title: "Recommendations - FKF CommsIQ" },
+      { title: "Recommendations - CommsIQ" },
       {
         name: "description",
         content:
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/recommendations/$threadId"
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Recommendations - FKF CommsIQ" },
+      { property: "og:title", content: "Recommendations - CommsIQ" },
       {
         property: "og:description",
         content: "Three AI-recommended rewrites with projected performance against the original.",
@@ -236,7 +236,7 @@ function RecommendationsPage() {
   function exportRecommendations() {
     if (!analysis) return;
     const lines = [
-      `FKF CommsIQ - Recommendations for "${data?.thread.title ?? "Message test"}"`,
+      `CommsIQ - Recommendations for "${data?.thread.title ?? "Message test"}"`,
       "",
       `Original confidence: ${analysis.confidence}%`,
       "",

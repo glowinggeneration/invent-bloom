@@ -40,15 +40,15 @@ import { Sparkles, SlidersHorizontal, Users, Megaphone, Link2, LifeBuoy } from "
 export const Route = createFileRoute("/_authenticated/personas")({
   head: () => ({
     meta: [
-      { title: "Personas - FKF CommsIQ" },
+      { title: "Personas - CommsIQ" },
       {
         name: "description",
         content:
-          "Browse the 100 research-grounded urban Kenyan personas that review every message tested in FKF CommsIQ.",
+          "Browse the 100 research-grounded urban Kenyan personas that review every message tested in CommsIQ.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Personas - FKF CommsIQ" },
+      { property: "og:title", content: "Personas - CommsIQ" },
       {
         property: "og:description",
         content: "The 100 urban Kenyan personas behind every CommsIQ analysis.",

@@ -71,7 +71,7 @@ export function ShareMenu({
     try {
       const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> };
       if (nav.share) {
-        await nav.share({ title: "FKF CommsIQ", url });
+        await nav.share({ title: "CommsIQ", url });
         return;
       }
       await navigator.clipboard.writeText(url);

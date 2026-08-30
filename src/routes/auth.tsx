@@ -11,15 +11,15 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in - FKF CommsIQ" },
+      { title: "Sign in - CommsIQ" },
       {
         name: "description",
         content:
-          "Sign in to FKF CommsIQ, the Football Kenya Federation workspace for testing messages against 100 Kenyan personas.",
+          "Sign in to CommsIQ, the Football Kenya Federation workspace for testing messages against 100 Kenyan personas.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Sign in - FKF CommsIQ" },
+      { property: "og:title", content: "Sign in - CommsIQ" },
       {
         property: "og:description",
         content: "Football Kenya Federation message-testing workspace.",

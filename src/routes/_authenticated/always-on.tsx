@@ -16,7 +16,7 @@ import { listAlwaysOnPublished } from "@/lib/always-on.functions";
 export const Route = createFileRoute("/_authenticated/always-on")({
   head: () => ({
     meta: [
-      { title: "Content Planning - FKF CommsIQ" },
+      { title: "Content Planning - CommsIQ" },
       {
         name: "description",
         content:
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/always-on")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Content Planning - FKF CommsIQ" },
+      { property: "og:title", content: "Content Planning - CommsIQ" },
       {
         property: "og:description",
         content: "A review-first content planning and publication history workspace.",

@@ -45,7 +45,7 @@ export function CampaignActionLoading({ label }: { label?: string }) {
           />
         </div>
         <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-          <span>FKF CommsIQ · powered by Persona_Voices</span>
+          <span>CommsIQ · powered by Persona_Voices</span>
           <span className="tabular-nums">{Math.round(progress)}%</span>
         </div>
       </div>

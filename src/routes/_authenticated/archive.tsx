@@ -66,15 +66,15 @@ export const Route = createFileRoute("/_authenticated/archive")({
 
   head: () => ({
     meta: [
-      { title: "Archive - FKF CommsIQ" },
+      { title: "Archive - CommsIQ" },
       {
         name: "description",
         content:
-          "Every message you have tested in FKF CommsIQ, with its persona analysis and recommended rewrites.",
+          "Every message you have tested in CommsIQ, with its persona analysis and recommended rewrites.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Archive - FKF CommsIQ" },
+      { property: "og:title", content: "Archive - CommsIQ" },
       {
         property: "og:description",
         content: "Every message you have tested, saved with its analysis.",

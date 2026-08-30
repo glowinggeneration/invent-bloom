@@ -138,7 +138,7 @@ export async function downloadReportPdf(report: ReportRecord) {
   }
 
   pdf.note(
-    `Created ${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })} - FKF CommsIQ, powered by Persona_Voices.`,
+    `Created ${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })} - CommsIQ, powered by Persona_Voices.`,
   );
 
   pdf.save(`${slugify(`fkf-${title}-${report.reportDate}`, "fkf-report")}.pdf`);

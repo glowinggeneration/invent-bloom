@@ -77,14 +77,14 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/campaigns")({
   head: () => ({
     meta: [
-      { title: "Campaigns - FKF CommsIQ" },
+      { title: "Campaigns - CommsIQ" },
       {
         name: "description",
         content: "Listening campaigns that reply in persona voice to matching conversations.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Campaigns - FKF CommsIQ" },
+      { property: "og:title", content: "Campaigns - CommsIQ" },
       {
         property: "og:description",
         content: "Keyword and hashtag listening campaigns with persona-voiced replies.",

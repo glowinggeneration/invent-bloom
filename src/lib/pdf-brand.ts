@@ -569,7 +569,7 @@ export class BrandPdf {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.4);
       doc.setTextColor(...BRAND.ink);
-      doc.text("FKF CommsIQ", margin + 4, height - 8.6);
+      doc.text("CommsIQ", margin + 4, height - 8.6);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...BRAND.muted);
       doc.text("Powered by Persona_Voices", margin + 24, height - 8.6);

@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/new")({
   }),
   head: () => ({
     meta: [
-      { title: "Response Studio - FKF CommsIQ" },
+      { title: "Response Studio - CommsIQ" },
       {
         name: "description",
         content:
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/new")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "New test - FKF CommsIQ" },
+      { property: "og:title", content: "New test - CommsIQ" },
       {
         property: "og:description",
         content: "Test FKF messaging against 100 research-grounded Kenyan personas.",

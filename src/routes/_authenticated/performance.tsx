@@ -83,7 +83,7 @@ export const Route = createFileRoute("/_authenticated/performance")({
     typeof search["campaign"] === "string" ? { campaign: search["campaign"] as string } : {},
   head: () => ({
     meta: [
-      { title: "Performance - FKF CommsIQ" },
+      { title: "Performance - CommsIQ" },
       {
         name: "description",
         content:
@@ -91,7 +91,7 @@ export const Route = createFileRoute("/_authenticated/performance")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Performance - FKF CommsIQ" },
+      { property: "og:title", content: "Performance - CommsIQ" },
       {
         property: "og:description",
         content:

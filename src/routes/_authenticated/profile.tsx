@@ -33,7 +33,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "My Profile - FKF CommsIQ" },
+      { title: "My Profile - CommsIQ" },
       {
         name: "description",
         content: "Manage your CommsIQ identity, preferences, activity and session.",

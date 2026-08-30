@@ -35,7 +35,7 @@ import { getSourceAuthority } from "@/lib/source-authority.functions";
 export const Route = createFileRoute("/_authenticated/crisis")({
   head: () => ({
     meta: [
-      { title: "Crisis Command - FKF CommsIQ" },
+      { title: "Crisis Command - CommsIQ" },
       {
         name: "description",
         content:

@@ -52,7 +52,7 @@ import { OfflineNotice } from "@/components/offline-notice";
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   head: () => ({
     meta: [
-      { title: "Message test - FKF CommsIQ" },
+      { title: "Message test - CommsIQ" },
       {
         name: "description",
         content:
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/chat/$threadId")({
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Message test - FKF CommsIQ" },
+      { property: "og:title", content: "Message test - CommsIQ" },
       {
         property: "og:description",
         content: "Persona reactions, confidence scores and recommended rewrites.",
@@ -285,7 +285,7 @@ function ThreadPage() {
     if (!latestAnalysis) return;
     const a = latestAnalysis;
     const lines = [
-      `FKF CommsIQ - ${thread?.title ?? "Message test"}`,
+      `CommsIQ - ${thread?.title ?? "Message test"}`,
       "",
       `Confidence: ${a.confidence}% (${confidenceLabel(a.confidence)})`,
       `Expected reach: ${expectedReach(a)}% · Share probability: ${shareProbability(a)}% · Negative backlash: ${negativeBacklash(a)}%`,

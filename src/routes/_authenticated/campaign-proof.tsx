@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/campaign-proof")({
   }),
   head: () => ({
     meta: [
-      { title: "Campaign Proof - FKF CommsIQ" },
+      { title: "Campaign Proof - CommsIQ" },
       {
         name: "description",
         content:

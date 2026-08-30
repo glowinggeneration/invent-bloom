@@ -22,7 +22,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/reports/builder")({
   head: () => ({
     meta: [
-      { title: "Custom Report Builder - FKF CommsIQ" },
+      { title: "Custom Report Builder - CommsIQ" },
       {
         name: "description",
         content:

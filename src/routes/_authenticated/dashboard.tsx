@@ -59,7 +59,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   }),
   head: () => ({
     meta: [
-      { title: "Brand Health - FKF CommsIQ" },
+      { title: "Brand Health - CommsIQ" },
       {
         name: "description",
         content:
@@ -67,7 +67,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Brand Health - FKF CommsIQ" },
+      { property: "og:title", content: "Brand Health - CommsIQ" },
       {
         property: "og:description",
         content:

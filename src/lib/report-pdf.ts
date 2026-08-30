@@ -41,7 +41,7 @@ export function buildAnalysisPdf(analysis: Analysis, title: string) {
       doc.line(M, H - 48, W - M, H - 48);
       doc.setFontSize(8);
       doc.setTextColor(...MUTED);
-      doc.text("FKF CommsIQ - Powered by Persona_Voices", M, H - 34);
+      doc.text("CommsIQ - Powered by Persona_Voices", M, H - 34);
       doc.text(`Page ${i} of ${pages}`, W - M, H - 34, { align: "right" });
     }
   }

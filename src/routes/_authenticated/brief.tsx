@@ -32,7 +32,7 @@ import { getOverviewIntelligence } from "@/lib/overview-intelligence.functions";
 export const Route = createFileRoute("/_authenticated/brief")({
   head: () => ({
     meta: [
-      { title: "Executive Brief - FKF CommsIQ" },
+      { title: "Executive Brief - CommsIQ" },
       {
         name: "description",
         content:

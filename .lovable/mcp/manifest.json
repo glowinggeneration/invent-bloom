@@ -13,13 +13,13 @@
     "server": {
       "name": "fkf-commsiq",
       "version": "0.1.0",
-      "title": "FKF CommsIQ"
+      "title": "CommsIQ"
     },
     "tools": [
       {
         "name": "list_message_tests",
         "title": "List message tests",
-        "description": "List the signed-in user's recent message-testing sessions (threads) in FKF CommsIQ, newest first.",
+        "description": "List the signed-in user's recent message-testing sessions (threads) in CommsIQ, newest first.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -66,7 +66,7 @@
       {
         "name": "list_campaigns",
         "title": "List campaigns",
-        "description": "List the signed-in user's publishing campaigns in FKF CommsIQ with their goal, status and copy, newest first.",
+        "description": "List the signed-in user's publishing campaigns in CommsIQ with their goal, status and copy, newest first.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
