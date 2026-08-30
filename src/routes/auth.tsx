@@ -82,7 +82,7 @@ function AuthPage() {
         <div className="flex flex-col items-center text-center">
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-10 w-auto" />
           <p className="type-section mt-4">
-            FKF <span className="text-primary">CommsIQ</span>
+            <span className="text-primary">CommsIQ</span>
           </p>
           <p className="type-meta mt-1 text-muted-foreground">
             Communications Intelligence Platform
@@ -156,9 +156,6 @@ function AuthPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center type-meta text-muted-foreground">
-          Powered by <span className="font-medium text-primary">Persona_Voices</span>
-        </p>
       </div>
     </div>
   );

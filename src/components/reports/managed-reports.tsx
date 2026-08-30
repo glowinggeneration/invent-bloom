@@ -221,7 +221,7 @@ export function ManagedReportsLibrary({ isAdmin }: { isAdmin: boolean }) {
           description={
             isAdmin
               ? "Attach a report in Lovable Chat and say “Add this to Managed Reports” — it will be published here."
-              : "The Persona_Voices team publishes prepared reports here. Nothing has been shared yet."
+              : "The team publishes prepared reports here. Nothing has been shared yet."
           }
         />
       ) : (

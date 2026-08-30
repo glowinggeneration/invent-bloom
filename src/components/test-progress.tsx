@@ -153,7 +153,7 @@ export function TestProgress({ label, phase = "analysis" }: { label?: string; ph
       </ul>
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
-        Keep this tab open - CommsIQ, powered by Persona_Voices
+        Keep this tab open - CommsIQ
       </p>
     </div>
   );

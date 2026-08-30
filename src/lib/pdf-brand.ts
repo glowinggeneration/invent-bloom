@@ -134,7 +134,7 @@ export class BrandPdf {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(...BRAND.muted);
-    doc.text("CommsIQ · Powered by Persona_Voices", textLeft, 20);
+    doc.text("CommsIQ", textLeft, 20);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(19);
@@ -572,7 +572,6 @@ export class BrandPdf {
       doc.text("CommsIQ", margin + 4, height - 8.6);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...BRAND.muted);
-      doc.text("Powered by Persona_Voices", margin + 24, height - 8.6);
       doc.text(`Page ${i} of ${pages}`, width - margin, height - 8.6, { align: "right" });
     }
   }

@@ -149,7 +149,7 @@ function AppSidebar() {
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-7 w-auto shrink-0 object-contain" />
           <span className="min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="block truncate type-card font-semibold">
-              FKF <span className="text-primary">CommsIQ</span>
+              <span className="text-primary">CommsIQ</span>
             </span>
             <span className="block truncate text-[11px] text-muted-foreground">
               Communications workspace
@@ -226,9 +226,6 @@ function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <p className="type-meta px-2 pb-1 pt-2 text-center text-muted-foreground group-data-[collapsible=icon]:hidden">
-          Powered by Persona_Voices
-        </p>
       </SidebarFooter>
     </Sidebar>
   );
