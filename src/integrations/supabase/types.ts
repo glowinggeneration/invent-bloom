@@ -355,6 +355,48 @@ export type Database = {
         }
         Relationships: []
       }
+      decision_log: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decision: string
+          due_at: string | null
+          id: string
+          insight: string
+          owner: string
+          result: string
+          source_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decision: string
+          due_at?: string | null
+          id?: string
+          insight: string
+          owner?: string
+          result?: string
+          source_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decision?: string
+          due_at?: string | null
+          id?: string
+          insight?: string
+          owner?: string
+          result?: string
+          source_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       external_profiles: {
         Row: {
           avatar_url: string | null
@@ -650,6 +692,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monitoring_watchlist: {
+        Row: {
+          alert_enabled: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          label: string
+          notes: string
+          platform: string | null
+          priority: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          alert_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind: string
+          label: string
+          notes?: string
+          platform?: string | null
+          priority?: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          alert_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          label?: string
+          notes?: string
+          platform?: string | null
+          priority?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
       }
       news_articles: {
         Row: {
@@ -1197,6 +1284,7 @@ export type Database = {
           media_urls: string[]
           persona_name: string
           publish_action_id: string | null
+          reassignments: number
           result_tweet_id: string | null
           run_at: string
           source: string
@@ -1221,6 +1309,7 @@ export type Database = {
           media_urls?: string[]
           persona_name?: string
           publish_action_id?: string | null
+          reassignments?: number
           result_tweet_id?: string | null
           run_at?: string
           source: string
@@ -1245,6 +1334,7 @@ export type Database = {
           media_urls?: string[]
           persona_name?: string
           publish_action_id?: string | null
+          reassignments?: number
           result_tweet_id?: string | null
           run_at?: string
           source?: string
@@ -1411,6 +1501,33 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      workspace_execution_state: {
+        Row: {
+          paused: boolean
+          paused_at: string | null
+          paused_by: string | null
+          reason: string
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          paused?: boolean
+          paused_at?: string | null
+          paused_by?: string | null
+          reason?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          paused?: boolean
+          paused_at?: string | null
+          paused_by?: string | null
+          reason?: string
+          singleton?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1613,15 +1730,6 @@ export type Database = {
           source: string
           status: string
         }[]
-      }
-      can_read_thread: { Args: { _thread_id: string }; Returns: boolean }
-      current_org: { Args: never; Returns: string }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
       }
     }
     Enums: {
