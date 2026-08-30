@@ -14,6 +14,177 @@ export type Database = {
   }
   public: {
     Tables: {
+      apify_mentions: {
+        Row: {
+          author_avatar: string | null
+          author_handle: string | null
+          author_name: string | null
+          collected_at: string
+          comments: number | null
+          content: string | null
+          content_type: string
+          created_at: string
+          entities: string[]
+          external_id: string
+          id: string
+          likes: number | null
+          matched_keywords: string[]
+          platform: string
+          published_at: string | null
+          raw_data: Json
+          sentiment: string
+          sentiment_reason: string | null
+          sentiment_score: number
+          shares: number | null
+          source_label: string
+          thumbnail_url: string | null
+          title: string | null
+          url: string
+          views: number | null
+        }
+        Insert: {
+          author_avatar?: string | null
+          author_handle?: string | null
+          author_name?: string | null
+          collected_at?: string
+          comments?: number | null
+          content?: string | null
+          content_type: string
+          created_at?: string
+          entities?: string[]
+          external_id: string
+          id?: string
+          likes?: number | null
+          matched_keywords?: string[]
+          platform: string
+          published_at?: string | null
+          raw_data?: Json
+          sentiment?: string
+          sentiment_reason?: string | null
+          sentiment_score?: number
+          shares?: number | null
+          source_label: string
+          thumbnail_url?: string | null
+          title?: string | null
+          url: string
+          views?: number | null
+        }
+        Update: {
+          author_avatar?: string | null
+          author_handle?: string | null
+          author_name?: string | null
+          collected_at?: string
+          comments?: number | null
+          content?: string | null
+          content_type?: string
+          created_at?: string
+          entities?: string[]
+          external_id?: string
+          id?: string
+          likes?: number | null
+          matched_keywords?: string[]
+          platform?: string
+          published_at?: string | null
+          raw_data?: Json
+          sentiment?: string
+          sentiment_reason?: string | null
+          sentiment_score?: number
+          shares?: number | null
+          source_label?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          url?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
+      apify_profiles: {
+        Row: {
+          avatar_url: string | null
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          display_name: string | null
+          fetched_at: string
+          followers: number | null
+          following: number | null
+          handle: string
+          id: string
+          is_verified: boolean
+          likes_count: number | null
+          platform: string
+          posts_count: number | null
+          profile_url: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          fetched_at?: string
+          followers?: number | null
+          following?: number | null
+          handle: string
+          id?: string
+          is_verified?: boolean
+          likes_count?: number | null
+          platform: string
+          posts_count?: number | null
+          profile_url: string
+        }
+        Update: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          fetched_at?: string
+          followers?: number | null
+          following?: number | null
+          handle?: string
+          id?: string
+          is_verified?: boolean
+          likes_count?: number | null
+          platform?: string
+          posts_count?: number | null
+          profile_url?: string
+        }
+        Relationships: []
+      }
+      apify_source_status: {
+        Row: {
+          items_last_run: number
+          label: string
+          last_run_at: string | null
+          message: string | null
+          source_key: string
+          status: string
+          stored_last_run: number
+          updated_at: string
+        }
+        Insert: {
+          items_last_run?: number
+          label: string
+          last_run_at?: string | null
+          message?: string | null
+          source_key: string
+          status?: string
+          stored_last_run?: number
+          updated_at?: string
+        }
+        Update: {
+          items_last_run?: number
+          label?: string
+          last_run_at?: string | null
+          message?: string | null
+          source_key?: string
+          status?: string
+          stored_last_run?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       brand_profiles: {
         Row: {
           avatar_url: string | null
@@ -346,6 +517,72 @@ export type Database = {
         }
         Relationships: []
       }
+      managed_reports: {
+        Row: {
+          campaign: string
+          category: string
+          client: string
+          cover_image: string | null
+          created_at: string
+          description: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          reporting_period_end: string | null
+          reporting_period_start: string | null
+          status: string
+          storage_path: string
+          tags: string[]
+          title: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          campaign?: string
+          category?: string
+          client?: string
+          cover_image?: string | null
+          created_at?: string
+          description?: string
+          file_name: string
+          file_size?: number
+          file_type: string
+          id?: string
+          reporting_period_end?: string | null
+          reporting_period_start?: string | null
+          status?: string
+          storage_path: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Update: {
+          campaign?: string
+          category?: string
+          client?: string
+          cover_image?: string | null
+          created_at?: string
+          description?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          reporting_period_end?: string | null
+          reporting_period_start?: string | null
+          status?: string
+          storage_path?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       mention_keywords: {
         Row: {
           created_at: string
@@ -456,6 +693,24 @@ export type Database = {
           source_id?: string
           title?: string
           title_key?: string
+        }
+        Relationships: []
+      }
+      overview_intel: {
+        Row: {
+          generated_at: string
+          key: string
+          payload: Json
+        }
+        Insert: {
+          generated_at?: string
+          key: string
+          payload?: Json
+        }
+        Update: {
+          generated_at?: string
+          key?: string
+          payload?: Json
         }
         Relationships: []
       }
@@ -863,6 +1118,69 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          campaigns: Json
+          conversation: Json
+          created_at: string
+          generated_at: string
+          id: string
+          insights: Json
+          kind: string
+          label: string
+          metrics: Json
+          period_end: string
+          period_start: string
+          personas: Json
+          recommendations: Json
+          report_date: string
+          source_errors: Json
+          status: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          campaigns?: Json
+          conversation?: Json
+          created_at?: string
+          generated_at?: string
+          id?: string
+          insights?: Json
+          kind?: string
+          label?: string
+          metrics?: Json
+          period_end: string
+          period_start: string
+          personas?: Json
+          recommendations?: Json
+          report_date: string
+          source_errors?: Json
+          status?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          campaigns?: Json
+          conversation?: Json
+          created_at?: string
+          generated_at?: string
+          id?: string
+          insights?: Json
+          kind?: string
+          label?: string
+          metrics?: Json
+          period_end?: string
+          period_start?: string
+          personas?: Json
+          recommendations?: Json
+          report_date?: string
+          source_errors?: Json
+          status?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scheduled_actions: {
         Row: {
           account_id: string | null
@@ -1210,6 +1528,72 @@ export type Database = {
           totp_secret?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      x_mentions: {
+        Row: {
+          author_handle: string
+          author_name: string
+          author_verified: boolean
+          collected_at: string
+          created_at: string
+          like_count: number
+          matched_keyword: string
+          mentions_federation: boolean
+          mentions_president: boolean
+          posted_at: string | null
+          reply_to_brand: boolean
+          sentiment: string
+          sentiment_reason: string
+          sentiment_score: number
+          source: string
+          text: string
+          tweet_id: string
+          url: string
+          view_count: number
+        }
+        Insert: {
+          author_handle?: string
+          author_name?: string
+          author_verified?: boolean
+          collected_at?: string
+          created_at?: string
+          like_count?: number
+          matched_keyword?: string
+          mentions_federation?: boolean
+          mentions_president?: boolean
+          posted_at?: string | null
+          reply_to_brand?: boolean
+          sentiment?: string
+          sentiment_reason?: string
+          sentiment_score?: number
+          source?: string
+          text?: string
+          tweet_id: string
+          url?: string
+          view_count?: number
+        }
+        Update: {
+          author_handle?: string
+          author_name?: string
+          author_verified?: boolean
+          collected_at?: string
+          created_at?: string
+          like_count?: number
+          matched_keyword?: string
+          mentions_federation?: boolean
+          mentions_president?: boolean
+          posted_at?: string | null
+          reply_to_brand?: boolean
+          sentiment?: string
+          sentiment_reason?: string
+          sentiment_score?: number
+          source?: string
+          text?: string
+          tweet_id?: string
+          url?: string
+          view_count?: number
         }
         Relationships: []
       }
