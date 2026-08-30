@@ -14,6 +14,270 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_events: {
+        Row: {
+          correlation_id: string | null
+          created_at: string
+          failure_reason: string | null
+          fallback_used: boolean
+          feature: string
+          id: string
+          input_tokens: number | null
+          latency_ms: number | null
+          model: string
+          org: string | null
+          outcome: string
+          output_tokens: number | null
+          prompt_version: string | null
+          provider: string
+          retries: number
+          user_id: string | null
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          fallback_used?: boolean
+          feature: string
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model: string
+          org?: string | null
+          outcome: string
+          output_tokens?: number | null
+          prompt_version?: string | null
+          provider: string
+          retries?: number
+          user_id?: string | null
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          fallback_used?: boolean
+          feature?: string
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model?: string
+          org?: string | null
+          outcome?: string
+          output_tokens?: number | null
+          prompt_version?: string | null
+          provider?: string
+          retries?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      apify_mentions: {
+        Row: {
+          author_avatar: string | null
+          author_handle: string | null
+          author_name: string | null
+          collected_at: string
+          comments: number | null
+          content: string | null
+          content_type: string
+          created_at: string
+          entities: string[]
+          external_id: string
+          id: string
+          likes: number | null
+          matched_keywords: string[]
+          platform: string
+          published_at: string | null
+          raw_data: Json
+          sentiment: string
+          sentiment_reason: string | null
+          sentiment_score: number
+          shares: number | null
+          source_label: string
+          thumbnail_url: string | null
+          title: string | null
+          url: string
+          views: number | null
+        }
+        Insert: {
+          author_avatar?: string | null
+          author_handle?: string | null
+          author_name?: string | null
+          collected_at?: string
+          comments?: number | null
+          content?: string | null
+          content_type: string
+          created_at?: string
+          entities?: string[]
+          external_id: string
+          id?: string
+          likes?: number | null
+          matched_keywords?: string[]
+          platform: string
+          published_at?: string | null
+          raw_data?: Json
+          sentiment?: string
+          sentiment_reason?: string | null
+          sentiment_score?: number
+          shares?: number | null
+          source_label: string
+          thumbnail_url?: string | null
+          title?: string | null
+          url: string
+          views?: number | null
+        }
+        Update: {
+          author_avatar?: string | null
+          author_handle?: string | null
+          author_name?: string | null
+          collected_at?: string
+          comments?: number | null
+          content?: string | null
+          content_type?: string
+          created_at?: string
+          entities?: string[]
+          external_id?: string
+          id?: string
+          likes?: number | null
+          matched_keywords?: string[]
+          platform?: string
+          published_at?: string | null
+          raw_data?: Json
+          sentiment?: string
+          sentiment_reason?: string | null
+          sentiment_score?: number
+          shares?: number | null
+          source_label?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          url?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
+      apify_profiles: {
+        Row: {
+          avatar_url: string | null
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          display_name: string | null
+          fetched_at: string
+          followers: number | null
+          following: number | null
+          handle: string
+          id: string
+          is_verified: boolean
+          likes_count: number | null
+          platform: string
+          posts_count: number | null
+          profile_url: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          fetched_at?: string
+          followers?: number | null
+          following?: number | null
+          handle: string
+          id?: string
+          is_verified?: boolean
+          likes_count?: number | null
+          platform: string
+          posts_count?: number | null
+          profile_url: string
+        }
+        Update: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          fetched_at?: string
+          followers?: number | null
+          following?: number | null
+          handle?: string
+          id?: string
+          is_verified?: boolean
+          likes_count?: number | null
+          platform?: string
+          posts_count?: number | null
+          profile_url?: string
+        }
+        Relationships: []
+      }
+      apify_source_status: {
+        Row: {
+          items_last_run: number
+          label: string
+          last_run_at: string | null
+          message: string | null
+          source_key: string
+          status: string
+          stored_last_run: number
+          updated_at: string
+        }
+        Insert: {
+          items_last_run?: number
+          label: string
+          last_run_at?: string | null
+          message?: string | null
+          source_key: string
+          status?: string
+          stored_last_run?: number
+          updated_at?: string
+        }
+        Update: {
+          items_last_run?: number
+          label?: string
+          last_run_at?: string | null
+          message?: string | null
+          source_key?: string
+          status?: string
+          stored_last_run?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          ip: unknown
+          metadata: Json
+          org: string | null
+          resource_id: string | null
+          resource_table: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: unknown
+          metadata?: Json
+          org?: string | null
+          resource_id?: string | null
+          resource_table: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: unknown
+          metadata?: Json
+          org?: string | null
+          resource_id?: string | null
+          resource_table?: string
+        }
+        Relationships: []
+      }
       brand_profiles: {
         Row: {
           avatar_url: string | null
@@ -184,6 +448,48 @@ export type Database = {
         }
         Relationships: []
       }
+      decision_log: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decision: string
+          due_at: string | null
+          id: string
+          insight: string
+          owner: string
+          result: string
+          source_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decision: string
+          due_at?: string | null
+          id?: string
+          insight: string
+          owner?: string
+          result?: string
+          source_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decision?: string
+          due_at?: string | null
+          id?: string
+          insight?: string
+          owner?: string
+          result?: string
+          source_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       external_profiles: {
         Row: {
           avatar_url: string | null
@@ -220,6 +526,36 @@ export type Database = {
           handle?: string
           is_verified?: boolean
           tweet_count?: number
+        }
+        Relationships: []
+      }
+      idempotency_keys: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          key: string
+          request_fingerprint: string
+          result: Json | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          key: string
+          request_fingerprint: string
+          result?: Json | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          key?: string
+          request_fingerprint?: string
+          result?: Json | null
+          status?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -346,6 +682,72 @@ export type Database = {
         }
         Relationships: []
       }
+      managed_reports: {
+        Row: {
+          campaign: string
+          category: string
+          client: string
+          cover_image: string | null
+          created_at: string
+          description: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          reporting_period_end: string | null
+          reporting_period_start: string | null
+          status: string
+          storage_path: string
+          tags: string[]
+          title: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          campaign?: string
+          category?: string
+          client?: string
+          cover_image?: string | null
+          created_at?: string
+          description?: string
+          file_name: string
+          file_size?: number
+          file_type: string
+          id?: string
+          reporting_period_end?: string | null
+          reporting_period_start?: string | null
+          status?: string
+          storage_path: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Update: {
+          campaign?: string
+          category?: string
+          client?: string
+          cover_image?: string | null
+          created_at?: string
+          description?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          reporting_period_end?: string | null
+          reporting_period_start?: string | null
+          status?: string
+          storage_path?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       mention_keywords: {
         Row: {
           created_at: string
@@ -414,6 +816,51 @@ export type Database = {
           },
         ]
       }
+      monitoring_watchlist: {
+        Row: {
+          alert_enabled: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          label: string
+          notes: string
+          platform: string | null
+          priority: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          alert_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind: string
+          label: string
+          notes?: string
+          platform?: string | null
+          priority?: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          alert_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          label?: string
+          notes?: string
+          platform?: string | null
+          priority?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       news_articles: {
         Row: {
           category: string[]
@@ -456,6 +903,24 @@ export type Database = {
           source_id?: string
           title?: string
           title_key?: string
+        }
+        Relationships: []
+      }
+      overview_intel: {
+        Row: {
+          generated_at: string
+          key: string
+          payload: Json
+        }
+        Insert: {
+          generated_at?: string
+          key: string
+          payload?: Json
+        }
+        Update: {
+          generated_at?: string
+          key?: string
+          payload?: Json
         }
         Relationships: []
       }
@@ -863,6 +1328,87 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: {
+          bucket_key: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          bucket_key: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          bucket_key?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          campaigns: Json
+          conversation: Json
+          created_at: string
+          generated_at: string
+          id: string
+          insights: Json
+          kind: string
+          label: string
+          metrics: Json
+          period_end: string
+          period_start: string
+          personas: Json
+          recommendations: Json
+          report_date: string
+          source_errors: Json
+          status: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          campaigns?: Json
+          conversation?: Json
+          created_at?: string
+          generated_at?: string
+          id?: string
+          insights?: Json
+          kind?: string
+          label?: string
+          metrics?: Json
+          period_end: string
+          period_start: string
+          personas?: Json
+          recommendations?: Json
+          report_date: string
+          source_errors?: Json
+          status?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          campaigns?: Json
+          conversation?: Json
+          created_at?: string
+          generated_at?: string
+          id?: string
+          insights?: Json
+          kind?: string
+          label?: string
+          metrics?: Json
+          period_end?: string
+          period_start?: string
+          personas?: Json
+          recommendations?: Json
+          report_date?: string
+          source_errors?: Json
+          status?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scheduled_actions: {
         Row: {
           account_id: string | null
@@ -879,6 +1425,7 @@ export type Database = {
           media_urls: string[]
           persona_name: string
           publish_action_id: string | null
+          reassignments: number
           result_tweet_id: string | null
           run_at: string
           source: string
@@ -903,6 +1450,7 @@ export type Database = {
           media_urls?: string[]
           persona_name?: string
           publish_action_id?: string | null
+          reassignments?: number
           result_tweet_id?: string | null
           run_at?: string
           source: string
@@ -927,6 +1475,7 @@ export type Database = {
           media_urls?: string[]
           persona_name?: string
           publish_action_id?: string | null
+          reassignments?: number
           result_tweet_id?: string | null
           run_at?: string
           source?: string
@@ -1096,6 +1645,33 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_execution_state: {
+        Row: {
+          paused: boolean
+          paused_at: string | null
+          paused_by: string | null
+          reason: string
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          paused?: boolean
+          paused_at?: string | null
+          paused_by?: string | null
+          reason?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          paused?: boolean
+          paused_at?: string | null
+          paused_by?: string | null
+          reason?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       x_accounts: {
         Row: {
           always_on: boolean
@@ -1213,6 +1789,72 @@ export type Database = {
         }
         Relationships: []
       }
+      x_mentions: {
+        Row: {
+          author_handle: string
+          author_name: string
+          author_verified: boolean
+          collected_at: string
+          created_at: string
+          like_count: number
+          matched_keyword: string
+          mentions_federation: boolean
+          mentions_president: boolean
+          posted_at: string | null
+          reply_to_brand: boolean
+          sentiment: string
+          sentiment_reason: string
+          sentiment_score: number
+          source: string
+          text: string
+          tweet_id: string
+          url: string
+          view_count: number
+        }
+        Insert: {
+          author_handle?: string
+          author_name?: string
+          author_verified?: boolean
+          collected_at?: string
+          created_at?: string
+          like_count?: number
+          matched_keyword?: string
+          mentions_federation?: boolean
+          mentions_president?: boolean
+          posted_at?: string | null
+          reply_to_brand?: boolean
+          sentiment?: string
+          sentiment_reason?: string
+          sentiment_score?: number
+          source?: string
+          text?: string
+          tweet_id: string
+          url?: string
+          view_count?: number
+        }
+        Update: {
+          author_handle?: string
+          author_name?: string
+          author_verified?: boolean
+          collected_at?: string
+          created_at?: string
+          like_count?: number
+          matched_keyword?: string
+          mentions_federation?: boolean
+          mentions_president?: boolean
+          posted_at?: string | null
+          reply_to_brand?: boolean
+          sentiment?: string
+          sentiment_reason?: string
+          sentiment_score?: number
+          source?: string
+          text?: string
+          tweet_id?: string
+          url?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1230,14 +1872,22 @@ export type Database = {
           status: string
         }[]
       }
-      can_read_thread: { Args: { _thread_id: string }; Returns: boolean }
-      current_org: { Args: never; Returns: string }
-      has_role: {
+      log_audit_event: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
+          _action: string
+          _metadata?: Json
+          _resource_id?: string
+          _resource_table: string
         }
-        Returns: boolean
+        Returns: string
+      }
+      prune_idempotency_keys: {
+        Args: { _older_than?: string }
+        Returns: undefined
+      }
+      prune_rate_limit_hits: {
+        Args: { _older_than?: string }
+        Returns: undefined
       }
     }
     Enums: {
