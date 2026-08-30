@@ -38,7 +38,6 @@ import { Input } from "@/components/ui/input";
 import { TagPicker } from "@/components/ui/tag-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { saveCampaign } from "@/lib/campaigns.functions";
-import { parseTerms } from "@/lib/campaigns";
 import { listPublishJobs, listXAccounts, runPublish } from "@/lib/publish.functions";
 import { getSetupStatus } from "@/lib/onboarding.functions";
 import { nextWindowStart } from "@/lib/send-windows";

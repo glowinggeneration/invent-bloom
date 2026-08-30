@@ -182,7 +182,7 @@ export function LaunchActions({
         launchLabel={launchLabel}
         onLaunch={onLaunch}
         onSchedule={onSchedule}
-        className={className}
+        className={className ?? ""}
       />
     );
   }
