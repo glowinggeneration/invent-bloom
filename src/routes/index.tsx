@@ -37,9 +37,9 @@ function Index() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="text-center">
         <img
-          src="/fkf-logo.png"
-          alt="Football Kenya Federation crest"
-          className="mx-auto size-16"
+          src="/smait-logo.svg"
+          alt="SMAIT logo"
+          className="mx-auto h-12 w-auto"
         />
         <h1 className="type-section mt-4">FKF CommsIQ</h1>
       </div>

@@ -467,7 +467,7 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
       : r;
     // The federation's own pages fall back to the FKF crest when a platform
     // hides the picture from the scraper.
-    return { ...base, avatar_url: base.avatar_url ?? "/fkf-logo.png" };
+    return { ...base, avatar_url: base.avatar_url ?? "/smait-logo.svg" };
   });
 
   const { error } = await admin
