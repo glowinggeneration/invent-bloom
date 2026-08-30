@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_events: {
+        Row: {
+          correlation_id: string | null
+          created_at: string
+          failure_reason: string | null
+          fallback_used: boolean
+          feature: string
+          id: string
+          input_tokens: number | null
+          latency_ms: number | null
+          model: string
+          org: string | null
+          outcome: string
+          output_tokens: number | null
+          prompt_version: string | null
+          provider: string
+          retries: number
+          user_id: string | null
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          fallback_used?: boolean
+          feature: string
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model: string
+          org?: string | null
+          outcome: string
+          output_tokens?: number | null
+          prompt_version?: string | null
+          provider: string
+          retries?: number
+          user_id?: string | null
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          fallback_used?: boolean
+          feature?: string
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model?: string
+          org?: string | null
+          outcome?: string
+          output_tokens?: number | null
+          prompt_version?: string | null
+          provider?: string
+          retries?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       apify_mentions: {
         Row: {
           author_avatar: string | null
@@ -182,6 +239,42 @@ export type Database = {
           status?: string
           stored_last_run?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          ip: unknown
+          metadata: Json
+          org: string | null
+          resource_id: string | null
+          resource_table: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: unknown
+          metadata?: Json
+          org?: string | null
+          resource_id?: string | null
+          resource_table: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          ip?: unknown
+          metadata?: Json
+          org?: string | null
+          resource_id?: string | null
+          resource_table?: string
         }
         Relationships: []
       }
@@ -433,6 +526,36 @@ export type Database = {
           handle?: string
           is_verified?: boolean
           tweet_count?: number
+        }
+        Relationships: []
+      }
+      idempotency_keys: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          key: string
+          request_fingerprint: string
+          result: Json | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          key: string
+          request_fingerprint: string
+          result?: Json | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          key?: string
+          request_fingerprint?: string
+          result?: Json | null
+          status?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1205,6 +1328,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: {
+          bucket_key: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          bucket_key: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          bucket_key?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           campaigns: Json
@@ -1730,6 +1871,23 @@ export type Database = {
           source: string
           status: string
         }[]
+      }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _metadata?: Json
+          _resource_id?: string
+          _resource_table: string
+        }
+        Returns: string
+      }
+      prune_idempotency_keys: {
+        Args: { _older_than?: string }
+        Returns: undefined
+      }
+      prune_rate_limit_hits: {
+        Args: { _older_than?: string }
+        Returns: undefined
       }
     }
     Enums: {
