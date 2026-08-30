@@ -1183,27 +1183,48 @@ export type Database = {
       }
       profiles: {
         Row: {
+          brand_handle: string
+          brand_name: string
           created_at: string
           email: string
           full_name: string
           id: string
+          job_title: string
+          onboarding_completed_at: string | null
+          onboarding_skipped_at: string | null
           org: string
+          phone: string
+          team: string
           updated_at: string
         }
         Insert: {
+          brand_handle?: string
+          brand_name?: string
           created_at?: string
           email: string
           full_name?: string
           id: string
+          job_title?: string
+          onboarding_completed_at?: string | null
+          onboarding_skipped_at?: string | null
           org?: string
+          phone?: string
+          team?: string
           updated_at?: string
         }
         Update: {
+          brand_handle?: string
+          brand_name?: string
           created_at?: string
           email?: string
           full_name?: string
           id?: string
+          job_title?: string
+          onboarding_completed_at?: string | null
+          onboarding_skipped_at?: string | null
           org?: string
+          phone?: string
+          team?: string
           updated_at?: string
         }
         Relationships: []
