@@ -1,0 +1,26 @@
+# Exception Register — Persona_Voices (FKF CommsIQ)
+
+Per Application Build Master Rules §16. Every rule not currently met is
+recorded here with an owner and a deadline. Exceptions expire — they are
+not permanent permission to skip the standard. This register was seeded
+during the initial Master Rules adoption pass; update it (don't just
+accumulate) as items close or new ones are found.
+
+| Rule | Reason | Risk | Temporary control | Owner | Deadline | Approval |
+| --- | --- | --- | --- | --- | --- | --- |
+| §6.4 MFA required for privileged accounts | Admin access is currently gated by a single hardcoded admin-email match (`src/lib/access.ts`), not a role system with MFA. | An admin account takeover requires only that one email's password. | Admin email is not public; session cookies are HttpOnly/Secure. | TBD | TBD | TBD |
+| §6.5 Rate limiting on login/OTP/export | No first-party rate limiter is wired to auth, OTP or export endpoints yet. `rate-limit.server.ts` scaffold added this pass but not connected to any route. | Brute-force / credential-stuffing and export abuse are not throttled by the app itself (Supabase Auth may apply its own limits, unverified). | Supabase Auth's own default protections, where they apply. | TBD | TBD | TBD |
+| §7.1 / §11.2 Audit logging for sensitive actions | No `audit_log` table exists yet. `audit-log.server.ts` + migration scaffold added this pass but not applied or wired to any admin/role/export action. | Admin actions, role changes and data exports aren't currently traceable after the fact. | Supabase's own database logs (infra-level, not action-level). | TBD | TBD | TBD |
+| §9.1 Multi-provider AI fallback | AI drafting (`campaigns.server.ts`, `smait-ai.functions.ts`) calls the Lovable AI gateway directly with no fallback provider or degraded mode. | If the Lovable gateway is unavailable, AI-dependent features fail outright rather than degrading. | Calls are wrapped in try/catch and fail closed (no draft rather than a bad one). | TBD | TBD | TBD |
+| §9.2 Structured/validated AI outputs | `draftReplies()` parses model output with a regex (`content.match(/\{[\s\S]*\}/)`) rather than a schema-constrained response. | A malformed or adversarial model response could silently produce no drafts, or (in a future feature) unexpected fields. | Parse failures are caught and fall back to an empty result. | TBD | TBD | TBD |
+| §9.7 Token caps and cost controls | No per-request or per-user/workspace AI token cap is enforced. | An unbounded prompt or a runaway retry loop could generate uncontrolled AI spend. | Requests are single-shot, not retried automatically. | TBD | TBD | TBD |
+| §9.8 AI observability | No structured log of provider/model/tokens/latency/outcome per AI call. `ai-observability.server.ts` scaffold added this pass, not wired. | AI cost and failure patterns aren't currently queryable; incidents are diagnosed from provider dashboards only. | Errors surface in application logs (unstructured). | TBD | TBD | TBD |
+| §8.1 Idempotency on retryable state-changing operations | Campaign sends and scheduled actions have no idempotency key; a retried request could duplicate a reply/action. `idempotency.server.ts` scaffold added this pass, not wired. | A network retry or double-click could send a duplicate reply or repeat a scheduled action. | Client-side duplicate-submit guards on some forms (not systematic). | TBD | TBD | TBD |
+| §3.1 / §8.2 — 306 untyped (`any`) values in API/scheduler/provider glue | Twitter API glue, scheduler and reports code use `any` at ~300 call sites (see prior audit). Rewriting all of them without a live API/DB to verify against risked introducing bugs for cosmetic gain. | Loose typing hides shape mismatches at compile time; bugs surface at runtime instead. | Runtime `tsc`/build/tests all pass; behaviour unchanged since these are pre-existing. | TBD | TBD | TBD |
+
+## How to use this register
+
+1. When a Master Rule can't be met before a release, add a row here instead of silently shipping the gap.
+2. Fill in **Owner** and **Deadline** before merging — "TBD" is a placeholder for the adoption pass, not a resting state.
+3. When an item is resolved, delete the row (git history keeps the record) rather than marking it "done" in place.
+4. This file should shrink over time. A growing register is a signal to stop adding scope and pay down risk instead.

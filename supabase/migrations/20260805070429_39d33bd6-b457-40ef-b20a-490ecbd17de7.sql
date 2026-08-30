@@ -1,0 +1,1 @@
+ALTER TABLE public.x_login_attempts ADD COLUMN IF NOT EXISTS totp_secret text NOT NULL DEFAULT '';

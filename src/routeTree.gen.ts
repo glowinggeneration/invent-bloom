@@ -10,33 +10,860 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthenticatedAccountHealthRouteImport } from './routes/_authenticated/account-health'
+import { Route as AuthenticatedAlwaysOnRouteImport } from './routes/_authenticated/always-on'
+import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
+import { Route as AuthenticatedBriefRouteImport } from './routes/_authenticated/brief'
+import { Route as AuthenticatedCampaignManagerRouteImport } from './routes/_authenticated/campaign-manager'
+import { Route as AuthenticatedCampaignProofRouteImport } from './routes/_authenticated/campaign-proof'
+import { Route as AuthenticatedCampaignsRouteImport } from './routes/_authenticated/campaigns'
+import { Route as AuthenticatedChangelogRouteImport } from './routes/_authenticated/changelog'
+import { Route as AuthenticatedCompareRouteImport } from './routes/_authenticated/compare'
+import { Route as AuthenticatedCrisisRouteImport } from './routes/_authenticated/crisis'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
+import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated/governance'
+import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
+import { Route as AuthenticatedLinkedAccountsRouteImport } from './routes/_authenticated/linked-accounts'
+import { Route as AuthenticatedMentionsRouteImport } from './routes/_authenticated/mentions'
+import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
+import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
+import { Route as AuthenticatedPersonasRouteImport } from './routes/_authenticated/personas'
+import { Route as AuthenticatedPreflightRouteImport } from './routes/_authenticated/preflight'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedPublishRouteImport } from './routes/_authenticated/publish'
+import { Route as AuthenticatedSharedRouteImport } from './routes/_authenticated/shared'
+import { Route as AuthenticatedTestingRouteImport } from './routes/_authenticated/testing'
+import { Route as AuthenticatedWatchlistRouteImport } from './routes/_authenticated/watchlist'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as AuthenticatedAdminAccountsRouteImport } from './routes/_authenticated/admin.accounts'
+import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
+import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenticated/admin.health'
+import { Route as AuthenticatedAdminProfileRouteImport } from './routes/_authenticated/admin.profile'
+import { Route as AuthenticatedCampaignActionRouteImport } from './routes/_authenticated/campaign.$action'
+import { Route as AuthenticatedCampaignOverviewRouteImport } from './routes/_authenticated/campaign.overview'
+import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as AuthenticatedPerformanceInsightsRouteImport } from './routes/_authenticated/performance.insights'
+import { Route as AuthenticatedRecommendationsThreadIdRouteImport } from './routes/_authenticated/recommendations.$threadId'
+import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
+import { Route as AuthenticatedReportsReportIdRouteImport } from './routes/_authenticated/reports.$reportId'
+import { Route as AuthenticatedReportsBuilderRouteImport } from './routes/_authenticated/reports.builder'
+import { Route as ApiPublicHooksAlwaysOnRouteImport } from './routes/api/public/hooks/always-on'
+import { Route as ApiPublicHooksApifySweepRouteImport } from './routes/api/public/hooks/apify-sweep'
+import { Route as ApiPublicHooksBulkReloginRouteImport } from './routes/api/public/hooks/bulk-relogin'
+import { Route as ApiPublicHooksDailyReportRouteImport } from './routes/api/public/hooks/daily-report'
+import { Route as ApiPublicHooksEngagementSweepRouteImport } from './routes/api/public/hooks/engagement-sweep'
+import { Route as ApiPublicHooksFollowListRouteImport } from './routes/api/public/hooks/follow-list'
+import { Route as ApiPublicHooksImportCredentialsRouteImport } from './routes/api/public/hooks/import-credentials'
+import { Route as ApiPublicHooksMentionKeywordsRouteImport } from './routes/api/public/hooks/mention-keywords'
+import { Route as ApiPublicHooksMetricsRefreshRouteImport } from './routes/api/public/hooks/metrics-refresh'
+import { Route as ApiPublicHooksNewsSweepRouteImport } from './routes/api/public/hooks/news-sweep'
+import { Route as ApiPublicHooksReloginRouteImport } from './routes/api/public/hooks/relogin'
+import { Route as ApiPublicHooksScheduledActionsRouteImport } from './routes/api/public/hooks/scheduled-actions'
+import { Route as ApiPublicHooksSocialSweepRouteImport } from './routes/api/public/hooks/social-sweep'
+import { Route as ApiPublicHooksSyncBiosRouteImport } from './routes/api/public/hooks/sync-bios'
+import { Route as ApiPublicHooksSyncLocationRouteImport } from './routes/api/public/hooks/sync-location'
+import { Route as ApiPublicHooksSyncProfileImagesRouteImport } from './routes/api/public/hooks/sync-profile-images'
+import { Route as ApiPublicHooksSyncProfilesRouteImport } from './routes/api/public/hooks/sync-profiles'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedAccountHealthRoute =
+  AuthenticatedAccountHealthRouteImport.update({
+    id: '/account-health',
+    path: '/account-health',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAlwaysOnRoute = AuthenticatedAlwaysOnRouteImport.update({
+  id: '/always-on',
+  path: '/always-on',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedArchiveRoute = AuthenticatedArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBriefRoute = AuthenticatedBriefRouteImport.update({
+  id: '/brief',
+  path: '/brief',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCampaignManagerRoute =
+  AuthenticatedCampaignManagerRouteImport.update({
+    id: '/campaign-manager',
+    path: '/campaign-manager',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCampaignProofRoute =
+  AuthenticatedCampaignProofRouteImport.update({
+    id: '/campaign-proof',
+    path: '/campaign-proof',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCampaignsRoute = AuthenticatedCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedChangelogRoute = AuthenticatedChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCompareRoute = AuthenticatedCompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCrisisRoute = AuthenticatedCrisisRouteImport.update({
+  id: '/crisis',
+  path: '/crisis',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDecisionsRoute = AuthenticatedDecisionsRouteImport.update({
+  id: '/decisions',
+  path: '/decisions',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGovernanceRoute = AuthenticatedGovernanceRouteImport.update({
+  id: '/governance',
+  path: '/governance',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLinkedAccountsRoute =
+  AuthenticatedLinkedAccountsRouteImport.update({
+    id: '/linked-accounts',
+    path: '/linked-accounts',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMentionsRoute = AuthenticatedMentionsRouteImport.update({
+  id: '/mentions',
+  path: '/mentions',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNewRoute = AuthenticatedNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOverviewRoute = AuthenticatedOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPerformanceRoute =
+  AuthenticatedPerformanceRouteImport.update({
+    id: '/performance',
+    path: '/performance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPersonasRoute = AuthenticatedPersonasRouteImport.update({
+  id: '/personas',
+  path: '/personas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPreflightRoute = AuthenticatedPreflightRouteImport.update({
+  id: '/preflight',
+  path: '/preflight',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPublishRoute = AuthenticatedPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSharedRoute = AuthenticatedSharedRouteImport.update({
+  id: '/shared',
+  path: '/shared',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTestingRoute = AuthenticatedTestingRouteImport.update({
+  id: '/testing',
+  path: '/testing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWatchlistRoute = AuthenticatedWatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedAdminAccountsRoute =
+  AuthenticatedAdminAccountsRouteImport.update({
+    id: '/admin/accounts',
+    path: '/admin/accounts',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminActivityRoute =
+  AuthenticatedAdminActivityRouteImport.update({
+    id: '/admin/activity',
+    path: '/admin/activity',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminHealthRoute =
+  AuthenticatedAdminHealthRouteImport.update({
+    id: '/admin/health',
+    path: '/admin/health',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminProfileRoute =
+  AuthenticatedAdminProfileRouteImport.update({
+    id: '/admin/profile',
+    path: '/admin/profile',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCampaignActionRoute =
+  AuthenticatedCampaignActionRouteImport.update({
+    id: '/campaign/$action',
+    path: '/campaign/$action',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCampaignOverviewRoute =
+  AuthenticatedCampaignOverviewRouteImport.update({
+    id: '/campaign/overview',
+    path: '/campaign/overview',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedChatThreadIdRoute =
+  AuthenticatedChatThreadIdRouteImport.update({
+    id: '/chat/$threadId',
+    path: '/chat/$threadId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPerformanceInsightsRoute =
+  AuthenticatedPerformanceInsightsRouteImport.update({
+    id: '/insights',
+    path: '/insights',
+    getParentRoute: () => AuthenticatedPerformanceRoute,
+  } as any)
+const AuthenticatedRecommendationsThreadIdRoute =
+  AuthenticatedRecommendationsThreadIdRouteImport.update({
+    id: '/recommendations/$threadId',
+    path: '/recommendations/$threadId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsIndexRoute =
+  AuthenticatedReportsIndexRouteImport.update({
+    id: '/reports/',
+    path: '/reports/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsReportIdRoute =
+  AuthenticatedReportsReportIdRouteImport.update({
+    id: '/reports/$reportId',
+    path: '/reports/$reportId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsBuilderRoute =
+  AuthenticatedReportsBuilderRouteImport.update({
+    id: '/reports/builder',
+    path: '/reports/builder',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicHooksAlwaysOnRoute = ApiPublicHooksAlwaysOnRouteImport.update({
+  id: '/api/public/hooks/always-on',
+  path: '/api/public/hooks/always-on',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksApifySweepRoute =
+  ApiPublicHooksApifySweepRouteImport.update({
+    id: '/api/public/hooks/apify-sweep',
+    path: '/api/public/hooks/apify-sweep',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBulkReloginRoute =
+  ApiPublicHooksBulkReloginRouteImport.update({
+    id: '/api/public/hooks/bulk-relogin',
+    path: '/api/public/hooks/bulk-relogin',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksDailyReportRoute =
+  ApiPublicHooksDailyReportRouteImport.update({
+    id: '/api/public/hooks/daily-report',
+    path: '/api/public/hooks/daily-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksEngagementSweepRoute =
+  ApiPublicHooksEngagementSweepRouteImport.update({
+    id: '/api/public/hooks/engagement-sweep',
+    path: '/api/public/hooks/engagement-sweep',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksFollowListRoute =
+  ApiPublicHooksFollowListRouteImport.update({
+    id: '/api/public/hooks/follow-list',
+    path: '/api/public/hooks/follow-list',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksImportCredentialsRoute =
+  ApiPublicHooksImportCredentialsRouteImport.update({
+    id: '/api/public/hooks/import-credentials',
+    path: '/api/public/hooks/import-credentials',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksMentionKeywordsRoute =
+  ApiPublicHooksMentionKeywordsRouteImport.update({
+    id: '/api/public/hooks/mention-keywords',
+    path: '/api/public/hooks/mention-keywords',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksMetricsRefreshRoute =
+  ApiPublicHooksMetricsRefreshRouteImport.update({
+    id: '/api/public/hooks/metrics-refresh',
+    path: '/api/public/hooks/metrics-refresh',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksNewsSweepRoute = ApiPublicHooksNewsSweepRouteImport.update({
+  id: '/api/public/hooks/news-sweep',
+  path: '/api/public/hooks/news-sweep',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksReloginRoute = ApiPublicHooksReloginRouteImport.update({
+  id: '/api/public/hooks/relogin',
+  path: '/api/public/hooks/relogin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksScheduledActionsRoute =
+  ApiPublicHooksScheduledActionsRouteImport.update({
+    id: '/api/public/hooks/scheduled-actions',
+    path: '/api/public/hooks/scheduled-actions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSocialSweepRoute =
+  ApiPublicHooksSocialSweepRouteImport.update({
+    id: '/api/public/hooks/social-sweep',
+    path: '/api/public/hooks/social-sweep',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSyncBiosRoute = ApiPublicHooksSyncBiosRouteImport.update({
+  id: '/api/public/hooks/sync-bios',
+  path: '/api/public/hooks/sync-bios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksSyncLocationRoute =
+  ApiPublicHooksSyncLocationRouteImport.update({
+    id: '/api/public/hooks/sync-location',
+    path: '/api/public/hooks/sync-location',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSyncProfileImagesRoute =
+  ApiPublicHooksSyncProfileImagesRouteImport.update({
+    id: '/api/public/hooks/sync-profile-images',
+    path: '/api/public/hooks/sync-profile-images',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSyncProfilesRoute =
+  ApiPublicHooksSyncProfilesRouteImport.update({
+    id: '/api/public/hooks/sync-profiles',
+    path: '/api/public/hooks/sync-profiles',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/account-health': typeof AuthenticatedAccountHealthRoute
+  '/always-on': typeof AuthenticatedAlwaysOnRoute
+  '/archive': typeof AuthenticatedArchiveRoute
+  '/brief': typeof AuthenticatedBriefRoute
+  '/campaign-manager': typeof AuthenticatedCampaignManagerRoute
+  '/campaign-proof': typeof AuthenticatedCampaignProofRoute
+  '/campaigns': typeof AuthenticatedCampaignsRoute
+  '/changelog': typeof AuthenticatedChangelogRoute
+  '/compare': typeof AuthenticatedCompareRoute
+  '/crisis': typeof AuthenticatedCrisisRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/decisions': typeof AuthenticatedDecisionsRoute
+  '/governance': typeof AuthenticatedGovernanceRoute
+  '/help': typeof AuthenticatedHelpRoute
+  '/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
+  '/mentions': typeof AuthenticatedMentionsRoute
+  '/new': typeof AuthenticatedNewRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/overview': typeof AuthenticatedOverviewRoute
+  '/performance': typeof AuthenticatedPerformanceRouteWithChildren
+  '/personas': typeof AuthenticatedPersonasRoute
+  '/preflight': typeof AuthenticatedPreflightRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/publish': typeof AuthenticatedPublishRoute
+  '/shared': typeof AuthenticatedSharedRoute
+  '/testing': typeof AuthenticatedTestingRoute
+  '/watchlist': typeof AuthenticatedWatchlistRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
+  '/admin/activity': typeof AuthenticatedAdminActivityRoute
+  '/admin/health': typeof AuthenticatedAdminHealthRoute
+  '/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/campaign/$action': typeof AuthenticatedCampaignActionRoute
+  '/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
+  '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
+  '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
+  '/reports/builder': typeof AuthenticatedReportsBuilderRoute
+  '/reports/': typeof AuthenticatedReportsIndexRoute
+  '/api/public/hooks/always-on': typeof ApiPublicHooksAlwaysOnRoute
+  '/api/public/hooks/apify-sweep': typeof ApiPublicHooksApifySweepRoute
+  '/api/public/hooks/bulk-relogin': typeof ApiPublicHooksBulkReloginRoute
+  '/api/public/hooks/daily-report': typeof ApiPublicHooksDailyReportRoute
+  '/api/public/hooks/engagement-sweep': typeof ApiPublicHooksEngagementSweepRoute
+  '/api/public/hooks/follow-list': typeof ApiPublicHooksFollowListRoute
+  '/api/public/hooks/import-credentials': typeof ApiPublicHooksImportCredentialsRoute
+  '/api/public/hooks/mention-keywords': typeof ApiPublicHooksMentionKeywordsRoute
+  '/api/public/hooks/metrics-refresh': typeof ApiPublicHooksMetricsRefreshRoute
+  '/api/public/hooks/news-sweep': typeof ApiPublicHooksNewsSweepRoute
+  '/api/public/hooks/relogin': typeof ApiPublicHooksReloginRoute
+  '/api/public/hooks/scheduled-actions': typeof ApiPublicHooksScheduledActionsRoute
+  '/api/public/hooks/social-sweep': typeof ApiPublicHooksSocialSweepRoute
+  '/api/public/hooks/sync-bios': typeof ApiPublicHooksSyncBiosRoute
+  '/api/public/hooks/sync-location': typeof ApiPublicHooksSyncLocationRoute
+  '/api/public/hooks/sync-profile-images': typeof ApiPublicHooksSyncProfileImagesRoute
+  '/api/public/hooks/sync-profiles': typeof ApiPublicHooksSyncProfilesRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/account-health': typeof AuthenticatedAccountHealthRoute
+  '/always-on': typeof AuthenticatedAlwaysOnRoute
+  '/archive': typeof AuthenticatedArchiveRoute
+  '/brief': typeof AuthenticatedBriefRoute
+  '/campaign-manager': typeof AuthenticatedCampaignManagerRoute
+  '/campaign-proof': typeof AuthenticatedCampaignProofRoute
+  '/campaigns': typeof AuthenticatedCampaignsRoute
+  '/changelog': typeof AuthenticatedChangelogRoute
+  '/compare': typeof AuthenticatedCompareRoute
+  '/crisis': typeof AuthenticatedCrisisRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/decisions': typeof AuthenticatedDecisionsRoute
+  '/governance': typeof AuthenticatedGovernanceRoute
+  '/help': typeof AuthenticatedHelpRoute
+  '/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
+  '/mentions': typeof AuthenticatedMentionsRoute
+  '/new': typeof AuthenticatedNewRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/overview': typeof AuthenticatedOverviewRoute
+  '/performance': typeof AuthenticatedPerformanceRouteWithChildren
+  '/personas': typeof AuthenticatedPersonasRoute
+  '/preflight': typeof AuthenticatedPreflightRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/publish': typeof AuthenticatedPublishRoute
+  '/shared': typeof AuthenticatedSharedRoute
+  '/testing': typeof AuthenticatedTestingRoute
+  '/watchlist': typeof AuthenticatedWatchlistRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
+  '/admin/activity': typeof AuthenticatedAdminActivityRoute
+  '/admin/health': typeof AuthenticatedAdminHealthRoute
+  '/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/campaign/$action': typeof AuthenticatedCampaignActionRoute
+  '/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
+  '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
+  '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
+  '/reports/builder': typeof AuthenticatedReportsBuilderRoute
+  '/reports': typeof AuthenticatedReportsIndexRoute
+  '/api/public/hooks/always-on': typeof ApiPublicHooksAlwaysOnRoute
+  '/api/public/hooks/apify-sweep': typeof ApiPublicHooksApifySweepRoute
+  '/api/public/hooks/bulk-relogin': typeof ApiPublicHooksBulkReloginRoute
+  '/api/public/hooks/daily-report': typeof ApiPublicHooksDailyReportRoute
+  '/api/public/hooks/engagement-sweep': typeof ApiPublicHooksEngagementSweepRoute
+  '/api/public/hooks/follow-list': typeof ApiPublicHooksFollowListRoute
+  '/api/public/hooks/import-credentials': typeof ApiPublicHooksImportCredentialsRoute
+  '/api/public/hooks/mention-keywords': typeof ApiPublicHooksMentionKeywordsRoute
+  '/api/public/hooks/metrics-refresh': typeof ApiPublicHooksMetricsRefreshRoute
+  '/api/public/hooks/news-sweep': typeof ApiPublicHooksNewsSweepRoute
+  '/api/public/hooks/relogin': typeof ApiPublicHooksReloginRoute
+  '/api/public/hooks/scheduled-actions': typeof ApiPublicHooksScheduledActionsRoute
+  '/api/public/hooks/social-sweep': typeof ApiPublicHooksSocialSweepRoute
+  '/api/public/hooks/sync-bios': typeof ApiPublicHooksSyncBiosRoute
+  '/api/public/hooks/sync-location': typeof ApiPublicHooksSyncLocationRoute
+  '/api/public/hooks/sync-profile-images': typeof ApiPublicHooksSyncProfileImagesRoute
+  '/api/public/hooks/sync-profiles': typeof ApiPublicHooksSyncProfilesRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/_authenticated/account-health': typeof AuthenticatedAccountHealthRoute
+  '/_authenticated/always-on': typeof AuthenticatedAlwaysOnRoute
+  '/_authenticated/archive': typeof AuthenticatedArchiveRoute
+  '/_authenticated/brief': typeof AuthenticatedBriefRoute
+  '/_authenticated/campaign-manager': typeof AuthenticatedCampaignManagerRoute
+  '/_authenticated/campaign-proof': typeof AuthenticatedCampaignProofRoute
+  '/_authenticated/campaigns': typeof AuthenticatedCampaignsRoute
+  '/_authenticated/changelog': typeof AuthenticatedChangelogRoute
+  '/_authenticated/compare': typeof AuthenticatedCompareRoute
+  '/_authenticated/crisis': typeof AuthenticatedCrisisRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
+  '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
+  '/_authenticated/help': typeof AuthenticatedHelpRoute
+  '/_authenticated/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
+  '/_authenticated/mentions': typeof AuthenticatedMentionsRoute
+  '/_authenticated/new': typeof AuthenticatedNewRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/overview': typeof AuthenticatedOverviewRoute
+  '/_authenticated/performance': typeof AuthenticatedPerformanceRouteWithChildren
+  '/_authenticated/personas': typeof AuthenticatedPersonasRoute
+  '/_authenticated/preflight': typeof AuthenticatedPreflightRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/publish': typeof AuthenticatedPublishRoute
+  '/_authenticated/shared': typeof AuthenticatedSharedRoute
+  '/_authenticated/testing': typeof AuthenticatedTestingRoute
+  '/_authenticated/watchlist': typeof AuthenticatedWatchlistRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/admin/accounts': typeof AuthenticatedAdminAccountsRoute
+  '/_authenticated/admin/activity': typeof AuthenticatedAdminActivityRoute
+  '/_authenticated/admin/health': typeof AuthenticatedAdminHealthRoute
+  '/_authenticated/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/_authenticated/campaign/$action': typeof AuthenticatedCampaignActionRoute
+  '/_authenticated/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
+  '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/_authenticated/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/_authenticated/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
+  '/_authenticated/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
+  '/_authenticated/reports/builder': typeof AuthenticatedReportsBuilderRoute
+  '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
+  '/api/public/hooks/always-on': typeof ApiPublicHooksAlwaysOnRoute
+  '/api/public/hooks/apify-sweep': typeof ApiPublicHooksApifySweepRoute
+  '/api/public/hooks/bulk-relogin': typeof ApiPublicHooksBulkReloginRoute
+  '/api/public/hooks/daily-report': typeof ApiPublicHooksDailyReportRoute
+  '/api/public/hooks/engagement-sweep': typeof ApiPublicHooksEngagementSweepRoute
+  '/api/public/hooks/follow-list': typeof ApiPublicHooksFollowListRoute
+  '/api/public/hooks/import-credentials': typeof ApiPublicHooksImportCredentialsRoute
+  '/api/public/hooks/mention-keywords': typeof ApiPublicHooksMentionKeywordsRoute
+  '/api/public/hooks/metrics-refresh': typeof ApiPublicHooksMetricsRefreshRoute
+  '/api/public/hooks/news-sweep': typeof ApiPublicHooksNewsSweepRoute
+  '/api/public/hooks/relogin': typeof ApiPublicHooksReloginRoute
+  '/api/public/hooks/scheduled-actions': typeof ApiPublicHooksScheduledActionsRoute
+  '/api/public/hooks/social-sweep': typeof ApiPublicHooksSocialSweepRoute
+  '/api/public/hooks/sync-bios': typeof ApiPublicHooksSyncBiosRoute
+  '/api/public/hooks/sync-location': typeof ApiPublicHooksSyncLocationRoute
+  '/api/public/hooks/sync-profile-images': typeof ApiPublicHooksSyncProfileImagesRoute
+  '/api/public/hooks/sync-profiles': typeof ApiPublicHooksSyncProfilesRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/account-health'
+    | '/always-on'
+    | '/archive'
+    | '/brief'
+    | '/campaign-manager'
+    | '/campaign-proof'
+    | '/campaigns'
+    | '/changelog'
+    | '/compare'
+    | '/crisis'
+    | '/dashboard'
+    | '/decisions'
+    | '/governance'
+    | '/help'
+    | '/linked-accounts'
+    | '/mentions'
+    | '/new'
+    | '/notifications'
+    | '/overview'
+    | '/performance'
+    | '/personas'
+    | '/preflight'
+    | '/profile'
+    | '/publish'
+    | '/shared'
+    | '/testing'
+    | '/watchlist'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
+    | '/admin/accounts'
+    | '/admin/activity'
+    | '/admin/health'
+    | '/admin/profile'
+    | '/campaign/$action'
+    | '/campaign/overview'
+    | '/chat/$threadId'
+    | '/performance/insights'
+    | '/recommendations/$threadId'
+    | '/reports/$reportId'
+    | '/reports/builder'
+    | '/reports/'
+    | '/api/public/hooks/always-on'
+    | '/api/public/hooks/apify-sweep'
+    | '/api/public/hooks/bulk-relogin'
+    | '/api/public/hooks/daily-report'
+    | '/api/public/hooks/engagement-sweep'
+    | '/api/public/hooks/follow-list'
+    | '/api/public/hooks/import-credentials'
+    | '/api/public/hooks/mention-keywords'
+    | '/api/public/hooks/metrics-refresh'
+    | '/api/public/hooks/news-sweep'
+    | '/api/public/hooks/relogin'
+    | '/api/public/hooks/scheduled-actions'
+    | '/api/public/hooks/social-sweep'
+    | '/api/public/hooks/sync-bios'
+    | '/api/public/hooks/sync-location'
+    | '/api/public/hooks/sync-profile-images'
+    | '/api/public/hooks/sync-profiles'
+    | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/account-health'
+    | '/always-on'
+    | '/archive'
+    | '/brief'
+    | '/campaign-manager'
+    | '/campaign-proof'
+    | '/campaigns'
+    | '/changelog'
+    | '/compare'
+    | '/crisis'
+    | '/dashboard'
+    | '/decisions'
+    | '/governance'
+    | '/help'
+    | '/linked-accounts'
+    | '/mentions'
+    | '/new'
+    | '/notifications'
+    | '/overview'
+    | '/performance'
+    | '/personas'
+    | '/preflight'
+    | '/profile'
+    | '/publish'
+    | '/shared'
+    | '/testing'
+    | '/watchlist'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
+    | '/admin/accounts'
+    | '/admin/activity'
+    | '/admin/health'
+    | '/admin/profile'
+    | '/campaign/$action'
+    | '/campaign/overview'
+    | '/chat/$threadId'
+    | '/performance/insights'
+    | '/recommendations/$threadId'
+    | '/reports/$reportId'
+    | '/reports/builder'
+    | '/reports'
+    | '/api/public/hooks/always-on'
+    | '/api/public/hooks/apify-sweep'
+    | '/api/public/hooks/bulk-relogin'
+    | '/api/public/hooks/daily-report'
+    | '/api/public/hooks/engagement-sweep'
+    | '/api/public/hooks/follow-list'
+    | '/api/public/hooks/import-credentials'
+    | '/api/public/hooks/mention-keywords'
+    | '/api/public/hooks/metrics-refresh'
+    | '/api/public/hooks/news-sweep'
+    | '/api/public/hooks/relogin'
+    | '/api/public/hooks/scheduled-actions'
+    | '/api/public/hooks/social-sweep'
+    | '/api/public/hooks/sync-bios'
+    | '/api/public/hooks/sync-location'
+    | '/api/public/hooks/sync-profile-images'
+    | '/api/public/hooks/sync-profiles'
+    | '/lovable/email/transactional/preview'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/_authenticated/account-health'
+    | '/_authenticated/always-on'
+    | '/_authenticated/archive'
+    | '/_authenticated/brief'
+    | '/_authenticated/campaign-manager'
+    | '/_authenticated/campaign-proof'
+    | '/_authenticated/campaigns'
+    | '/_authenticated/changelog'
+    | '/_authenticated/compare'
+    | '/_authenticated/crisis'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/decisions'
+    | '/_authenticated/governance'
+    | '/_authenticated/help'
+    | '/_authenticated/linked-accounts'
+    | '/_authenticated/mentions'
+    | '/_authenticated/new'
+    | '/_authenticated/notifications'
+    | '/_authenticated/overview'
+    | '/_authenticated/performance'
+    | '/_authenticated/personas'
+    | '/_authenticated/preflight'
+    | '/_authenticated/profile'
+    | '/_authenticated/publish'
+    | '/_authenticated/shared'
+    | '/_authenticated/testing'
+    | '/_authenticated/watchlist'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/admin/accounts'
+    | '/_authenticated/admin/activity'
+    | '/_authenticated/admin/health'
+    | '/_authenticated/admin/profile'
+    | '/_authenticated/campaign/$action'
+    | '/_authenticated/campaign/overview'
+    | '/_authenticated/chat/$threadId'
+    | '/_authenticated/performance/insights'
+    | '/_authenticated/recommendations/$threadId'
+    | '/_authenticated/reports/$reportId'
+    | '/_authenticated/reports/builder'
+    | '/_authenticated/reports/'
+    | '/api/public/hooks/always-on'
+    | '/api/public/hooks/apify-sweep'
+    | '/api/public/hooks/bulk-relogin'
+    | '/api/public/hooks/daily-report'
+    | '/api/public/hooks/engagement-sweep'
+    | '/api/public/hooks/follow-list'
+    | '/api/public/hooks/import-credentials'
+    | '/api/public/hooks/mention-keywords'
+    | '/api/public/hooks/metrics-refresh'
+    | '/api/public/hooks/news-sweep'
+    | '/api/public/hooks/relogin'
+    | '/api/public/hooks/scheduled-actions'
+    | '/api/public/hooks/social-sweep'
+    | '/api/public/hooks/sync-bios'
+    | '/api/public/hooks/sync-location'
+    | '/api/public/hooks/sync-profile-images'
+    | '/api/public/hooks/sync-profiles'
+    | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  McpRoute: typeof McpRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicHooksAlwaysOnRoute: typeof ApiPublicHooksAlwaysOnRoute
+  ApiPublicHooksApifySweepRoute: typeof ApiPublicHooksApifySweepRoute
+  ApiPublicHooksBulkReloginRoute: typeof ApiPublicHooksBulkReloginRoute
+  ApiPublicHooksDailyReportRoute: typeof ApiPublicHooksDailyReportRoute
+  ApiPublicHooksEngagementSweepRoute: typeof ApiPublicHooksEngagementSweepRoute
+  ApiPublicHooksFollowListRoute: typeof ApiPublicHooksFollowListRoute
+  ApiPublicHooksImportCredentialsRoute: typeof ApiPublicHooksImportCredentialsRoute
+  ApiPublicHooksMentionKeywordsRoute: typeof ApiPublicHooksMentionKeywordsRoute
+  ApiPublicHooksMetricsRefreshRoute: typeof ApiPublicHooksMetricsRefreshRoute
+  ApiPublicHooksNewsSweepRoute: typeof ApiPublicHooksNewsSweepRoute
+  ApiPublicHooksReloginRoute: typeof ApiPublicHooksReloginRoute
+  ApiPublicHooksScheduledActionsRoute: typeof ApiPublicHooksScheduledActionsRoute
+  ApiPublicHooksSocialSweepRoute: typeof ApiPublicHooksSocialSweepRoute
+  ApiPublicHooksSyncBiosRoute: typeof ApiPublicHooksSyncBiosRoute
+  ApiPublicHooksSyncLocationRoute: typeof ApiPublicHooksSyncLocationRoute
+  ApiPublicHooksSyncProfileImagesRoute: typeof ApiPublicHooksSyncProfileImagesRoute
+  ApiPublicHooksSyncProfilesRoute: typeof ApiPublicHooksSyncProfilesRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +875,586 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account-health': {
+      id: '/_authenticated/account-health'
+      path: '/account-health'
+      fullPath: '/account-health'
+      preLoaderRoute: typeof AuthenticatedAccountHealthRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/always-on': {
+      id: '/_authenticated/always-on'
+      path: '/always-on'
+      fullPath: '/always-on'
+      preLoaderRoute: typeof AuthenticatedAlwaysOnRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/archive': {
+      id: '/_authenticated/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof AuthenticatedArchiveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/brief': {
+      id: '/_authenticated/brief'
+      path: '/brief'
+      fullPath: '/brief'
+      preLoaderRoute: typeof AuthenticatedBriefRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaign-manager': {
+      id: '/_authenticated/campaign-manager'
+      path: '/campaign-manager'
+      fullPath: '/campaign-manager'
+      preLoaderRoute: typeof AuthenticatedCampaignManagerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaign-proof': {
+      id: '/_authenticated/campaign-proof'
+      path: '/campaign-proof'
+      fullPath: '/campaign-proof'
+      preLoaderRoute: typeof AuthenticatedCampaignProofRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaigns': {
+      id: '/_authenticated/campaigns'
+      path: '/campaigns'
+      fullPath: '/campaigns'
+      preLoaderRoute: typeof AuthenticatedCampaignsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/changelog': {
+      id: '/_authenticated/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof AuthenticatedChangelogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/compare': {
+      id: '/_authenticated/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof AuthenticatedCompareRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/crisis': {
+      id: '/_authenticated/crisis'
+      path: '/crisis'
+      fullPath: '/crisis'
+      preLoaderRoute: typeof AuthenticatedCrisisRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/decisions': {
+      id: '/_authenticated/decisions'
+      path: '/decisions'
+      fullPath: '/decisions'
+      preLoaderRoute: typeof AuthenticatedDecisionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/governance': {
+      id: '/_authenticated/governance'
+      path: '/governance'
+      fullPath: '/governance'
+      preLoaderRoute: typeof AuthenticatedGovernanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/help': {
+      id: '/_authenticated/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof AuthenticatedHelpRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/linked-accounts': {
+      id: '/_authenticated/linked-accounts'
+      path: '/linked-accounts'
+      fullPath: '/linked-accounts'
+      preLoaderRoute: typeof AuthenticatedLinkedAccountsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mentions': {
+      id: '/_authenticated/mentions'
+      path: '/mentions'
+      fullPath: '/mentions'
+      preLoaderRoute: typeof AuthenticatedMentionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/new': {
+      id: '/_authenticated/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof AuthenticatedNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/overview': {
+      id: '/_authenticated/overview'
+      path: '/overview'
+      fullPath: '/overview'
+      preLoaderRoute: typeof AuthenticatedOverviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/performance': {
+      id: '/_authenticated/performance'
+      path: '/performance'
+      fullPath: '/performance'
+      preLoaderRoute: typeof AuthenticatedPerformanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/personas': {
+      id: '/_authenticated/personas'
+      path: '/personas'
+      fullPath: '/personas'
+      preLoaderRoute: typeof AuthenticatedPersonasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/preflight': {
+      id: '/_authenticated/preflight'
+      path: '/preflight'
+      fullPath: '/preflight'
+      preLoaderRoute: typeof AuthenticatedPreflightRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/publish': {
+      id: '/_authenticated/publish'
+      path: '/publish'
+      fullPath: '/publish'
+      preLoaderRoute: typeof AuthenticatedPublishRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/shared': {
+      id: '/_authenticated/shared'
+      path: '/shared'
+      fullPath: '/shared'
+      preLoaderRoute: typeof AuthenticatedSharedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/testing': {
+      id: '/_authenticated/testing'
+      path: '/testing'
+      fullPath: '/testing'
+      preLoaderRoute: typeof AuthenticatedTestingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/watchlist': {
+      id: '/_authenticated/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof AuthenticatedWatchlistRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/accounts': {
+      id: '/_authenticated/admin/accounts'
+      path: '/admin/accounts'
+      fullPath: '/admin/accounts'
+      preLoaderRoute: typeof AuthenticatedAdminAccountsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/activity': {
+      id: '/_authenticated/admin/activity'
+      path: '/admin/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AuthenticatedAdminActivityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/health': {
+      id: '/_authenticated/admin/health'
+      path: '/admin/health'
+      fullPath: '/admin/health'
+      preLoaderRoute: typeof AuthenticatedAdminHealthRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/profile': {
+      id: '/_authenticated/admin/profile'
+      path: '/admin/profile'
+      fullPath: '/admin/profile'
+      preLoaderRoute: typeof AuthenticatedAdminProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaign/$action': {
+      id: '/_authenticated/campaign/$action'
+      path: '/campaign/$action'
+      fullPath: '/campaign/$action'
+      preLoaderRoute: typeof AuthenticatedCampaignActionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaign/overview': {
+      id: '/_authenticated/campaign/overview'
+      path: '/campaign/overview'
+      fullPath: '/campaign/overview'
+      preLoaderRoute: typeof AuthenticatedCampaignOverviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/chat/$threadId': {
+      id: '/_authenticated/chat/$threadId'
+      path: '/chat/$threadId'
+      fullPath: '/chat/$threadId'
+      preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/performance/insights': {
+      id: '/_authenticated/performance/insights'
+      path: '/insights'
+      fullPath: '/performance/insights'
+      preLoaderRoute: typeof AuthenticatedPerformanceInsightsRouteImport
+      parentRoute: typeof AuthenticatedPerformanceRoute
+    }
+    '/_authenticated/recommendations/$threadId': {
+      id: '/_authenticated/recommendations/$threadId'
+      path: '/recommendations/$threadId'
+      fullPath: '/recommendations/$threadId'
+      preLoaderRoute: typeof AuthenticatedRecommendationsThreadIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/': {
+      id: '/_authenticated/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/$reportId': {
+      id: '/_authenticated/reports/$reportId'
+      path: '/reports/$reportId'
+      fullPath: '/reports/$reportId'
+      preLoaderRoute: typeof AuthenticatedReportsReportIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/builder': {
+      id: '/_authenticated/reports/builder'
+      path: '/reports/builder'
+      fullPath: '/reports/builder'
+      preLoaderRoute: typeof AuthenticatedReportsBuilderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/hooks/always-on': {
+      id: '/api/public/hooks/always-on'
+      path: '/api/public/hooks/always-on'
+      fullPath: '/api/public/hooks/always-on'
+      preLoaderRoute: typeof ApiPublicHooksAlwaysOnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/apify-sweep': {
+      id: '/api/public/hooks/apify-sweep'
+      path: '/api/public/hooks/apify-sweep'
+      fullPath: '/api/public/hooks/apify-sweep'
+      preLoaderRoute: typeof ApiPublicHooksApifySweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/bulk-relogin': {
+      id: '/api/public/hooks/bulk-relogin'
+      path: '/api/public/hooks/bulk-relogin'
+      fullPath: '/api/public/hooks/bulk-relogin'
+      preLoaderRoute: typeof ApiPublicHooksBulkReloginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/daily-report': {
+      id: '/api/public/hooks/daily-report'
+      path: '/api/public/hooks/daily-report'
+      fullPath: '/api/public/hooks/daily-report'
+      preLoaderRoute: typeof ApiPublicHooksDailyReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/engagement-sweep': {
+      id: '/api/public/hooks/engagement-sweep'
+      path: '/api/public/hooks/engagement-sweep'
+      fullPath: '/api/public/hooks/engagement-sweep'
+      preLoaderRoute: typeof ApiPublicHooksEngagementSweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/follow-list': {
+      id: '/api/public/hooks/follow-list'
+      path: '/api/public/hooks/follow-list'
+      fullPath: '/api/public/hooks/follow-list'
+      preLoaderRoute: typeof ApiPublicHooksFollowListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/import-credentials': {
+      id: '/api/public/hooks/import-credentials'
+      path: '/api/public/hooks/import-credentials'
+      fullPath: '/api/public/hooks/import-credentials'
+      preLoaderRoute: typeof ApiPublicHooksImportCredentialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/mention-keywords': {
+      id: '/api/public/hooks/mention-keywords'
+      path: '/api/public/hooks/mention-keywords'
+      fullPath: '/api/public/hooks/mention-keywords'
+      preLoaderRoute: typeof ApiPublicHooksMentionKeywordsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/metrics-refresh': {
+      id: '/api/public/hooks/metrics-refresh'
+      path: '/api/public/hooks/metrics-refresh'
+      fullPath: '/api/public/hooks/metrics-refresh'
+      preLoaderRoute: typeof ApiPublicHooksMetricsRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/news-sweep': {
+      id: '/api/public/hooks/news-sweep'
+      path: '/api/public/hooks/news-sweep'
+      fullPath: '/api/public/hooks/news-sweep'
+      preLoaderRoute: typeof ApiPublicHooksNewsSweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/relogin': {
+      id: '/api/public/hooks/relogin'
+      path: '/api/public/hooks/relogin'
+      fullPath: '/api/public/hooks/relogin'
+      preLoaderRoute: typeof ApiPublicHooksReloginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/scheduled-actions': {
+      id: '/api/public/hooks/scheduled-actions'
+      path: '/api/public/hooks/scheduled-actions'
+      fullPath: '/api/public/hooks/scheduled-actions'
+      preLoaderRoute: typeof ApiPublicHooksScheduledActionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/social-sweep': {
+      id: '/api/public/hooks/social-sweep'
+      path: '/api/public/hooks/social-sweep'
+      fullPath: '/api/public/hooks/social-sweep'
+      preLoaderRoute: typeof ApiPublicHooksSocialSweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sync-bios': {
+      id: '/api/public/hooks/sync-bios'
+      path: '/api/public/hooks/sync-bios'
+      fullPath: '/api/public/hooks/sync-bios'
+      preLoaderRoute: typeof ApiPublicHooksSyncBiosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sync-location': {
+      id: '/api/public/hooks/sync-location'
+      path: '/api/public/hooks/sync-location'
+      fullPath: '/api/public/hooks/sync-location'
+      preLoaderRoute: typeof ApiPublicHooksSyncLocationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sync-profile-images': {
+      id: '/api/public/hooks/sync-profile-images'
+      path: '/api/public/hooks/sync-profile-images'
+      fullPath: '/api/public/hooks/sync-profile-images'
+      preLoaderRoute: typeof ApiPublicHooksSyncProfileImagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sync-profiles': {
+      id: '/api/public/hooks/sync-profiles'
+      path: '/api/public/hooks/sync-profiles'
+      fullPath: '/api/public/hooks/sync-profiles'
+      preLoaderRoute: typeof ApiPublicHooksSyncProfilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedPerformanceRouteChildren {
+  AuthenticatedPerformanceInsightsRoute: typeof AuthenticatedPerformanceInsightsRoute
+}
+
+const AuthenticatedPerformanceRouteChildren: AuthenticatedPerformanceRouteChildren =
+  {
+    AuthenticatedPerformanceInsightsRoute:
+      AuthenticatedPerformanceInsightsRoute,
+  }
+
+const AuthenticatedPerformanceRouteWithChildren =
+  AuthenticatedPerformanceRoute._addFileChildren(
+    AuthenticatedPerformanceRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountHealthRoute: typeof AuthenticatedAccountHealthRoute
+  AuthenticatedAlwaysOnRoute: typeof AuthenticatedAlwaysOnRoute
+  AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
+  AuthenticatedBriefRoute: typeof AuthenticatedBriefRoute
+  AuthenticatedCampaignManagerRoute: typeof AuthenticatedCampaignManagerRoute
+  AuthenticatedCampaignProofRoute: typeof AuthenticatedCampaignProofRoute
+  AuthenticatedCampaignsRoute: typeof AuthenticatedCampaignsRoute
+  AuthenticatedChangelogRoute: typeof AuthenticatedChangelogRoute
+  AuthenticatedCompareRoute: typeof AuthenticatedCompareRoute
+  AuthenticatedCrisisRoute: typeof AuthenticatedCrisisRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
+  AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
+  AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
+  AuthenticatedLinkedAccountsRoute: typeof AuthenticatedLinkedAccountsRoute
+  AuthenticatedMentionsRoute: typeof AuthenticatedMentionsRoute
+  AuthenticatedNewRoute: typeof AuthenticatedNewRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
+  AuthenticatedPerformanceRoute: typeof AuthenticatedPerformanceRouteWithChildren
+  AuthenticatedPersonasRoute: typeof AuthenticatedPersonasRoute
+  AuthenticatedPreflightRoute: typeof AuthenticatedPreflightRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedPublishRoute: typeof AuthenticatedPublishRoute
+  AuthenticatedSharedRoute: typeof AuthenticatedSharedRoute
+  AuthenticatedTestingRoute: typeof AuthenticatedTestingRoute
+  AuthenticatedWatchlistRoute: typeof AuthenticatedWatchlistRoute
+  AuthenticatedAdminAccountsRoute: typeof AuthenticatedAdminAccountsRoute
+  AuthenticatedAdminActivityRoute: typeof AuthenticatedAdminActivityRoute
+  AuthenticatedAdminHealthRoute: typeof AuthenticatedAdminHealthRoute
+  AuthenticatedAdminProfileRoute: typeof AuthenticatedAdminProfileRoute
+  AuthenticatedCampaignActionRoute: typeof AuthenticatedCampaignActionRoute
+  AuthenticatedCampaignOverviewRoute: typeof AuthenticatedCampaignOverviewRoute
+  AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
+  AuthenticatedRecommendationsThreadIdRoute: typeof AuthenticatedRecommendationsThreadIdRoute
+  AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
+  AuthenticatedReportsBuilderRoute: typeof AuthenticatedReportsBuilderRoute
+  AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountHealthRoute: AuthenticatedAccountHealthRoute,
+  AuthenticatedAlwaysOnRoute: AuthenticatedAlwaysOnRoute,
+  AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
+  AuthenticatedBriefRoute: AuthenticatedBriefRoute,
+  AuthenticatedCampaignManagerRoute: AuthenticatedCampaignManagerRoute,
+  AuthenticatedCampaignProofRoute: AuthenticatedCampaignProofRoute,
+  AuthenticatedCampaignsRoute: AuthenticatedCampaignsRoute,
+  AuthenticatedChangelogRoute: AuthenticatedChangelogRoute,
+  AuthenticatedCompareRoute: AuthenticatedCompareRoute,
+  AuthenticatedCrisisRoute: AuthenticatedCrisisRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
+  AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
+  AuthenticatedHelpRoute: AuthenticatedHelpRoute,
+  AuthenticatedLinkedAccountsRoute: AuthenticatedLinkedAccountsRoute,
+  AuthenticatedMentionsRoute: AuthenticatedMentionsRoute,
+  AuthenticatedNewRoute: AuthenticatedNewRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
+  AuthenticatedPerformanceRoute: AuthenticatedPerformanceRouteWithChildren,
+  AuthenticatedPersonasRoute: AuthenticatedPersonasRoute,
+  AuthenticatedPreflightRoute: AuthenticatedPreflightRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedPublishRoute: AuthenticatedPublishRoute,
+  AuthenticatedSharedRoute: AuthenticatedSharedRoute,
+  AuthenticatedTestingRoute: AuthenticatedTestingRoute,
+  AuthenticatedWatchlistRoute: AuthenticatedWatchlistRoute,
+  AuthenticatedAdminAccountsRoute: AuthenticatedAdminAccountsRoute,
+  AuthenticatedAdminActivityRoute: AuthenticatedAdminActivityRoute,
+  AuthenticatedAdminHealthRoute: AuthenticatedAdminHealthRoute,
+  AuthenticatedAdminProfileRoute: AuthenticatedAdminProfileRoute,
+  AuthenticatedCampaignActionRoute: AuthenticatedCampaignActionRoute,
+  AuthenticatedCampaignOverviewRoute: AuthenticatedCampaignOverviewRoute,
+  AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
+  AuthenticatedRecommendationsThreadIdRoute:
+    AuthenticatedRecommendationsThreadIdRoute,
+  AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
+  AuthenticatedReportsBuilderRoute: AuthenticatedReportsBuilderRoute,
+  AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  McpRoute: McpRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicHooksAlwaysOnRoute: ApiPublicHooksAlwaysOnRoute,
+  ApiPublicHooksApifySweepRoute: ApiPublicHooksApifySweepRoute,
+  ApiPublicHooksBulkReloginRoute: ApiPublicHooksBulkReloginRoute,
+  ApiPublicHooksDailyReportRoute: ApiPublicHooksDailyReportRoute,
+  ApiPublicHooksEngagementSweepRoute: ApiPublicHooksEngagementSweepRoute,
+  ApiPublicHooksFollowListRoute: ApiPublicHooksFollowListRoute,
+  ApiPublicHooksImportCredentialsRoute: ApiPublicHooksImportCredentialsRoute,
+  ApiPublicHooksMentionKeywordsRoute: ApiPublicHooksMentionKeywordsRoute,
+  ApiPublicHooksMetricsRefreshRoute: ApiPublicHooksMetricsRefreshRoute,
+  ApiPublicHooksNewsSweepRoute: ApiPublicHooksNewsSweepRoute,
+  ApiPublicHooksReloginRoute: ApiPublicHooksReloginRoute,
+  ApiPublicHooksScheduledActionsRoute: ApiPublicHooksScheduledActionsRoute,
+  ApiPublicHooksSocialSweepRoute: ApiPublicHooksSocialSweepRoute,
+  ApiPublicHooksSyncBiosRoute: ApiPublicHooksSyncBiosRoute,
+  ApiPublicHooksSyncLocationRoute: ApiPublicHooksSyncLocationRoute,
+  ApiPublicHooksSyncProfileImagesRoute: ApiPublicHooksSyncProfileImagesRoute,
+  ApiPublicHooksSyncProfilesRoute: ApiPublicHooksSyncProfilesRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

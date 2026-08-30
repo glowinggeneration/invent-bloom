@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Shared workspace skip audit readable" ON public.campaign_skip_audit;

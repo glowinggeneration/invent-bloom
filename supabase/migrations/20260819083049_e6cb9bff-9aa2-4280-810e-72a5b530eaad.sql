@@ -1,0 +1,1 @@
+ALTER TABLE public.scheduled_actions ADD COLUMN IF NOT EXISTS reassignments integer NOT NULL DEFAULT 0;

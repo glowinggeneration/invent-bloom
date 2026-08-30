@@ -1,0 +1,2 @@
+ALTER TABLE public.scheduled_actions DROP CONSTRAINT IF EXISTS scheduled_actions_status_check;
+ALTER TABLE public.scheduled_actions ADD CONSTRAINT scheduled_actions_status_check CHECK (status = ANY (ARRAY['pending','running','success','failed','cancelled','paused']));

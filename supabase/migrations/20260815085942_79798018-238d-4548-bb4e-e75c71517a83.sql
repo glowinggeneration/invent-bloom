@@ -1,0 +1,1 @@
+delete from public.apify_profiles where platform='tiktok' and handle <> 'footballkenya';
