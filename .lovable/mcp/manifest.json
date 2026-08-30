@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://pnpautlteliblorjsuzb.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "fkf-commsiq",
+      "version": "0.1.0",
+      "title": "FKF CommsIQ"
+    },
+    "tools": [
+      {
+        "name": "list_message_tests",
+        "title": "List message tests",
+        "description": "List the signed-in user's recent message-testing sessions (threads) in FKF CommsIQ, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "How many sessions to return (default 20, max 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_message_test",
+        "title": "Get message test",
+        "description": "Read one message-testing session: the tested messages plus the persona-panel verdict, sentiment split, risks and the three recommended rewrites.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "thread_id": {
+              "type": "string",
+              "description": "The id of the message-testing session (from list_message_tests)."
+            }
+          },
+          "required": [
+            "thread_id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_campaigns",
+        "title": "List campaigns",
+        "description": "List the signed-in user's publishing campaigns in FKF CommsIQ with their goal, status and copy, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Optional status filter, e.g. draft, queued, running, done.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "How many campaigns to return (default 20, max 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_personas",
+        "title": "List personas",
+        "description": "Browse the 100-persona Kenyan synthetic panel used to test messages, optionally filtered by segment or location.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "segment": {
+              "description": "Case-insensitive segment filter, e.g. 'youth'.",
+              "type": "string"
+            },
+            "location": {
+              "description": "Case-insensitive location filter, e.g. 'Nairobi'.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "How many personas to return (default 25, max 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

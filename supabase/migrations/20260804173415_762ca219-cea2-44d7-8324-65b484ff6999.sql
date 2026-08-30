@@ -1,0 +1,1 @@
+ALTER TABLE public.x_accounts ADD COLUMN IF NOT EXISTS bio text NOT NULL DEFAULT '';

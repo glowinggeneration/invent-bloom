@@ -1,0 +1,1 @@
+update public.scheduled_actions set status='pending', attempts=0, run_at=now(), error=null where id in ('de21a700-df3a-4e09-90e0-e03e5fd66d84','e0973817-1314-47fb-9359-2ab55dcb326c','95c10d1e-8d5e-4428-ac54-555c98121f66');

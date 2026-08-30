@@ -1,0 +1,1 @@
+DELETE FROM public.apify_profiles WHERE platform = 'instagram' AND handle = 'football_kenya';

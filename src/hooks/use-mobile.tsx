@@ -1,6 +1,13 @@
 import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768;
+/**
+ * Touch-first compact shell breakpoint.
+ *
+ * Phones and tablets below 1024px use the off-canvas navigation instead of the
+ * hover/collapsed desktop rail. This keeps iPad-sized screens predictable and
+ * leaves more horizontal room for tables, charts and campaign controls.
+ */
+const MOBILE_BREAKPOINT = 1024;
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);

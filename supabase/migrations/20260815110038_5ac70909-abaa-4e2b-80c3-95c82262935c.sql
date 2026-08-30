@@ -1,0 +1,1 @@
+SELECT cron.alter_job((SELECT jobid FROM cron.job WHERE jobname = 'always-on-daily-plan'), schedule := '*/10 3-9 * * *');
