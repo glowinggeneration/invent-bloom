@@ -713,7 +713,10 @@ export const runPublish = createServerFn({ method: "POST" })
         }
       }
 
-      const times = runTimesFor(units.length, data.spreadHours);
+      const startAtMs = data.startAt ? Date.parse(data.startAt) : Number.NaN;
+      const startFrom =
+        Number.isFinite(startAtMs) && startAtMs > Date.now() ? startAtMs : Date.now();
+      const times = runTimesFor(units.length, data.spreadHours, startFrom);
       const scheduledResults: PublishActionRow[] = [];
       let failedCount = 0;
 
