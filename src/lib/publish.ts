@@ -203,6 +203,8 @@ const rawPublishInputSchema = z.object({
   varyByPersona: z.boolean().default(true),
   // 0 = queue now with safe pacing; otherwise distribute across N hours.
   spreadHours: z.number().int().min(0).max(48).default(0),
+  // Optional explicit campaign start; queue times are offset from this moment.
+  startAt: z.string().trim().max(40).default(""),
   objectiveMode: z.boolean().default(false),
   tone: z.enum(PUBLISH_TONES).default(DEFAULT_TONE),
   intensity: z.number().int().min(INTENSITY_MIN).max(INTENSITY_MAX).default(DEFAULT_INTENSITY),

@@ -35,10 +35,12 @@ import { PublishProgress } from "@/components/publish-progress";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TagPicker } from "@/components/ui/tag-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { saveCampaign } from "@/lib/campaigns.functions";
-import { parseTerms } from "@/lib/campaigns";
 import { listPublishJobs, listXAccounts, runPublish } from "@/lib/publish.functions";
+import { getSetupStatus } from "@/lib/onboarding.functions";
+import { nextWindowStart } from "@/lib/send-windows";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-errors";
 
@@ -70,10 +72,13 @@ export function AutoCampaign() {
   const fetchAccounts = useServerFn(listXAccounts);
   const fetchJobs = useServerFn(listPublishJobs);
   const publish = useServerFn(runPublish);
+  const fetchSetup = useServerFn(getSetupStatus);
   const persistCampaign = useServerFn(saveCampaign);
 
   const accountsQuery = useQuery({ queryKey: ["x-accounts"], queryFn: () => fetchAccounts() });
   const jobsQuery = useQuery({ queryKey: ["publish-jobs"], queryFn: () => fetchJobs() });
+  const setupQuery = useQuery({ queryKey: ["setup-status"], queryFn: () => fetchSetup() });
+  const keywordSuggestions = setupQuery.data?.keywords ?? [];
   const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
 
   const personas = usePersonaSelection(accounts);
@@ -81,7 +86,7 @@ export function AutoCampaign() {
 
   const [name, setName] = useState("");
   const [objective, setObjective] = useState("");
-  const [keywords, setKeywords] = useState("");
+  const [keywordList, setKeywordList] = useState<string[]>([]);
   const [activities, setActivities] = useState<Record<ActivityKey, boolean>>({
     post: true,
     engage: true,
@@ -92,7 +97,6 @@ export function AutoCampaign() {
   const [campaignId, setCampaignId] = useState<string | null>(null);
 
   const activeActivities = ACTIVITIES.filter((a) => activities[a.key]);
-  const keywordList = parseTerms(keywords);
   const canRun =
     objective.trim().length > 0 &&
     personas.selected.length > 0 &&
@@ -101,8 +105,11 @@ export function AutoCampaign() {
   const scheduled = timing.spreadHours > 0;
 
   const runMutation = useMutation({
-    mutationFn: async (opts: { now: boolean }) => {
+    mutationFn: async (opts: { now: boolean; startAt?: Date }) => {
       const spreadHours = opts.now ? 0 : timing.spreadHours;
+      const start = opts.now
+        ? null
+        : nextWindowStart(timing.windows, opts.startAt ?? new Date());
       let posted = 0;
       if (activities.post) {
         await publish({
@@ -117,6 +124,7 @@ export function AutoCampaign() {
             likeTarget: false,
             varyByPersona: true,
             spreadHours,
+            startAt: start ? start.toISOString() : "",
             objectiveMode: true,
             tone: "auto" as const,
             intensity: 3,
@@ -186,6 +194,7 @@ export function AutoCampaign() {
       disabled={!canRun}
       onLaunch={() => runMutation.mutate({ now: true })}
       onQueue={() => runMutation.mutate({ now: false })}
+      onSchedule={(at) => runMutation.mutate({ now: false, startAt: at })}
       launchLabel="Launch auto campaign"
       queueLabel="Queue auto campaign"
     />
@@ -265,22 +274,15 @@ export function AutoCampaign() {
               )}
 
               {activities.intercept && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium" htmlFor="auto-keywords">
-                    Keywords to listen for
-                  </label>
-                  <Textarea
-                    id="auto-keywords"
-                    rows={2}
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    placeholder="Harambee Stars, FKF, Kenya football"
-                    className="resize-y"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    {keywordList.length} keyword(s) — separate with commas or new lines.
-                  </p>
-                </div>
+                <TagPicker
+                  id="auto-keywords"
+                  label="Keywords to listen for"
+                  value={keywordList}
+                  onChange={setKeywordList}
+                  suggestions={keywordSuggestions}
+                  allowCustom
+                  placeholder="Add a term and press Enter"
+                />
               )}
             </Step>
 
