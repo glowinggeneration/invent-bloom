@@ -48,7 +48,7 @@ function AuthPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) return;
       if (next) window.location.replace(next);
-      else navigate({ to: "/mentions", replace: true });
+      else navigate({ to: "/setup", replace: true });
     });
   }, [navigate, next]);
 
@@ -73,7 +73,7 @@ function AuthPage() {
     if (remember) window.localStorage.setItem("fkf-commsiq-email", cleanEmail);
     else window.localStorage.removeItem("fkf-commsiq-email");
     if (next) window.location.replace(next);
-    else navigate({ to: "/mentions", replace: true });
+    else navigate({ to: "/setup", replace: true });
   }
 
   return (

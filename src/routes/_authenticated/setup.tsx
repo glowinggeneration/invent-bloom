@@ -68,6 +68,10 @@ function SetupPage() {
 
   useEffect(() => {
     if (!status) return;
+    if (!status.needsSetup) {
+      navigate({ to: "/mentions", replace: true });
+      return;
+    }
     setFullName(status.fullName);
     setJobTitle(status.jobTitle);
     setTeam(status.team);
@@ -76,7 +80,7 @@ function SetupPage() {
     setBrandHandle(status.brandHandle);
     setKeywords(status.keywords);
     setSocials(status.socials);
-  }, [status]);
+  }, [status, navigate]);
 
   const finish = useMutation({
     mutationFn: () =>
