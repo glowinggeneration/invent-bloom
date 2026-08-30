@@ -153,6 +153,7 @@ export function LaunchActions({
   disabled,
   onLaunch,
   onQueue,
+  onSchedule,
   launchLabel,
   queueLabel,
   size = "sm",
@@ -163,11 +164,25 @@ export function LaunchActions({
   disabled: boolean;
   onLaunch: () => void;
   onQueue: () => void;
+  /** When provided the operator can also pick an explicit start date/time. */
+  onSchedule?: (at: Date) => void;
   launchLabel: string;
   queueLabel: string;
   size?: "sm" | "default";
   className?: string;
 }) {
+  if (onSchedule) {
+    return (
+      <ScheduleLauncher
+        busy={busy}
+        disabled={disabled}
+        launchLabel={launchLabel}
+        onLaunch={onLaunch}
+        onSchedule={onSchedule}
+        className={className}
+      />
+    );
+  }
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className ?? ""}`}>
       <Button size={size} disabled={disabled || busy} onClick={onLaunch}>
@@ -630,13 +645,18 @@ export type Timing = {
   setDelaySeconds: (v: number) => void;
   smartDelay: boolean;
   setSmartDelay: (v: boolean) => void;
+  windows: SendDay[];
+  setWindows: (v: SendDay[]) => void;
 };
 
 export function useTiming(initialDelay = 60): Timing {
   const [spreadHours, setSpreadHours] = useState(0);
   const [delaySeconds, setDelaySeconds] = useState(initialDelay);
   const [smartDelay, setSmartDelay] = useState(true);
+  const [windows, setWindows] = useState<SendDay[]>(() => defaultSendDays());
   return {
+    windows,
+    setWindows,
     spreadHours,
     setSpreadHours,
     delaySeconds,
@@ -717,6 +737,14 @@ export function TimingFields({
             </p>
           </div>
         ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs font-medium">Preferred send windows</p>
+        <p className="text-[11px] text-muted-foreground">
+          Optional. The campaign start moves forward to the next open window — {sendWindowSummary(timing.windows)}.
+        </p>
+        <SlotPicker days={timing.windows} onChange={timing.setWindows} />
       </div>
 
       <label className="flex items-start gap-2 text-xs">
