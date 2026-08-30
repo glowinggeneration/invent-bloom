@@ -36,7 +36,7 @@ import { OVERVIEW_WINDOWS, type OverviewWindow } from "@/lib/overview";
 export const Route = createFileRoute("/_authenticated/overview")({
   head: () => ({
     meta: [
-      { title: "Overview - FKF CommsIQ" },
+      { title: "Overview - CommsIQ" },
       {
         name: "description",
         content:
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/overview")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Overview - FKF CommsIQ" },
+      { property: "og:title", content: "Overview - CommsIQ" },
       {
         property: "og:description",
         content: "One screen for how the federation and the president are being talked about.",

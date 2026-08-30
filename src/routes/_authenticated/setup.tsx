@@ -1,0 +1,338 @@
+import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Plus, X } from "lucide-react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui-kit";
+import { ProgressStepper } from "@/components/smait/primitives/progress-stepper";
+import { getSetupStatus, saveSetup, skipSetup } from "@/lib/onboarding.functions";
+import { EMPTY_SOCIALS, SOCIAL_FIELDS, cleanHandle, type SetupSocials } from "@/lib/onboarding";
+import { friendlyError } from "@/lib/friendly-errors";
+
+export const Route = createFileRoute("/_authenticated/setup")({
+  head: () => ({
+    meta: [
+      { title: "Set up your profile - CommsIQ" },
+      {
+        name: "description",
+        content:
+          "Tell CommsIQ who you are and what to monitor so mentions, alerts and reports are relevant from day one.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:title", content: "Set up your profile - CommsIQ" },
+      {
+        property: "og:description",
+        content: "A short guided setup that tells the platform what to listen for.",
+      },
+    ],
+  }),
+  validateSearch: (s: Record<string, unknown>): { edit?: boolean } =>
+    s["edit"] ? { edit: true } : {},
+  component: SetupPage,
+});
+
+const STEPS = [
+  { id: "you", label: "About you", description: "Name and role" },
+  { id: "brand", label: "Organisation", description: "Who you speak for" },
+  { id: "monitor", label: "Monitoring", description: "Required" },
+  { id: "channels", label: "Other channels", description: "Optional" },
+];
+
+function SetupPage() {
+  const navigate = useNavigate();
+  const { edit } = Route.useSearch();
+  const queryClient = useQueryClient();
+  const fetchStatus = useServerFn(getSetupStatus);
+  const save = useServerFn(saveSetup);
+  const skip = useServerFn(skipSetup);
+
+  const { data: status, isLoading } = useQuery({
+    queryKey: ["setup-status"],
+    queryFn: () => fetchStatus(),
+    staleTime: 0,
+  });
+
+  const [step, setStep] = useState(0);
+  const [fullName, setFullName] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [team, setTeam] = useState("");
+  const [phone, setPhone] = useState("");
+  const [brandName, setBrandName] = useState("");
+  const [brandHandle, setBrandHandle] = useState("");
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywordDraft, setKeywordDraft] = useState("");
+  const [socials, setSocials] = useState<SetupSocials>(EMPTY_SOCIALS);
+
+  useEffect(() => {
+    if (!status) return;
+    if (!status.needsSetup && !edit) {
+      navigate({ to: "/mentions", replace: true });
+      return;
+    }
+    setFullName(status.fullName);
+    setJobTitle(status.jobTitle);
+    setTeam(status.team);
+    setPhone(status.phone);
+    setBrandName(status.brandName);
+    setBrandHandle(status.brandHandle);
+    setKeywords(status.keywords);
+    setSocials(status.socials);
+  }, [status, navigate, edit]);
+
+  const finish = useMutation({
+    mutationFn: () =>
+      save({
+        data: { fullName, jobTitle, team, phone, brandName, brandHandle, keywords, socials },
+      }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ["profile"] });
+      void queryClient.invalidateQueries({ queryKey: ["setup-status"] });
+      toast.success(
+        result.keywordsAdded
+          ? `Setup saved — ${result.keywordsAdded} new monitoring term${result.keywordsAdded === 1 ? "" : "s"} added.`
+          : "Setup saved.",
+      );
+      navigate({ to: "/mentions", replace: true });
+    },
+    onError: (e: Error) => toast.error(friendlyError(e, { action: "save your setup" })),
+  });
+
+  const skipAll = useMutation({
+    mutationFn: () => skip(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["setup-status"] });
+      navigate({ to: "/mentions", replace: true });
+    },
+    onError: (e: Error) => toast.error(friendlyError(e, { action: "skip setup" })),
+  });
+
+  function addKeyword(raw?: string) {
+    const term = (raw ?? keywordDraft).trim();
+    if (term.length < 2) return;
+    setKeywords((list) =>
+      list.some((k) => k.toLowerCase() === term.toLowerCase()) ? list : [...list, term],
+    );
+    setKeywordDraft("");
+  }
+
+  const canContinue = useMemo(() => {
+    if (step === 0) return fullName.trim().length > 0;
+    if (step === 2) return keywords.length > 0;
+    return true;
+  }, [step, fullName, keywords.length]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/40">
+        <p className="type-meta text-muted-foreground">Loading your setup…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-muted/40 px-4 py-10">
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="flex flex-col items-center text-center">
+          <img src="/smait-logo.svg" alt="SMAIT logo" className="h-9 w-auto" />
+          <h1 className="type-section mt-4">Set up your workspace</h1>
+          <p className="type-meta mt-1 max-w-md text-muted-foreground">
+            A minute now makes mentions, alerts and reports relevant. Only the monitoring step is
+            required — everything else is optional.
+          </p>
+        </div>
+
+        <Card className="mt-6">
+          <ProgressStepper steps={STEPS} currentIndex={step} onStepClick={(i) => setStep(i)} />
+
+          <div className="mt-6 space-y-4">
+            {step === 0 && (
+              <>
+                <Field label="Full name" required>
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                </Field>
+                <Field label="Job title" hint="Optional">
+                  <Input
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                    placeholder="Communications Manager"
+                  />
+                </Field>
+                <Field label="Team or department" hint="Optional">
+                  <Input
+                    value={team}
+                    onChange={(e) => setTeam(e.target.value)}
+                    placeholder="Communications"
+                  />
+                </Field>
+                <Field label="Phone" hint="Optional — used for urgent alerts only">
+                  <Input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+254…"
+                  />
+                </Field>
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <Field label="Organisation or brand name" hint="Optional">
+                  <Input
+                    value={brandName}
+                    onChange={(e) => setBrandName(e.target.value)}
+                    placeholder="Football Kenya Federation"
+                  />
+                </Field>
+                <Field
+                  label="Main X (Twitter) handle"
+                  hint="Recommended — the account whose mentions and replies we track"
+                >
+                  <Input
+                    value={brandHandle}
+                    onChange={(e) => setBrandHandle(e.target.value)}
+                    placeholder="Football_Kenya"
+                  />
+                </Field>
+              </>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-3">
+                <div>
+                  <Label>Words and phrases to monitor</Label>
+                  <p className="type-meta mt-1 text-muted-foreground">
+                    Required. These drive every mention we collect — add the organisation name,
+                    nicknames, leaders, competitions and issues people talk about.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={keywordDraft}
+                    onChange={(e) => setKeywordDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addKeyword();
+                      }
+                    }}
+                    placeholder="e.g. Harambee Stars"
+                    aria-label="Add a monitoring term"
+                  />
+                  <Button type="button" variant="outline" onClick={() => addKeyword()}>
+                    <Plus className="size-4" /> Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {keywords.length === 0 && (
+                    <p className="type-meta text-muted-foreground">No terms yet.</p>
+                  )}
+                  {keywords.map((term) => (
+                    <span
+                      key={term}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 type-meta font-medium text-primary"
+                    >
+                      {term}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${term}`}
+                        onClick={() => setKeywords((l) => l.filter((k) => k !== term))}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <>
+                <p className="type-meta text-muted-foreground">
+                  Optional. Add any official pages you want watched alongside X.
+                </p>
+                {SOCIAL_FIELDS.map((field) => (
+                  <Field key={field.key} label={field.label} hint="Optional">
+                    <Input
+                      value={socials[field.key]}
+                      onChange={(e) =>
+                        setSocials((s) => ({ ...s, [field.key]: e.target.value }))
+                      }
+                      placeholder={field.placeholder}
+                      onBlur={(e) =>
+                        setSocials((s) => ({ ...s, [field.key]: cleanHandle(e.target.value) }))
+                      }
+                    />
+                  </Field>
+                ))}
+              </>
+            )}
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => skipAll.mutate()}
+              disabled={skipAll.isPending || finish.isPending}
+            >
+              Skip for now
+            </Button>
+            <div className="flex gap-2">
+              {step > 0 && (
+                <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
+                  Back
+                </Button>
+              )}
+              {step < STEPS.length - 1 ? (
+                <Button
+                  type="button"
+                  onClick={() => setStep((s) => s + 1)}
+                  disabled={!canContinue}
+                >
+                  Continue
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={() => finish.mutate()}
+                  disabled={finish.isPending || !fullName.trim() || keywords.length === 0}
+                >
+                  {finish.isPending ? "Saving…" : "Finish setup"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  required,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label>
+        {label}
+        {required ? <span className="text-primary"> *</span> : null}
+      </Label>
+      {children}
+      {hint && <p className="type-meta text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}

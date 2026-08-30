@@ -149,7 +149,7 @@ function AppSidebar() {
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-7 w-auto shrink-0 object-contain" />
           <span className="min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="block truncate type-card font-semibold">
-              FKF <span className="text-primary">CommsIQ</span>
+              <span className="text-primary">CommsIQ</span>
             </span>
             <span className="block truncate text-[11px] text-muted-foreground">
               Communications workspace
@@ -226,9 +226,6 @@ function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <p className="type-meta px-2 pb-1 pt-2 text-center text-muted-foreground group-data-[collapsible=icon]:hidden">
-          Powered by Persona_Voices
-        </p>
       </SidebarFooter>
     </Sidebar>
   );
@@ -411,7 +408,7 @@ export function WorkspaceShell({
           >
             <SidebarTrigger className="size-9" />
             <p className="min-w-0 flex-1 truncate type-card font-semibold">
-              {title ?? "FKF CommsIQ"}
+              {title ?? "CommsIQ"}
             </p>
             <div
               className="flex items-center gap-1 sm:gap-2"
@@ -448,7 +445,7 @@ export function WorkspaceShell({
           <main
             id="main-content"
             tabIndex={-1}
-            aria-label={title ?? "FKF CommsIQ"}
+            aria-label={title ?? "CommsIQ"}
             className={cn(
               "reveal mx-auto w-full flex-1 px-4 pb-24 pt-5 sm:px-5 sm:pb-12 lg:px-6",
               wide ? "max-w-[1480px]" : "max-w-6xl",

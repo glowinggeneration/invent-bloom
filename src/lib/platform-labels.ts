@@ -1,5 +1,5 @@
 /**
- * Display labels and status shape for the platforms FKF CommsIQ already
+ * Display labels and status shape for the platforms CommsIQ already
  * tracks (X plus the connected social/news monitoring feeds). FKF's own
  * data layer keeps `platform` as a free-form string rather than a fixed
  * union, so these helpers accept any string and fall back to a

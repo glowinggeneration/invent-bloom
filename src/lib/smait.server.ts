@@ -64,7 +64,7 @@ async function callGateway(
   }
 }
 
-const PANEL_SYSTEM = `You are the persona-panel engine for FKF CommsIQ, a Kenyan message-testing platform.
+const PANEL_SYSTEM = `You are the persona-panel engine for CommsIQ, a Kenyan message-testing platform.
 
 You are given a slice of a 100-persona synthetic panel, research-calibrated on Big Five traits,
 Hofstede cultural dimensions for Kenya, and Nairobi digital-behaviour research.
@@ -83,7 +83,7 @@ Return STRICT JSON only:
 "reaction": "one sentence in that persona's own voice", "likelyAction": "3-5 words e.g. Shares it, Scrolls past, Asks price",
 "strategy": "the response strategy that persona would take" } ] }`;
 
-const SYNTHESIS_SYSTEM = `You are the head strategist for FKF CommsIQ.
+const SYNTHESIS_SYSTEM = `You are the head strategist for CommsIQ.
 
 You receive a message under test and a statistical digest of how a 100-persona Kenyan panel reacted.
 Write the verdict and rewrites. Be specific, commercial and Kenyan-literate.

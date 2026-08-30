@@ -29,7 +29,7 @@ function toManagedReport(row: any): ManagedReport {
     fileType: String(row.file_type ?? ""),
     fileSize: Number(row.file_size ?? 0),
     status: (row.status ?? "published") as ManagedReportStatus,
-    uploadedBy: String(row.uploaded_by ?? "Persona_Voices"),
+    uploadedBy: String(row.uploaded_by ?? "CommsIQ"),
     uploadedAt: String(row.uploaded_at),
   };
 }

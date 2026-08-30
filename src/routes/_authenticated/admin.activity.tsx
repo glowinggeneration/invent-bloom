@@ -16,7 +16,7 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/activity")({
   head: () => ({
     meta: [
-      { title: "Operational Activity - FKF CommsIQ" },
+      { title: "Operational Activity - CommsIQ" },
       {
         name: "description",
         content:

@@ -19,19 +19,19 @@ import { CommandGrid, RailAction, RailCard } from "@/components/command-layout";
 export const Route = createFileRoute("/_authenticated/help")({
   head: () => ({
     meta: [
-      { title: "Help Centre - FKF CommsIQ" },
+      { title: "Help Centre - CommsIQ" },
       {
         name: "description",
         content:
-          "Detailed user guidance for Overview, Mentions, Response Studio, Personas, Campaigns, Performance and Reports in FKF CommsIQ.",
+          "Detailed user guidance for Overview, Mentions, Response Studio, Personas, Campaigns, Performance and Reports in CommsIQ.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Help Centre - FKF CommsIQ" },
+      { property: "og:title", content: "Help Centre - CommsIQ" },
       {
         property: "og:description",
         content:
-          "Learn how to monitor, understand, test, run and measure communications in FKF CommsIQ.",
+          "Learn how to monitor, understand, test, run and measure communications in CommsIQ.",
       },
     ],
   }),

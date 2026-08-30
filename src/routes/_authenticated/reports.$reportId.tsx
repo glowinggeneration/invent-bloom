@@ -13,13 +13,13 @@ import { formatReportDate, type ReportRecord } from "@/lib/reports";
 export const Route = createFileRoute("/_authenticated/reports/$reportId")({
   head: () => ({
     meta: [
-      { title: "Daily report - FKF CommsIQ" },
+      { title: "Daily report - CommsIQ" },
       {
         name: "description",
         content:
           "A single day of FKF conversation, sentiment, campaign execution and persona activity, with insights and recommendations.",
       },
-      { property: "og:title", content: "Daily report - FKF CommsIQ" },
+      { property: "og:title", content: "Daily report - CommsIQ" },
       {
         property: "og:description",
         content: "What was said, what we ran and what worked — for one reporting day.",

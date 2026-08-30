@@ -11,15 +11,15 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in - FKF CommsIQ" },
+      { title: "Sign in - CommsIQ" },
       {
         name: "description",
         content:
-          "Sign in to FKF CommsIQ, the Football Kenya Federation workspace for testing messages against 100 Kenyan personas.",
+          "Sign in to CommsIQ, the Football Kenya Federation workspace for testing messages against 100 Kenyan personas.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Sign in - FKF CommsIQ" },
+      { property: "og:title", content: "Sign in - CommsIQ" },
       {
         property: "og:description",
         content: "Football Kenya Federation message-testing workspace.",
@@ -48,7 +48,7 @@ function AuthPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) return;
       if (next) window.location.replace(next);
-      else navigate({ to: "/mentions", replace: true });
+      else navigate({ to: "/setup", replace: true });
     });
   }, [navigate, next]);
 
@@ -73,7 +73,7 @@ function AuthPage() {
     if (remember) window.localStorage.setItem("fkf-commsiq-email", cleanEmail);
     else window.localStorage.removeItem("fkf-commsiq-email");
     if (next) window.location.replace(next);
-    else navigate({ to: "/mentions", replace: true });
+    else navigate({ to: "/setup", replace: true });
   }
 
   return (
@@ -82,7 +82,7 @@ function AuthPage() {
         <div className="flex flex-col items-center text-center">
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-10 w-auto" />
           <p className="type-section mt-4">
-            FKF <span className="text-primary">CommsIQ</span>
+            <span className="text-primary">CommsIQ</span>
           </p>
           <p className="type-meta mt-1 text-muted-foreground">
             Communications Intelligence Platform
@@ -156,9 +156,6 @@ function AuthPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center type-meta text-muted-foreground">
-          Powered by <span className="font-medium text-primary">Persona_Voices</span>
-        </p>
       </div>
     </div>
   );

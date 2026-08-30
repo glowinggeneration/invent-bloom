@@ -49,13 +49,13 @@ import { formatReportDateShort, REPORT_FILTERS, type ReportFilter } from "@/lib/
 export const Route = createFileRoute("/_authenticated/reports/")({
   head: () => ({
     meta: [
-      { title: "Reports - FKF CommsIQ" },
+      { title: "Reports - CommsIQ" },
       {
         name: "description",
         content:
           "The daily record of FKF conversation, campaign execution and persona activity, with downloadable CSVs.",
       },
-      { property: "og:title", content: "Reports - FKF CommsIQ" },
+      { property: "og:title", content: "Reports - CommsIQ" },
       {
         property: "og:description",
         content:

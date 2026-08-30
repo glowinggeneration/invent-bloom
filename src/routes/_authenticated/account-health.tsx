@@ -16,7 +16,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/account-health")({
   head: () => ({
     meta: [
-      { title: "X Account Health - FKF CommsIQ" },
+      { title: "X Account Health - CommsIQ" },
       {
         name: "description",
         content:

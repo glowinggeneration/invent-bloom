@@ -298,7 +298,7 @@ export function AnalysisView({
 
   function downloadReport() {
     const lines = [
-      "FKF CommsIQ - Message test report",
+      "CommsIQ - Message test report",
       "",
       `Confidence: ${analysis.confidence}%`,
       `Sentiment: ${analysis.sentiment.positive}% positive / ${analysis.sentiment.neutral}% neutral / ${analysis.sentiment.negative}% negative`,

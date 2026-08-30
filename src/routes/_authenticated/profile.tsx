@@ -33,7 +33,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "My Profile - FKF CommsIQ" },
+      { title: "My Profile - CommsIQ" },
       {
         name: "description",
         content: "Manage your CommsIQ identity, preferences, activity and session.",
@@ -179,6 +179,11 @@ function ProfilePage() {
           <Card>
             <h2 className="type-card font-semibold">Quick settings</h2>
             <div className="mt-3 grid gap-2">
+              <Button asChild variant="outline" className="justify-start">
+                <Link to="/setup" search={{ edit: true }}>
+                  <UserRound className="size-4" /> Profile setup
+                </Link>
+              </Button>
               <Button asChild variant="outline" className="justify-start">
                 <Link to="/notifications">
                   <Bell className="size-4" /> Notifications

@@ -50,7 +50,7 @@ import {
 export const Route = createFileRoute("/_authenticated/watchlist")({
   head: () => ({
     meta: [
-      { title: "Monitoring Watchlist - FKF CommsIQ" },
+      { title: "Monitoring Watchlist - CommsIQ" },
       {
         name: "description",
         content:

@@ -22,7 +22,7 @@ import { getOperationsHealth, type HealthState } from "@/lib/operations-health.f
 export const Route = createFileRoute("/_authenticated/admin/health")({
   head: () => ({
     meta: [
-      { title: "System Health - FKF CommsIQ" },
+      { title: "System Health - CommsIQ" },
       {
         name: "description",
         content:

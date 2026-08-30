@@ -324,7 +324,7 @@ export async function downloadCustomReportPdf(input: CustomReportInput) {
   }
 
   pdf.note(
-    "This report reflects the data available to FKF CommsIQ at generation time. Platform-specific metrics may differ in definition and availability. Intelligence and persona-testing signals are decision support and should be reviewed against the underlying evidence before external action.",
+    "This report reflects the data available to CommsIQ at generation time. Platform-specific metrics may differ in definition and availability. Intelligence and persona-testing signals are decision support and should be reviewed against the underlying evidence before external action.",
   );
 
   pdf.save(

@@ -84,7 +84,7 @@ function Consent() {
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-10 w-auto" />
           <h1 className="type-section mt-4">Connect {clientName}</h1>
           <p className="type-meta mt-1 text-muted-foreground">
-            {clientName} will read your FKF CommsIQ message tests, campaigns and personas as you.
+            {clientName} will read your CommsIQ message tests, campaigns and personas as you.
           </p>
         </div>
 

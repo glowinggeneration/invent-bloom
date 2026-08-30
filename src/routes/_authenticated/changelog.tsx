@@ -15,10 +15,10 @@ import { Card, PageTitle, SectionTitle } from "@/components/ui-kit";
 export const Route = createFileRoute("/_authenticated/changelog")({
   head: () => ({
     meta: [
-      { title: "Changelog - FKF CommsIQ" },
+      { title: "Changelog - CommsIQ" },
       {
         name: "description",
-        content: "Internal record of material FKF CommsIQ product improvements.",
+        content: "Internal record of material CommsIQ product improvements.",
       },
     ],
   }),

@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/campaign/$action")({
   },
   head: ({ params }) => {
     const goal = PUBLISH_GOALS.find((g) => g.action === params.action);
-    const title = `${goal?.title ?? "Campaign"} campaign - FKF CommsIQ`;
+    const title = `${goal?.title ?? "Campaign"} campaign - CommsIQ`;
     const description = goal?.description ?? "Run a controlled campaign on X.";
     return {
       meta: [

@@ -13,7 +13,7 @@ import { isAdminEmail } from "@/lib/access";
 export const Route = createFileRoute("/_authenticated/admin/profile")({
   head: () => ({
     meta: [
-      { title: "Admin Profile - FKF CommsIQ" },
+      { title: "Admin Profile - CommsIQ" },
       {
         name: "description",
         content: "Administrative identity, workspace controls, users and integrations.",
