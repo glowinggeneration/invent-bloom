@@ -14,6 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_replies: {
+        Row: {
+          account_id: string | null
+          author_handle: string
+          campaign_id: string
+          created_at: string
+          error: string | null
+          handle: string
+          id: string
+          persona_name: string
+          reply_text: string
+          result_tweet_id: string | null
+          status: string
+          tweet_id: string
+          tweet_text: string
+          tweet_url: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          author_handle?: string
+          campaign_id: string
+          created_at?: string
+          error?: string | null
+          handle?: string
+          id?: string
+          persona_name?: string
+          reply_text?: string
+          result_tweet_id?: string | null
+          status?: string
+          tweet_id: string
+          tweet_text?: string
+          tweet_url?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          author_handle?: string
+          campaign_id?: string
+          created_at?: string
+          error?: string | null
+          handle?: string
+          id?: string
+          persona_name?: string
+          reply_text?: string
+          result_tweet_id?: string | null
+          status?: string
+          tweet_id?: string
+          tweet_text?: string
+          tweet_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_replies_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "listening_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_reviews: {
+        Row: {
+          approval_required: string
+          auto_publish_allowed: boolean
+          confidence: number
+          created_at: string
+          escalation_note: string | null
+          facts_changed: boolean
+          findings: Json
+          function_preserved: boolean
+          id: string
+          original_text: string
+          persona_id: string | null
+          persona_preserved: boolean
+          reference: string | null
+          revised_text: string
+          risk_categories: string[]
+          risk_level: number
+          surface: string
+          user_id: string | null
+        }
+        Insert: {
+          approval_required?: string
+          auto_publish_allowed?: boolean
+          confidence?: number
+          created_at?: string
+          escalation_note?: string | null
+          facts_changed?: boolean
+          findings?: Json
+          function_preserved?: boolean
+          id?: string
+          original_text: string
+          persona_id?: string | null
+          persona_preserved?: boolean
+          reference?: string | null
+          revised_text?: string
+          risk_categories?: string[]
+          risk_level?: number
+          surface: string
+          user_id?: string | null
+        }
+        Update: {
+          approval_required?: string
+          auto_publish_allowed?: boolean
+          confidence?: number
+          created_at?: string
+          escalation_note?: string | null
+          facts_changed?: boolean
+          findings?: Json
+          function_preserved?: boolean
+          id?: string
+          original_text?: string
+          persona_id?: string | null
+          persona_preserved?: boolean
+          reference?: string | null
+          revised_text?: string
+          risk_categories?: string[]
+          risk_level?: number
+          surface?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      listening_campaigns: {
+        Row: {
+          account_ids: string[]
+          core_message: string
+          created_at: string
+          follow_author: boolean
+          hashtags: string[]
+          id: string
+          is_active: boolean
+          keywords: string[]
+          language: string
+          last_run_at: string | null
+          like_target: boolean
+          max_replies_per_run: number
+          name: string
+          spread_hours: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_ids?: string[]
+          core_message?: string
+          created_at?: string
+          follow_author?: boolean
+          hashtags?: string[]
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          language?: string
+          last_run_at?: string | null
+          like_target?: boolean
+          max_replies_per_run?: number
+          name: string
+          spread_hours?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_ids?: string[]
+          core_message?: string
+          created_at?: string
+          follow_author?: boolean
+          hashtags?: string[]
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          language?: string
+          last_run_at?: string | null
+          like_target?: boolean
+          max_replies_per_run?: number
+          name?: string
+          spread_hours?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           analysis: Json | null
@@ -51,6 +233,155 @@ export type Database = {
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      persona_daily_plans: {
+        Row: {
+          account_id: string
+          activity_type: string
+          campaign_count: number
+          created_at: string
+          id: string
+          notes: string
+          persona_id: string
+          persona_name: string
+          plan_date: string
+          target: number
+          updated_at: string
+          user_id: string
+          windows: Json
+        }
+        Insert: {
+          account_id: string
+          activity_type?: string
+          campaign_count?: number
+          created_at?: string
+          id?: string
+          notes?: string
+          persona_id: string
+          persona_name?: string
+          plan_date: string
+          target?: number
+          updated_at?: string
+          user_id: string
+          windows?: Json
+        }
+        Update: {
+          account_id?: string
+          activity_type?: string
+          campaign_count?: number
+          created_at?: string
+          id?: string
+          notes?: string
+          persona_id?: string
+          persona_name?: string
+          plan_date?: string
+          target?: number
+          updated_at?: string
+          user_id?: string
+          windows?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "persona_daily_plans_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "x_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      persona_daily_posts: {
+        Row: {
+          account_id: string
+          category: string
+          content: string
+          created_at: string
+          error: string | null
+          id: string
+          image_credit_name: string | null
+          image_credit_url: string | null
+          image_id: string | null
+          image_url: string | null
+          legal: Json
+          persona_id: string
+          plan_id: string
+          published_at: string | null
+          quality: Json
+          result_tweet_id: string | null
+          review_notes: string
+          scheduled_at: string
+          slot_index: number
+          status: string
+          topic: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          category?: string
+          content?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          image_credit_name?: string | null
+          image_credit_url?: string | null
+          image_id?: string | null
+          image_url?: string | null
+          legal?: Json
+          persona_id: string
+          plan_id: string
+          published_at?: string | null
+          quality?: Json
+          result_tweet_id?: string | null
+          review_notes?: string
+          scheduled_at?: string
+          slot_index?: number
+          status?: string
+          topic?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          category?: string
+          content?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          image_credit_name?: string | null
+          image_credit_url?: string | null
+          image_id?: string | null
+          image_url?: string | null
+          legal?: Json
+          persona_id?: string
+          plan_id?: string
+          published_at?: string | null
+          quality?: Json
+          result_tweet_id?: string | null
+          review_notes?: string
+          scheduled_at?: string
+          slot_index?: number
+          status?: string
+          topic?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "persona_daily_posts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "x_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "persona_daily_posts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "persona_daily_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -257,6 +588,8 @@ export type Database = {
           image_urls: string[]
           link_url: string | null
           mode: string
+          objective_mode: boolean
+          objective_text: string
           status: string
           target_tweet_url: string | null
           tweet_text: string
@@ -272,6 +605,8 @@ export type Database = {
           image_urls?: string[]
           link_url?: string | null
           mode?: string
+          objective_mode?: boolean
+          objective_text?: string
           status?: string
           target_tweet_url?: string | null
           tweet_text?: string
@@ -287,6 +622,8 @@ export type Database = {
           image_urls?: string[]
           link_url?: string | null
           mode?: string
+          objective_mode?: boolean
+          objective_text?: string
           status?: string
           target_tweet_url?: string | null
           tweet_text?: string
@@ -294,6 +631,117 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      scheduled_actions: {
+        Row: {
+          account_id: string | null
+          action_type: string
+          attempts: number
+          campaign_id: string | null
+          campaign_reply_id: string | null
+          content: string
+          created_at: string
+          error: string | null
+          handle: string
+          id: string
+          job_id: string | null
+          media_urls: string[]
+          persona_name: string
+          publish_action_id: string | null
+          result_tweet_id: string | null
+          run_at: string
+          source: string
+          status: string
+          target_handle: string | null
+          target_tweet_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          action_type: string
+          attempts?: number
+          campaign_id?: string | null
+          campaign_reply_id?: string | null
+          content?: string
+          created_at?: string
+          error?: string | null
+          handle?: string
+          id?: string
+          job_id?: string | null
+          media_urls?: string[]
+          persona_name?: string
+          publish_action_id?: string | null
+          result_tweet_id?: string | null
+          run_at?: string
+          source: string
+          status?: string
+          target_handle?: string | null
+          target_tweet_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          action_type?: string
+          attempts?: number
+          campaign_id?: string | null
+          campaign_reply_id?: string | null
+          content?: string
+          created_at?: string
+          error?: string | null
+          handle?: string
+          id?: string
+          job_id?: string | null
+          media_urls?: string[]
+          persona_name?: string
+          publish_action_id?: string | null
+          result_tweet_id?: string | null
+          run_at?: string
+          source?: string
+          status?: string
+          target_handle?: string | null
+          target_tweet_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_actions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "x_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_actions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "listening_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_actions_campaign_reply_id_fkey"
+            columns: ["campaign_reply_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_replies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_actions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "publish_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_actions_publish_action_id_fkey"
+            columns: ["publish_action_id"]
+            isOneToOne: false
+            referencedRelation: "publish_actions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       threads: {
         Row: {
@@ -419,6 +867,7 @@ export type Database = {
       }
       x_accounts: {
         Row: {
+          always_on: boolean
           auth_token: string | null
           avatar_color: string | null
           avatar_credit_name: string | null
@@ -437,6 +886,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          always_on?: boolean
           auth_token?: string | null
           avatar_color?: string | null
           avatar_credit_name?: string | null
@@ -455,6 +905,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          always_on?: boolean
           auth_token?: string | null
           avatar_color?: string | null
           avatar_credit_name?: string | null
@@ -485,6 +936,7 @@ export type Database = {
           persona_label: string
           proxy: string
           status: string
+          totp_secret: string
           updated_at: string
           user_id: string
         }
@@ -498,6 +950,7 @@ export type Database = {
           persona_label?: string
           proxy?: string
           status?: string
+          totp_secret?: string
           updated_at?: string
           user_id: string
         }
@@ -511,6 +964,7 @@ export type Database = {
           persona_label?: string
           proxy?: string
           status?: string
+          totp_secret?: string
           updated_at?: string
           user_id?: string
         }
