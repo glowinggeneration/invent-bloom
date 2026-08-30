@@ -180,6 +180,11 @@ function ProfilePage() {
             <h2 className="type-card font-semibold">Quick settings</h2>
             <div className="mt-3 grid gap-2">
               <Button asChild variant="outline" className="justify-start">
+                <Link to="/setup" search={{ edit: true }}>
+                  <UserRound className="size-4" /> Profile setup
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-start">
                 <Link to="/notifications">
                   <Bell className="size-4" /> Notifications
                 </Link>

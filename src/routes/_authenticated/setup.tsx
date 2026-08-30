@@ -32,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/setup")({
       },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { edit?: boolean } =>
+    s["edit"] ? { edit: true } : {},
   component: SetupPage,
 });
 
@@ -44,6 +46,7 @@ const STEPS = [
 
 function SetupPage() {
   const navigate = useNavigate();
+  const { edit } = Route.useSearch();
   const queryClient = useQueryClient();
   const fetchStatus = useServerFn(getSetupStatus);
   const save = useServerFn(saveSetup);
@@ -68,7 +71,7 @@ function SetupPage() {
 
   useEffect(() => {
     if (!status) return;
-    if (!status.needsSetup) {
+    if (!status.needsSetup && !edit) {
       navigate({ to: "/mentions", replace: true });
       return;
     }
@@ -80,7 +83,7 @@ function SetupPage() {
     setBrandHandle(status.brandHandle);
     setKeywords(status.keywords);
     setSocials(status.socials);
-  }, [status, navigate]);
+  }, [status, navigate, edit]);
 
   const finish = useMutation({
     mutationFn: () =>
