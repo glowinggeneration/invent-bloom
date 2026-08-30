@@ -39,6 +39,7 @@ import { Route as AuthenticatedPersonasRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPreflightRouteImport } from './routes/_authenticated/preflight'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPublishRouteImport } from './routes/_authenticated/publish'
+import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
 import { Route as AuthenticatedSharedRouteImport } from './routes/_authenticated/shared'
 import { Route as AuthenticatedTestingRouteImport } from './routes/_authenticated/testing'
 import { Route as AuthenticatedWatchlistRouteImport } from './routes/_authenticated/watchlist'
@@ -230,6 +231,11 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
 const AuthenticatedPublishRoute = AuthenticatedPublishRouteImport.update({
   id: '/publish',
   path: '/publish',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSetupRoute = AuthenticatedSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSharedRoute = AuthenticatedSharedRouteImport.update({
@@ -465,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/preflight': typeof AuthenticatedPreflightRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/publish': typeof AuthenticatedPublishRoute
+  '/setup': typeof AuthenticatedSetupRoute
   '/shared': typeof AuthenticatedSharedRoute
   '/testing': typeof AuthenticatedTestingRoute
   '/watchlist': typeof AuthenticatedWatchlistRoute
@@ -531,6 +538,7 @@ export interface FileRoutesByTo {
   '/preflight': typeof AuthenticatedPreflightRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/publish': typeof AuthenticatedPublishRoute
+  '/setup': typeof AuthenticatedSetupRoute
   '/shared': typeof AuthenticatedSharedRoute
   '/testing': typeof AuthenticatedTestingRoute
   '/watchlist': typeof AuthenticatedWatchlistRoute
@@ -599,6 +607,7 @@ export interface FileRoutesById {
   '/_authenticated/preflight': typeof AuthenticatedPreflightRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/publish': typeof AuthenticatedPublishRoute
+  '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/shared': typeof AuthenticatedSharedRoute
   '/_authenticated/testing': typeof AuthenticatedTestingRoute
   '/_authenticated/watchlist': typeof AuthenticatedWatchlistRoute
@@ -667,6 +676,7 @@ export interface FileRouteTypes {
     | '/preflight'
     | '/profile'
     | '/publish'
+    | '/setup'
     | '/shared'
     | '/testing'
     | '/watchlist'
@@ -733,6 +743,7 @@ export interface FileRouteTypes {
     | '/preflight'
     | '/profile'
     | '/publish'
+    | '/setup'
     | '/shared'
     | '/testing'
     | '/watchlist'
@@ -800,6 +811,7 @@ export interface FileRouteTypes {
     | '/_authenticated/preflight'
     | '/_authenticated/profile'
     | '/_authenticated/publish'
+    | '/_authenticated/setup'
     | '/_authenticated/shared'
     | '/_authenticated/testing'
     | '/_authenticated/watchlist'
@@ -1076,6 +1088,13 @@ declare module '@tanstack/react-router' {
       path: '/publish'
       fullPath: '/publish'
       preLoaderRoute: typeof AuthenticatedPublishRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/setup': {
+      id: '/_authenticated/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof AuthenticatedSetupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/shared': {
@@ -1366,6 +1385,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPreflightRoute: typeof AuthenticatedPreflightRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedPublishRoute: typeof AuthenticatedPublishRoute
+  AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
   AuthenticatedSharedRoute: typeof AuthenticatedSharedRoute
   AuthenticatedTestingRoute: typeof AuthenticatedTestingRoute
   AuthenticatedWatchlistRoute: typeof AuthenticatedWatchlistRoute
@@ -1407,6 +1427,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPreflightRoute: AuthenticatedPreflightRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedPublishRoute: AuthenticatedPublishRoute,
+  AuthenticatedSetupRoute: AuthenticatedSetupRoute,
   AuthenticatedSharedRoute: AuthenticatedSharedRoute,
   AuthenticatedTestingRoute: AuthenticatedTestingRoute,
   AuthenticatedWatchlistRoute: AuthenticatedWatchlistRoute,
