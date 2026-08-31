@@ -4,6 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, Gauge, Search, ShieldAlert } from "lucide-react";
 
+import { CollapsibleProgressList } from "@/components/core/collapsible-progress-list";
 import { DataFreshness } from "@/components/data-freshness";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Card, EmptyState, PageTitle, PageToolbar, StatCard } from "@/components/ui-kit";
@@ -113,6 +114,24 @@ function AccountHealthPage() {
         />
         <StatCard label="Average health" value={`${avgScore}%`} icon={Gauge} />
       </div>
+
+      {rows.length > 0 ? (
+        <Card className="mt-5">
+          <CollapsibleProgressList
+            title="Accounts by health score"
+            className="max-w-none p-0"
+            items={[...rows]
+              .sort((a, b) => b.score - a.score)
+              .map((row) => ({
+                id: row.handle,
+                name: row.displayName,
+                role: `@${row.handle} · ${stateLabel(row.state)}`,
+                progress: row.score,
+                fallback: row.handle.slice(0, 2).toUpperCase(),
+              }))}
+          />
+        </Card>
+      ) : null}
 
       <div className="mt-5 flex flex-wrap gap-2" aria-label="Filter accounts by health state">
         {(

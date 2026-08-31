@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { toast } from "sonner";
+import { FloatingInput } from "@/components/core/floating-input";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { useCachedQuery } from "@/lib/offline-cache";
 import { OfflineNotice } from "@/components/offline-notice";
@@ -395,12 +396,11 @@ export function CampaignsWorkspace() {
 
           <div className="mt-4 space-y-4">
             <div className="space-y-1">
-              <Label htmlFor="c-name">Campaign name</Label>
-              <Input
+              <FloatingInput
                 id="c-name"
+                label="Campaign name"
                 value={form.name}
                 maxLength={80}
-                placeholder="Harambee Stars ticket drive"
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>

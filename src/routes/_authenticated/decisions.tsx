@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { AssigneeCombobox, type AssigneeOption } from "@/components/core/assignee-combobox";
 import { DataFreshness } from "@/components/data-freshness";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Card, EmptyState, PageTitle, StatCard } from "@/components/ui-kit";
@@ -39,6 +40,7 @@ import {
 } from "@/components/command-layout";
 import { useProfile } from "@/hooks/use-profile";
 import { isAdminEmail } from "@/lib/access";
+import { listAllUsers } from "@/lib/admin-users.functions";
 import {
   listDecisionLog,
   saveDecisionLogItem,
@@ -102,6 +104,7 @@ function DecisionLogPage() {
   const queryClient = useQueryClient();
   const list = useServerFn(listDecisionLog);
   const save = useServerFn(saveDecisionLogItem);
+  const fetchUsers = useServerFn(listAllUsers);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [filter, setFilter] = useState<DecisionFilter>("all");
 
@@ -109,6 +112,26 @@ function DecisionLogPage() {
     queryKey: ["decision-log"],
     queryFn: () => list(),
   });
+
+  const usersQuery = useQuery({
+    queryKey: ["admin", "users"],
+    queryFn: () => fetchUsers(),
+    enabled: isAdmin,
+  });
+
+  const assigneeOptions: AssigneeOption[] = useMemo(() => {
+    const RECENT_MS = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    return (usersQuery.data ?? []).map((user) => ({
+      id: user.email,
+      name: user.fullName || user.email,
+      email: user.email,
+      status:
+        user.lastSignInAt && now - new Date(user.lastSignInAt).getTime() < RECENT_MS
+          ? "online"
+          : "offline",
+    }));
+  }, [usersQuery.data]);
 
   const mutation = useMutation({
     mutationFn: (value: Draft) =>
@@ -418,13 +441,29 @@ function DecisionLogPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="decision-owner">Owner</Label>
-                <Input
-                  id="decision-owner"
-                  value={draft.owner}
-                  onChange={(event) => setDraft({ ...draft, owner: event.target.value })}
-                  placeholder="Communications Team"
-                />
+                {assigneeOptions.length > 0 ? (
+                  <AssigneeCombobox
+                    key={draft.owner}
+                    label="Owner"
+                    options={assigneeOptions}
+                    value={assigneeOptions.find((option) => option.name === draft.owner)?.id ?? ""}
+                    onChange={(id) => {
+                      const selected = assigneeOptions.find((option) => option.id === id);
+                      setDraft({ ...draft, owner: selected?.name ?? "" });
+                    }}
+                    placeholder="Assign an owner"
+                  />
+                ) : (
+                  <>
+                    <Label htmlFor="decision-owner">Owner</Label>
+                    <Input
+                      id="decision-owner"
+                      value={draft.owner}
+                      onChange={(event) => setDraft({ ...draft, owner: event.target.value })}
+                      placeholder="Communications Team"
+                    />
+                  </>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="decision-status">Status</Label>

@@ -12,10 +12,11 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { DisclosureMenu } from "@/components/core/disclosure-menu";
+import { SegmentedControl } from "@/components/core/segmented-control";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Card, EmptyState, PageTitle } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
@@ -425,21 +426,16 @@ function WatchlistPage() {
                         </Link>
                       </Button>
                       {isAdmin ? (
-                        <>
-                          <Button variant="outline" size="sm" onClick={() => edit(item)}>
-                            Edit
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-9"
-                            aria-label={`Remove ${item.label}`}
-                            onClick={() => deleteMutation.mutate(item.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </>
+                        <DisclosureMenu
+                          menuItems={[
+                            {
+                              icon: <Eye className="size-4" aria-hidden="true" />,
+                              label: "Edit",
+                              onClick: () => edit(item),
+                            },
+                          ]}
+                          onDelete={() => deleteMutation.mutate(item.id)}
+                        />
                       ) : null}
                     </div>
                   </div>
@@ -492,18 +488,24 @@ function WatchlistPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="watchlist-priority">Priority</Label>
-                <select
-                  id="watchlist-priority"
-                  value={draft.priority}
-                  onChange={(event) =>
-                    setDraft({ ...draft, priority: event.target.value as Draft["priority"] })
+                <SegmentedControl
+                  aria-label="Priority"
+                  options={["Critical", "High", "Standard"]}
+                  value={
+                    draft.priority === "critical"
+                      ? "Critical"
+                      : draft.priority === "high"
+                        ? "High"
+                        : "Standard"
                   }
-                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="standard">Standard</option>
-                </select>
+                  onChange={(next) =>
+                    setDraft({
+                      ...draft,
+                      priority: next.toLowerCase() as Draft["priority"],
+                    })
+                  }
+                  className="w-full"
+                />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="watchlist-label">Display name</Label>

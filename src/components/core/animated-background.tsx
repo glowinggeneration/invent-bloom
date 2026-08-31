@@ -4,14 +4,21 @@
  * Each child must carry a unique `data-id`.
  */
 import { AnimatePresence, motion, type Transition } from "motion/react";
-import { Children, cloneElement, useEffect, useState, type ReactElement, type ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  useEffect,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
 export type AnimatedBackgroundProps = {
   children:
-    | ReactElement<{ "data-id": string; className?: string; children?: ReactNode }>[]
-    | ReactElement<{ "data-id": string; className?: string; children?: ReactNode }>;
+    | ReactElement<{ "data-id": string; className?: string }>[]
+    | ReactElement<{ "data-id": string; className?: string }>;
   defaultValue?: string;
   onValueChange?: (newActiveId: string | null) => void;
   className?: string;
@@ -69,7 +76,7 @@ export function AnimatedBackground({
             />
           ) : null}
         </AnimatePresence>
-        <span className="z-10">{child.props.children as never}</span>
+        <span className="z-10">{(child.props as { children?: ReactNode }).children}</span>
       </>,
     );
   });

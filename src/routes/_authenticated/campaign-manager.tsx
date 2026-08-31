@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -25,6 +25,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Disclosure } from "@/components/core/disclosure";
+import { PUBLISH_GOALS } from "@/components/publish-goals";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { EmptyState, PageTabs, PageTitle, PageToolbar, StatCard } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
@@ -231,6 +233,7 @@ function CampaignMenu({
 }
 
 function CampaignManagerPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchCampaigns = useServerFn(listManagedCampaigns);
   const nameCampaigns = useServerFn(generateCampaignNames);
@@ -398,11 +401,15 @@ function CampaignManagerPage() {
             )}
             Check for updates
           </Button>
-          <Button asChild size="sm">
-            <Link to="/publish" search={{ choose: true }}>
-              <Plus className="size-4" /> Create campaign
-            </Link>
-          </Button>
+          <Disclosure
+            triggerLabel="Create campaign"
+            items={PUBLISH_GOALS.map((goal) => ({
+              icon: <goal.icon className="size-5" aria-hidden="true" />,
+              label: goal.title,
+              onSelect: () =>
+                navigate({ to: "/campaign/$action", params: { action: goal.action } }),
+            }))}
+          />
         </div>
       </PageToolbar>
 

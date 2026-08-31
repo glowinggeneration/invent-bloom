@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Activity,
   Archive,
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 
+import { AboutPopover } from "@/components/core/about-popover";
 import { OfficialPostAlert } from "@/components/official-post-alert";
 import { IdleSessionGuard } from "@/components/idle-session-guard";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +39,14 @@ import { isAdminEmail } from "@/lib/access";
 import { useNotifications } from "@/hooks/use-notifications";
 import { Button } from "@/components/ui/button";
 import { GlobalCommandPalette } from "@/components/global-command";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -51,6 +61,7 @@ import {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { initialsOf } from "@/lib/initials";
 import { cn } from "@/lib/utils";
@@ -63,36 +74,49 @@ function useNavAreas() {
   return { isAdmin, profile };
 }
 
-const activeNavClass =
-  "data-[active=true]:relative data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:before:absolute data-[active=true]:before:left-0 data-[active=true]:before:top-1/2 data-[active=true]:before:h-5 data-[active=true]:before:w-[3px] data-[active=true]:before:-translate-y-1/2 data-[active=true]:before:rounded-full data-[active=true]:before:bg-primary";
-
 function NavGroup({
   label,
   items,
   pathname,
+  isCompactRail,
 }: {
   label: string;
   items: NavItem[];
   pathname: string;
+  isCompactRail: boolean;
 }) {
   return (
     <SidebarGroup>
-      {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
+      {/* The group label is genuinely unmounted in the compact rail, not
+          just hidden with opacity/negative-margin — a true label fragment
+          must never exist in the layout at 80px width. */}
+      {label && !isCompactRail ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className={cn(isCompactRail && "items-center gap-1")}>
           {items.map((item) => {
-            const active = pathname.startsWith(item.to);
+            const isActive = pathname.startsWith(item.to);
             return (
-              <SidebarMenuItem key={item.to}>
+              <SidebarMenuItem key={item.to} className={cn(isCompactRail && "w-auto")}>
                 <SidebarMenuButton
                   asChild
-                  isActive={active}
+                  isActive={isActive}
                   tooltip={item.label}
-                  className={activeNavClass}
+                  className={cn(
+                    "relative overflow-hidden",
+                    isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11",
+                    isActive &&
+                      "bg-sidebar-primary/10 font-medium text-sidebar-primary hover:bg-sidebar-primary/15 hover:text-sidebar-primary data-[active=true]:bg-sidebar-primary/10 data-[active=true]:text-sidebar-primary",
+                  )}
                 >
-                  <Link to={item.to} aria-current={active ? "page" : undefined} title={item.label}>
-                    <item.icon className="size-4 shrink-0" />
-                    <span>{item.label}</span>
+                  <Link to={item.to} aria-current={isActive ? "page" : undefined}>
+                    {isActive && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-sidebar-primary"
+                      />
+                    )}
+                    <item.icon className={cn("shrink-0", isCompactRail ? "size-5" : "size-4")} />
+                    {!isCompactRail && <span>{item.label}</span>}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -152,114 +176,175 @@ function AppSidebar() {
 
   const moreActive = moreItems.some((item) => pathname.startsWith(item.to));
   const moreOpen = showMore || moreActive;
+  const reduceMotion = useReducedMotion();
+  // Single source of truth for "is this the 80px icon-only rail" — every
+  // child below reads this, never the raw `collapsed`/`state` value, so
+  // the mobile drawer (which shares `state="collapsed"` sometimes) never
+  // inherits the compact rendering.
+  const { state, isMobile } = useSidebar();
+  const isCompactRail = state === "collapsed" && !isMobile;
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-3">
-        <Link to="/overview" className="flex items-center gap-3" title="CommsIQ">
-          <img
-            src="/smait-logo.svg"
-            alt="SMAIT logo"
-            className="h-7 w-auto shrink-0 object-contain group-data-[collapsible=icon]:h-6"
-          />
-          <span className="min-w-0 group-data-[collapsible=icon]:hidden">
-            <span className="block truncate type-card font-semibold">
-              <span className="text-primary">CommsIQ</span>
+      <SidebarHeader className={cn("border-b border-sidebar-border p-3", isCompactRail && "px-3")}>
+        <Link
+          to="/overview"
+          aria-label="Persona_Voices, go to overview"
+          className={cn("flex items-center gap-3", isCompactRail && "justify-center")}
+        >
+          {isCompactRail ? (
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-sidebar-primary text-sm font-semibold text-sidebar-primary-foreground">
+              P
             </span>
-            <span className="block truncate text-[11px] text-muted-foreground">
-              Communications workspace
-            </span>
-          </span>
+          ) : (
+            <>
+              <img
+                src="/smait-logo.svg"
+                alt="Persona_Voices logo"
+                className="h-7 w-auto shrink-0 object-contain"
+              />
+              <span className="min-w-0">
+                <span className="block truncate type-card font-semibold">
+                  <span className="text-primary">CommsIQ</span>
+                </span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  Communications workspace
+                </span>
+              </span>
+            </>
+          )}
         </Link>
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarMenu className="px-2 pt-2">
-          <SidebarMenuItem>
+        <SidebarMenu className={cn("px-2 pt-2", isCompactRail && "items-center")}>
+          <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
             <SidebarMenuButton
               onClick={() => navigate({ to: "/publish", search: { choose: true } })}
               tooltip="New campaign"
-              title="New campaign"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+              className={cn(
+                "bg-primary text-primary-foreground hover:bg-primary/90",
+                isCompactRail ? "!size-12 !p-0 justify-center" : "min-h-11",
+              )}
             >
-              <Plus className="size-4 shrink-0" />
-              <span>New campaign</span>
+              <Plus className={cn("shrink-0", isCompactRail ? "size-5" : "size-4")} />
+              {!isCompactRail && <span>New campaign</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <NavGroup label="Workspace" items={workspaceItems} pathname={pathname} />
-        <NavGroup label="Work" items={workItems} pathname={pathname} />
+        <NavGroup
+          label="Workspace"
+          items={workspaceItems}
+          pathname={pathname}
+          isCompactRail={isCompactRail}
+        />
+        <NavGroup
+          label="Work"
+          items={workItems}
+          pathname={pathname}
+          isCompactRail={isCompactRail}
+        />
 
         <SidebarSeparator className="mx-4 my-1" />
-        <SidebarMenu className="px-2">
-          <SidebarMenuItem>
+        <SidebarMenu className={cn("px-2", isCompactRail && "items-center")}>
+          <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
             <SidebarMenuButton
               onClick={() => setShowMore((v) => !v)}
               tooltip="More"
-              title="More"
               aria-expanded={moreOpen}
-              className="text-muted-foreground"
+              aria-controls="workspace-more-navigation"
+              className={cn(
+                "text-muted-foreground",
+                isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11",
+              )}
             >
               <ChevronDown
+                aria-hidden="true"
                 className={cn(
-                  "size-4 shrink-0 transition-transform motion-reduce:transition-none",
+                  "shrink-0 transition-transform",
+                  isCompactRail ? "size-5" : "size-4",
                   moreOpen ? "" : "-rotate-90",
                 )}
               />
-              <span>More</span>
+              {!isCompactRail && <span>More</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div
-          className={cn(
-            "grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none",
-            moreOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        <AnimatePresence initial={false}>
+          {moreOpen && (
+            <motion.div
+              id="workspace-more-navigation"
+              initial={reduceMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={reduceMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <NavGroup
+                label=""
+                items={moreItems}
+                pathname={pathname}
+                isCompactRail={isCompactRail}
+              />
+            </motion.div>
           )}
-        >
-          <div className="overflow-hidden">
-            <NavGroup label="" items={moreItems} pathname={pathname} />
-          </div>
-        </div>
+        </AnimatePresence>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <SidebarMenu>
-          <SidebarMenuItem>
+        <div className="flex items-center justify-between gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
+          <span className="type-meta text-muted-foreground">CommsIQ</span>
+          <AboutPopover title="CommsIQ" />
+        </div>
+        <SidebarMenu className={cn(isCompactRail && "items-center gap-1")}>
+          <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
             <SidebarMenuButton
               asChild
               isActive={pathname.startsWith("/help")}
               tooltip="Help"
-              className={activeNavClass}
+              className={isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11"}
             >
-              <Link to="/help" title="Help">
-                <HelpCircle className="size-4 shrink-0" />
-                <span>Help</span>
+              <Link to="/help" aria-current={pathname.startsWith("/help") ? "page" : undefined}>
+                <HelpCircle className={cn("shrink-0", isCompactRail ? "size-5" : "size-4")} />
+                {!isCompactRail && <span>Help</span>}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
+          <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
             <SidebarMenuButton
               asChild
               isActive={pathname === profilePath}
               tooltip={isAdmin ? "Admin Profile" : "Profile"}
-              className={activeNavClass}
+              className={isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11"}
             >
-              <Link to={profilePath} title={isAdmin ? "Admin Profile" : "Profile"}>
-                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-fkf-green text-[10px] font-semibold text-navy-foreground">
-                  {initialsOf(profile?.fullName)}
-                </span>
-                <span className="min-w-0 flex-1 truncate">
-                  {profile?.fullName || (isAdmin ? "Admin Profile" : "Profile")}
-                </span>
-                <Settings className="size-4 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" />
+              <Link to={profilePath} aria-current={pathname === profilePath ? "page" : undefined}>
+                {isCompactRail ? (
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-fkf-green text-[10px] font-semibold text-navy-foreground">
+                    {initialsOf(profile?.fullName)}
+                  </span>
+                ) : (
+                  <>
+                    <Settings className="size-4 shrink-0" />
+                    <span className="min-w-0 truncate">
+                      {isAdmin ? "Admin Profile" : "Profile"}
+                    </span>
+                  </>
+                )}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleSignOut} tooltip="Log out" title="Log out">
-              <LogOut className="size-4 shrink-0" />
-              <span>Log out</span>
+          <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
+            <SidebarMenuButton
+              onClick={handleSignOut}
+              tooltip="Log out"
+              className={cn(
+                "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
+                isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11",
+              )}
+            >
+              <LogOut className={cn("shrink-0", isCompactRail ? "size-5" : "size-4")} />
+              {!isCompactRail && <span>Log out</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -380,15 +465,17 @@ function NotificationsBell() {
       asChild
       variant="ghost"
       size="icon"
-      className="relative size-9"
+      className="relative size-10"
       aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
+      title="Notifications"
     >
       <Link to="/notifications">
-        <Bell className="size-4" />
+        <Bell className="size-[18px]" aria-hidden="true" />
         {unread > 0 ? (
-          <span className="absolute right-0.5 top-0.5 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">
-            {unread > 9 ? "9+" : unread}
-          </span>
+          <span
+            aria-hidden="true"
+            className="absolute right-2 top-2 size-2 rounded-full border-2 border-background bg-primary"
+          />
         ) : null}
       </Link>
     </Button>
@@ -415,6 +502,15 @@ export function WorkspaceShell({
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [pinned, setPinned] = useState(false);
   const [peeking, setPeeking] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  async function handleSignOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
 
   return (
     <SidebarProvider open={pinned || peeking} onOpenChange={setPinned}>
@@ -441,42 +537,77 @@ export function WorkspaceShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <header
             aria-label="Page header"
-            className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border/80 bg-background/90 px-3 backdrop-blur-xl sm:gap-3 sm:px-4 lg:px-5"
+            className="sticky top-0 z-20 flex h-[68px] items-center gap-2 border-b border-border/80 bg-background px-3 sm:gap-3 sm:px-4 lg:px-5"
           >
-            <SidebarTrigger className="size-9" />
-            <p className="min-w-0 flex-1 truncate type-card font-semibold">
-              {title ?? "CommsIQ"}
-            </p>
+            <SidebarTrigger className="size-10" />
+            <p className="min-w-0 flex-1 truncate type-card font-semibold">{title ?? "CommsIQ"}</p>
             <div
-              className="flex items-center gap-1 sm:gap-2"
+              className="flex items-center gap-1 sm:gap-1.5"
               role="toolbar"
               aria-label="Page actions"
             >
               {actions}
               <GlobalCommandPalette />
-              <Button asChild size="sm" className="hidden shrink-0 sm:inline-flex">
-                <Link to="/publish" search={{ choose: true }}>
-                  <Plus className="size-4" />
-                  <span className="hidden md:inline">Create</span>
+              {/* Desktop create lives in the sidebar as "New campaign"; this
+                  compact action stays for mobile/tablet where the sidebar is
+                  off-canvas. */}
+              <Button
+                asChild
+                size="icon"
+                className="size-10 shrink-0 lg:hidden"
+                aria-label="New campaign"
+              >
+                <Link to="/publish" search={{ choose: true }} title="New campaign">
+                  <Plus className="size-[18px]" aria-hidden="true" />
                 </Link>
               </Button>
               <NotificationsBell />
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden size-9 md:inline-flex"
+                className="hidden size-10 sm:inline-flex"
                 aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+                title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
                 onClick={toggle}
               >
-                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                {theme === "dark" ? (
+                  <Sun className="size-[18px]" aria-hidden="true" />
+                ) : (
+                  <Moon className="size-[18px]" aria-hidden="true" />
+                )}
               </Button>
-              <Link
-                to={profilePath}
-                aria-label={isAdmin ? "Admin profile" : "Profile"}
-                className="flex size-8 items-center justify-center rounded-full bg-fkf-green type-meta font-semibold text-navy-foreground sm:size-9"
-              >
-                {initialsOf(profile?.fullName)}
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Open profile menu"
+                    aria-haspopup="menu"
+                    className="ml-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-fkf-green type-meta font-semibold text-navy-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {initialsOf(profile?.fullName)}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="truncate">
+                    {profile?.fullName || (isAdmin ? "Admin" : "Profile")}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to={profilePath}>
+                      <Settings className="size-4" aria-hidden="true" />
+                      {isAdmin ? "Admin profile" : "Profile"}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="size-4" aria-hidden="true" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
           <main

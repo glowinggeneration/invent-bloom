@@ -107,9 +107,7 @@ export function AutoCampaign() {
   const runMutation = useMutation({
     mutationFn: async (opts: { now: boolean; startAt?: Date }) => {
       const spreadHours = opts.now ? 0 : timing.spreadHours;
-      const start = opts.now
-        ? null
-        : nextWindowStart(timing.windows, opts.startAt ?? new Date());
+      const start = opts.now ? null : nextWindowStart(timing.windows, opts.startAt ?? new Date());
       let posted = 0;
       if (activities.post) {
         await publish({

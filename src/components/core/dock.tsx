@@ -43,9 +43,10 @@ function useDock() {
   return ctx;
 }
 
-const DockItemContext = createContext<{ width: MotionValue<number>; isHovered: MotionValue<number> } | null>(
-  null,
-);
+const DockItemContext = createContext<{
+  width: MotionValue<number>;
+  isHovered: MotionValue<number>;
+} | null>(null);
 
 export function Dock({
   children,
@@ -72,7 +73,10 @@ export function Dock({
   const height = useSpring(heightRow, spring);
 
   return (
-    <motion.div style={{ height, scrollbarWidth: "none" }} className="mx-2 flex max-w-full items-end overflow-x-auto">
+    <motion.div
+      style={{ height, scrollbarWidth: "none" }}
+      className="mx-2 flex max-w-full items-end overflow-x-auto"
+    >
       <motion.div
         onMouseMove={({ pageX }) => {
           isHovered.set(1);
@@ -107,7 +111,11 @@ export function DockItem({ children, className }: { children: ReactNode; classNa
     const domRect = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
     return val - domRect.x - domRect.width / 2;
   });
-  const widthTransform = useTransform(mouseDistance, [-distance, 0, distance], [40, magnification, 40]);
+  const widthTransform = useTransform(
+    mouseDistance,
+    [-distance, 0, distance],
+    [40, magnification, 40],
+  );
   const width = useSpring(widthTransform, spring);
 
   return (
@@ -161,7 +169,10 @@ export function DockIcon({ children, className }: { children: ReactNode; classNa
   const ctx = useContext(DockItemContext);
   const widthTransform = useTransform(ctx?.width ?? useMotionValue(40), (w) => w / 2);
   return (
-    <motion.div style={{ width: widthTransform }} className={cn("flex items-center justify-center", className)}>
+    <motion.div
+      style={{ width: widthTransform }}
+      className={cn("flex items-center justify-center", className)}
+    >
       {children}
     </motion.div>
   );

@@ -40,6 +40,7 @@ import { FirstRunChecklist } from "@/components/first-run-checklist";
 import { BrandAccounts } from "@/components/brand-accounts";
 import { BrandMentions } from "@/components/brand-mentions";
 import { WorkspaceShell } from "@/components/workspace-shell";
+import { SegmentedControl } from "@/components/core/segmented-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState, SectionTitle, StatCard } from "@/components/ui-kit";
@@ -201,17 +202,19 @@ function BrandHealthPage() {
       >
         <div className="flex flex-wrap items-center gap-2">
           <CalendarRange className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          {BRAND_HEALTH_PRESETS.map((p) => (
-            <Button
-              key={p.id}
-              size="sm"
-              variant={range === p.id ? "default" : "outline"}
-              aria-pressed={range === p.id}
-              onClick={() => setPreset(p.id)}
-            >
-              {p.label}
-            </Button>
-          ))}
+          <SegmentedControl
+            aria-label="Date range preset"
+            options={BRAND_HEALTH_PRESETS.map((p) => p.label)}
+            value={
+              BRAND_HEALTH_PRESETS.find((p) => p.id === range)?.label ??
+              BRAND_HEALTH_PRESETS[BRAND_HEALTH_PRESETS.length - 1]?.label ??
+              "All time"
+            }
+            onChange={(label) => {
+              const preset = BRAND_HEALTH_PRESETS.find((p) => p.label === label);
+              if (preset) setPreset(preset.id);
+            }}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="type-meta text-muted-foreground" htmlFor="bh-from">

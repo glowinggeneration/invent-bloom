@@ -1,29 +1,40 @@
-import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "motion/react";
 import {
-  BookOpen,
+  ArrowUpRight,
+  ChartNoAxesCombined,
+  ChevronDown,
   FileClock,
-  HelpCircle,
-  Keyboard,
-  ScrollText,
+  LifeBuoy,
+  MessagesSquare,
+  RadioTower,
   Search,
+  SearchX,
+  Send,
   ShieldCheck,
-  Workflow,
 } from "lucide-react";
+
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { Card, PageTitle, SectionTitle } from "@/components/ui-kit";
 import { ContactSupportButton } from "@/components/contact-support";
-import { Input } from "@/components/ui/input";
-import { CommandGrid, RailAction, RailCard } from "@/components/command-layout";
+import { isAdminEmail } from "@/lib/access";
+import { useProfile } from "@/hooks/use-profile";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/help")({
+  validateSearch: (search: Record<string, unknown>): { article?: string | undefined } => ({
+    article:
+      typeof search["article"] === "string" && search["article"].trim()
+        ? (search["article"] as string)
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Help Centre - CommsIQ" },
       {
         name: "description",
         content:
-          "Detailed user guidance for Overview, Mentions, Response Studio, Personas, Campaigns, Performance and Reports in CommsIQ.",
+          "Search for an answer or browse Overview, Mentions, Response Studio, Campaigns and Reports guidance in CommsIQ.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -31,33 +42,86 @@ export const Route = createFileRoute("/_authenticated/help")({
       {
         property: "og:description",
         content:
-          "Learn how to monitor, understand, test, run and measure communications in CommsIQ.",
+          "Find a direct answer for monitoring, testing, campaigns and reporting in CommsIQ.",
       },
     ],
   }),
   component: HelpPage,
 });
 
+// ---------------------------------------------------------------------------
+// Canonical article registry — the single dataset behind search, category
+// browsing and the accordion. Every paragraph and bullet migrated here was
+// present in the previous Help Centre sections, FAQ sheet or troubleshooting
+// list; none of the operational detail, warnings or permission limits were
+// summarised away.
+// ---------------------------------------------------------------------------
+
+type HelpCategory = "signals" | "testing" | "campaigns" | "reporting";
+
 type HelpBlock = {
-  title: string;
+  title?: string;
   body: string[];
   bullets?: string[];
 };
 
-type HelpSection = {
+type HelpArticle = {
   id: string;
+  /** null keeps the article pinned outside category filtering (Getting started). */
+  category: HelpCategory | null;
   title: string;
-  intro: string;
+  summary: string;
   blocks: HelpBlock[];
+  keywords: string[];
+  /** Article is hidden entirely for users without this access, matching the destination page. */
+  requiredAccess?: "admin";
 };
 
-const SECTIONS: HelpSection[] = [
+const CATEGORIES: {
+  id: HelpCategory;
+  title: string;
+  description: string;
+  icon: typeof RadioTower;
+}[] = [
+  {
+    id: "signals",
+    title: "Understand signals",
+    description: "Mentions, sentiment and narratives",
+    icon: RadioTower,
+  },
+  {
+    id: "testing",
+    title: "Plan and test",
+    description: "Recommendations and Response Studio",
+    icon: MessagesSquare,
+  },
+  {
+    id: "campaigns",
+    title: "Run campaigns",
+    description: "Connected accounts, execution and approvals",
+    icon: Send,
+  },
+  {
+    id: "reporting",
+    title: "Measure and report",
+    description: "Metrics, exports and managed reports",
+    icon: ChartNoAxesCombined,
+  },
+];
+
+const HELP_ARTICLES: HelpArticle[] = [
   {
     id: "getting-started",
+    category: null,
     title: "Getting started",
-    intro:
-      "CommsIQ is organised around one working loop: monitor the public conversation, understand what matters, decide what to do, test the message, run the campaign, then measure the result.",
+    summary: "CommsIQ is organised around one working loop, from monitoring through measurement.",
+    keywords: ["getting started", "workflow", "navigation", "loop", "start"],
     blocks: [
+      {
+        body: [
+          "CommsIQ is organised around one working loop: monitor the public conversation, understand what matters, decide what to do, test the message, run the campaign, then measure the result.",
+        ],
+      },
       {
         title: "The normal workflow",
         body: [
@@ -83,10 +147,24 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "overview",
+    category: "signals",
     title: "Overview",
-    intro:
-      "Overview is the executive screen. It combines current brand health, changes in the conversation, recommendations, official account activity and the strongest signals from monitored sources.",
+    summary:
+      "The executive screen: brand health, conversation change, recommendations and top signals.",
+    keywords: [
+      "overview",
+      "brand health",
+      "intelligence",
+      "pdf report",
+      "recommendation",
+      "narrative",
+    ],
     blocks: [
+      {
+        body: [
+          "Overview is the executive screen. It combines current brand health, changes in the conversation, recommendations, official account activity and the strongest signals from monitored sources.",
+        ],
+      },
       {
         title: "Time window",
         body: [
@@ -131,10 +209,25 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "mentions",
+    category: "signals",
     title: "Mentions",
-    intro:
-      "Mentions is the evidence layer. It brings together public posts and press coverage collected from the platform's connected monitoring sources.",
+    summary:
+      "The evidence layer: public posts and press coverage from connected monitoring sources.",
+    keywords: [
+      "mentions",
+      "feed",
+      "filters",
+      "importance",
+      "source authority",
+      "duplicates",
+      "investigation",
+    ],
     blocks: [
+      {
+        body: [
+          "Mentions is the evidence layer. It brings together public posts and press coverage collected from the platform's connected monitoring sources.",
+        ],
+      },
       {
         title: "Reading a mention",
         body: [
@@ -172,10 +265,26 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "sentiment",
+    category: "signals",
     title: "Understanding sentiment",
-    intro:
-      "Sentiment describes how a post or article reads in relation to FKF, its teams or leadership. It is not simply a count of positive and negative words.",
+    summary:
+      "How positive, neutral and negative readings are decided, including sarcasm and context.",
+    keywords: [
+      "sentiment",
+      "positive",
+      "negative",
+      "neutral",
+      "sarcasm",
+      "context",
+      "kiswahili",
+      "sheng",
+    ],
     blocks: [
+      {
+        body: [
+          "Sentiment describes how a post or article reads in relation to FKF, its teams or leadership. It is not simply a count of positive and negative words.",
+        ],
+      },
       {
         title: "Positive, neutral and negative",
         body: [
@@ -193,10 +302,17 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "narratives",
+    category: "signals",
     title: "Narratives and trends",
-    intro:
-      "Narratives group related monitored conversation into practical themes so a user can understand what is driving volume instead of reading every post first.",
+    summary:
+      "How related conversation is grouped into themes, and how to investigate before acting.",
+    keywords: ["narratives", "trends", "growth", "velocity", "lifecycle", "risks", "opportunities"],
     blocks: [
+      {
+        body: [
+          "Narratives group related monitored conversation into practical themes so a user can understand what is driving volume instead of reading every post first.",
+        ],
+      },
       {
         title: "What the labels mean",
         body: [
@@ -220,10 +336,16 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "response-studio",
+    category: "testing",
     title: "Response Studio",
-    intro:
-      "Response Studio tests proposed messaging against the platform's persona panel before the message moves into execution.",
+    summary: "Test proposed messaging against the persona panel before it moves into execution.",
+    keywords: ["response studio", "test", "confidence", "persona panel", "recommended version"],
     blocks: [
+      {
+        body: [
+          "Response Studio tests proposed messaging against the platform's persona panel before the message moves into execution.",
+        ],
+      },
       {
         title: "Run a test",
         body: [
@@ -252,10 +374,16 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "personas",
+    category: "testing",
     title: "Personas",
-    intro:
-      "Personas are the audience perspectives used by Response Studio to evaluate how a message may be received by different types of people.",
+    summary: "The audience perspectives Response Studio uses to evaluate how a message may land.",
+    keywords: ["personas", "audience panel", "voices", "persona reactions"],
     blocks: [
+      {
+        body: [
+          "Personas are the audience perspectives used by Response Studio to evaluate how a message may be received by different types of people.",
+        ],
+      },
       {
         title: "Using the persona panel",
         body: [
@@ -267,10 +395,17 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "campaigns",
-    title: "Campaigns",
-    intro:
-      "Create campaign is the execution entry point. The exact form depends on the action you choose and reuses the connected-account and scheduling systems already configured in the platform.",
+    category: "campaigns",
+    title: "Run a campaign",
+    summary:
+      "The execution entry point, using the platform's connected-account and scheduling tools.",
+    keywords: ["campaign", "create campaign", "run", "execution", "connected accounts"],
     blocks: [
+      {
+        body: [
+          "Create campaign is the execution entry point. The exact form depends on the action you choose and reuses the connected-account and scheduling systems already configured in the platform.",
+        ],
+      },
       {
         title: "Starting from intelligence",
         body: [
@@ -287,9 +422,23 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "campaign-manager",
+    category: "campaigns",
     title: "Campaign Manager",
-    intro: "Campaign Manager is the live operational list for campaign execution.",
+    summary:
+      "The live operational list for campaign execution: status, progress, pause and resume.",
+    keywords: [
+      "campaign manager",
+      "status",
+      "pause",
+      "resume",
+      "running",
+      "scheduled",
+      "completed",
+    ],
     blocks: [
+      {
+        body: ["Campaign Manager is the live operational list for campaign execution."],
+      },
       {
         title: "Status and progress",
         body: [
@@ -307,10 +456,18 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "performance",
+    category: "campaigns",
+    requiredAccess: "admin",
     title: "Performance",
-    intro:
-      "Performance is the measurement view for users who have access to it. It combines campaign execution data and the metrics collected after actions or posts are published.",
+    summary:
+      "Measurement view combining campaign execution data and post-publish metrics. Admin access.",
+    keywords: ["performance", "measurement", "metrics", "admin"],
     blocks: [
+      {
+        body: [
+          "Performance is the measurement view for users who have access to it. It combines campaign execution data and the metrics collected after actions or posts are published.",
+        ],
+      },
       {
         title: "Reading performance",
         body: [
@@ -326,11 +483,45 @@ const SECTIONS: HelpSection[] = [
     ],
   },
   {
-    id: "reports",
-    title: "Reports",
-    intro:
-      "Reports keeps a dated record of monitoring and campaign activity and separates system-generated records from prepared Persona_Voices reports.",
+    id: "accounts",
+    category: "campaigns",
+    requiredAccess: "admin",
+    title: "Connected Accounts",
+    summary: "Operational account management for authorised administrators. Admin access.",
+    keywords: ["connected accounts", "linked accounts", "admin", "account status"],
     blocks: [
+      {
+        body: [
+          "Connected Accounts is an operational page for authorised administrators. It is separate from the public brand-account cards shown in Overview and Mentions.",
+        ],
+      },
+      {
+        title: "Ready-to-use accounts",
+        body: [
+          "Campaign execution should use accounts that are active and currently ready for the platform to use. Accounts that are unavailable, suspended or require a new sign-in can remain visible to administrators for management while being excluded from execution where the campaign engine marks them unavailable.",
+        ],
+      },
+      {
+        title: "If an account needs attention",
+        body: [
+          "Use the status and account-management controls available on Connected Accounts. If an account cannot be restored from the interface, contact platform support instead of repeatedly running campaigns against the unavailable account.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "reports",
+    category: "reporting",
+    title: "Reports",
+    summary:
+      "A dated record of monitoring and campaign activity, generated from stored platform data.",
+    keywords: ["reports", "automated reports", "csv", "export", "date range"],
+    blocks: [
+      {
+        body: [
+          "Reports keeps a dated record of monitoring and campaign activity and separates system-generated records from prepared Persona_Voices reports.",
+        ],
+      },
       {
         title: "Automated Reports",
         body: [
@@ -347,10 +538,17 @@ const SECTIONS: HelpSection[] = [
   },
   {
     id: "managed-reports",
+    category: "reporting",
     title: "Managed Reports",
-    intro:
-      "Managed Reports contains reports prepared and shared by the Persona_Voices team rather than automatically generated system records.",
+    summary:
+      "Reports prepared and shared by the Persona_Voices team rather than generated automatically.",
+    keywords: ["managed reports", "prepared reports", "publish", "download"],
     blocks: [
+      {
+        body: [
+          "Managed Reports contains reports prepared and shared by the Persona_Voices team rather than automatically generated system records.",
+        ],
+      },
       {
         title: "View and download",
         body: [
@@ -361,34 +559,28 @@ const SECTIONS: HelpSection[] = [
     ],
   },
   {
-    id: "accounts",
-    title: "Connected Accounts",
-    intro:
-      "Connected Accounts is an operational page for authorised administrators. It is separate from the public brand-account cards shown in Overview and Mentions.",
-    blocks: [
-      {
-        title: "Ready-to-use accounts",
-        body: [
-          "Campaign execution should use accounts that are active and currently ready for the platform to use. Accounts that are unavailable, suspended or require a new sign-in can remain visible to administrators for management while being excluded from execution where the campaign engine marks them unavailable.",
-        ],
-      },
-      {
-        title: "If an account needs attention",
-        body: [
-          "Use the status and account-management controls available on Connected Accounts. If an account cannot be restored from the interface, contact platform support instead of repeatedly running campaigns against the unavailable account.",
-        ],
-      },
-    ],
-  },
-  {
     id: "metrics",
+    category: "reporting",
     title: "Understanding metrics",
-    intro:
-      "Metrics describe different parts of the communication lifecycle. Similar-looking numbers from different platforms are not always calculated in the same way.",
+    summary:
+      "What each metric measures, and why the same-looking number can differ between platforms.",
+    keywords: [
+      "metrics",
+      "glossary",
+      "views",
+      "impressions",
+      "reach",
+      "engagement",
+      "engagement rate",
+      "confidence",
+      "importance",
+      "source authority",
+    ],
     blocks: [
       {
-        title: "Core metrics",
-        body: [],
+        body: [
+          "Metrics describe different parts of the communication lifecycle. Similar-looking numbers from different platforms are not always calculated in the same way.",
+        ],
         bullets: [
           "Mentions: monitored public items that matched the listening brief and were accepted into the feed.",
           "Views or impressions: exposure figures returned or stored for a specific platform or post. Availability depends on the source.",
@@ -403,149 +595,429 @@ const SECTIONS: HelpSection[] = [
       },
     ],
   },
-];
-
-const FAQS = [
-  [
-    "Where should I start each morning?",
-    "Start on Overview. Read the health cards, Intelligence Brief, What Changed, risks and opportunities. Open Mentions only for the items that need investigation.",
-  ],
-  [
-    "Why are the numbers on two pages different?",
-    "Pages can use different time windows, data sources or metric definitions. Check the selected period and the metric label before comparing values.",
-  ],
-  [
-    "Why is a mention labelled negative when it contains positive words?",
-    "The sentiment system can use context, sarcasm and rhetorical criticism. Open the sentiment explanation where it is available to see the short user-facing reason.",
-  ],
-  [
-    "Can I see the posts behind an Overview narrative?",
-    "Yes. Use Investigate mentions. The focused Mentions view applies the narrative topic across the monitored sources available to that investigation.",
-  ],
-  [
-    "What does Critical mean?",
-    "Critical is the strongest mention-importance label. It tells you to review the item first. It does not automatically mean the platform recommends a public response.",
-  ],
-  [
-    "What does High Source Authority mean?",
-    "It means the source has stronger observable authority signals available to the platform, such as publication status or verified/high-attention account signals. It is a prioritisation aid.",
-  ],
-  [
-    "Why does Likely origin say likely?",
-    "The platform can identify the earliest matching item in the data it has monitored. It cannot prove that no earlier item existed outside those sources or collection windows.",
-  ],
-  [
-    "Can I test an Overview recommendation?",
-    "Yes. Use Test with personas to send the suggested message into Response Studio as prefilled copy.",
-  ],
-  [
-    "Can I edit the recommended message?",
-    "Yes. The recommended version on a test result can be edited before it is passed into Run campaign.",
-  ],
-  [
-    "Can I pause a campaign?",
-    "Running campaigns that support operational control can be paused in Campaign Manager and resumed later.",
-  ],
-  [
-    "Where do completed campaigns go?",
-    "Campaign Manager keeps completed campaigns in the Completed filter and links them to Performance.",
-  ],
-  [
-    "What is the difference between Automated and Managed Reports?",
-    "Automated Reports are generated from platform records. Managed Reports are prepared deliverables published by the Persona_Voices team.",
-  ],
-  [
-    "Can I generate a report for my own dates?",
-    "Yes. In Automated Reports choose Generate report, select Custom date range, then enter the From and To dates.",
-  ],
-  [
-    "Can I export Overview?",
-    "Yes. Use Generate PDF Report on Overview for the executive PDF generated from current platform data.",
-  ],
-  [
-    "Why is a platform metric missing?",
-    "The source may not expose that metric, the item may not have been refreshed yet, or the collector may not have received it. Missing data should not be invented.",
-  ],
-  [
-    "Why do I see fewer duplicate posts in an investigation?",
-    "Hide duplicates collapses near-identical items in that view. The underlying stored records are not deleted.",
-  ],
-  [
-    "Why can another user see a page that I cannot?",
-    "Some operational pages and controls are permission-based. Your navigation only exposes the surfaces available to your account.",
-  ],
-  [
-    "Does Response Studio predict exact real-world results?",
-    "No. It is communication decision support based on the persona panel. Use real monitoring and campaign performance alongside it.",
-  ],
-  [
-    "How often does Overview update?",
-    "Several Overview datasets refresh on a short interval, while some source feeds have their own collection cadence. The page can therefore contain data with different latest-refresh times.",
-  ],
-  [
-    "How do I get human support?",
-    "Use Chat with Thabo on WhatsApp on this page. The message opens with the platform-support context already filled in.",
-  ],
-] as const;
-
-const TROUBLESHOOTING: HelpBlock[] = [
+  // -- Migrated FAQ entries --------------------------------------------------
   {
+    id: "faq-start-morning",
+    category: "signals",
+    title: "Where should I start each morning?",
+    summary: "Start on Overview, then open Mentions only for items that need investigation.",
+    keywords: ["morning", "start", "routine", "overview"],
+    blocks: [
+      {
+        body: [
+          "Start on Overview. Read the health cards, Intelligence Brief, What Changed, risks and opportunities. Open Mentions only for the items that need investigation.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-numbers-differ",
+    category: "reporting",
+    title: "Why are the numbers on two pages different?",
+    summary: "Pages can use different time windows, sources or metric definitions.",
+    keywords: ["numbers", "different", "mismatch", "time window"],
+    blocks: [
+      {
+        body: [
+          "Pages can use different time windows, data sources or metric definitions. Check the selected period and the metric label before comparing values.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-negative-positive-words",
+    category: "signals",
+    title: "Why is a mention labelled negative when it contains positive words?",
+    summary: "Sentiment can use context, sarcasm and rhetorical criticism.",
+    keywords: ["sentiment", "negative", "positive words", "sarcasm"],
+    blocks: [
+      {
+        body: [
+          "The sentiment system can use context, sarcasm and rhetorical criticism. Open the sentiment explanation where it is available to see the short user-facing reason.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-narrative-posts",
+    category: "signals",
+    title: "Can I see the posts behind an Overview narrative?",
+    summary: "Yes — use Investigate mentions to open the underlying material.",
+    keywords: ["narrative", "posts", "investigate", "sources"],
+    blocks: [
+      {
+        body: [
+          "Yes. Use Investigate mentions. The focused Mentions view applies the narrative topic across the monitored sources available to that investigation.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-critical-meaning",
+    category: "signals",
+    title: "What does Critical mean?",
+    summary: "The strongest mention-importance label — review the item first.",
+    keywords: ["critical", "importance", "label"],
+    blocks: [
+      {
+        body: [
+          "Critical is the strongest mention-importance label. It tells you to review the item first. It does not automatically mean the platform recommends a public response.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-source-authority",
+    category: "signals",
+    title: "What does High Source Authority mean?",
+    summary:
+      "Stronger observable authority signals available to the platform — a prioritisation aid.",
+    keywords: ["source authority", "high", "verified"],
+    blocks: [
+      {
+        body: [
+          "It means the source has stronger observable authority signals available to the platform, such as publication status or verified/high-attention account signals. It is a prioritisation aid.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-likely-origin",
+    category: "signals",
+    title: "Why does Likely origin say likely?",
+    summary:
+      "The earliest matching item in the monitored data, not proof of the first publication anywhere.",
+    keywords: ["likely origin", "first", "earliest"],
+    blocks: [
+      {
+        body: [
+          "The platform can identify the earliest matching item in the data it has monitored. It cannot prove that no earlier item existed outside those sources or collection windows.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-test-recommendation",
+    category: "testing",
+    title: "Can I test an Overview recommendation?",
+    summary: "Yes — use Test with personas to send it into Response Studio as prefilled copy.",
+    keywords: ["test", "recommendation", "response studio"],
+    blocks: [
+      {
+        body: [
+          "Yes. Use Test with personas to send the suggested message into Response Studio as prefilled copy.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-edit-recommended",
+    category: "testing",
+    title: "Can I edit the recommended message?",
+    summary: "Yes, before it is passed into Run campaign.",
+    keywords: ["edit", "recommended message", "response studio"],
+    blocks: [
+      {
+        body: [
+          "Yes. The recommended version on a test result can be edited before it is passed into Run campaign.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-pause-campaign",
+    category: "campaigns",
+    title: "Can I pause a campaign?",
+    summary: "Running campaigns that support operational control can be paused and resumed.",
+    keywords: ["pause", "campaign", "resume"],
+    blocks: [
+      {
+        body: [
+          "Running campaigns that support operational control can be paused in Campaign Manager and resumed later.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-completed-campaigns",
+    category: "campaigns",
+    title: "Where do completed campaigns go?",
+    summary: "Campaign Manager keeps them in the Completed filter, linked to Performance.",
+    keywords: ["completed", "campaigns", "performance"],
+    blocks: [
+      {
+        body: [
+          "Campaign Manager keeps completed campaigns in the Completed filter and links them to Performance.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-page-access",
+    category: "campaigns",
+    title: "Why can another user see a page that I cannot?",
+    summary: "Some operational pages and controls are permission-based.",
+    keywords: ["permissions", "access", "page", "role"],
+    blocks: [
+      {
+        body: [
+          "Some operational pages and controls are permission-based. Your navigation only exposes the surfaces available to your account.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-automated-managed",
+    category: "reporting",
+    title: "What is the difference between automated and managed reports?",
+    summary: "Automated reports are system-generated; Managed reports are analyst-prepared.",
+    keywords: ["automated reports", "managed reports", "difference"],
+    blocks: [
+      {
+        body: [
+          "Automated reports use available platform data and standard templates. Managed reports add analyst review, narrative interpretation and approved recommendations.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-custom-date-report",
+    category: "reporting",
+    title: "Can I generate a report for my own dates?",
+    summary: "Yes — choose Custom date range in Automated Reports.",
+    keywords: ["custom date", "report", "range"],
+    blocks: [
+      {
+        body: [
+          "Yes. In Automated Reports choose Generate report, select Custom date range, then enter the From and To dates.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-export-overview",
+    category: "reporting",
+    title: "Can I export Overview?",
+    summary: "Yes — use Generate PDF Report for an executive PDF from current data.",
+    keywords: ["export", "overview", "pdf"],
+    blocks: [
+      {
+        body: [
+          "Yes. Use Generate PDF Report on Overview for the executive PDF generated from current platform data.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-missing-metric",
+    category: "reporting",
+    title: "Why is a platform metric missing?",
+    summary: "The source may not expose it, or it may not have been collected yet.",
+    keywords: ["missing", "metric", "unavailable"],
+    blocks: [
+      {
+        body: [
+          "The source may not expose that metric, the item may not have been refreshed yet, or the collector may not have received it. Missing data should not be invented.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-duplicates",
+    category: "signals",
+    title: "Why do I see fewer duplicate posts in an investigation?",
+    summary: "Hide duplicates collapses near-identical items in the view only.",
+    keywords: ["duplicates", "hide", "investigation"],
+    blocks: [
+      {
+        body: [
+          "Hide duplicates collapses near-identical items in that view. The underlying stored records are not deleted.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-response-studio-prediction",
+    category: "testing",
+    title: "Does Response Studio predict the exact outcome?",
+    summary: "No — it supports judgement rather than replacing it.",
+    keywords: ["response studio", "predict", "outcome", "exact"],
+    blocks: [
+      {
+        body: [
+          "No. It is communication decision support based on the persona panel. Use real monitoring and campaign performance alongside it.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "faq-overview-refresh",
+    category: "signals",
+    title: "How often does Overview update?",
+    summary: "Several datasets refresh often; source feeds keep their own collection cadence.",
+    keywords: ["overview", "update", "refresh", "cadence"],
+    blocks: [
+      {
+        body: [
+          "Several Overview datasets refresh on a short interval, while some source feeds have their own collection cadence. The page can therefore contain data with different latest-refresh times.",
+        ],
+      },
+    ],
+  },
+  // -- Migrated troubleshooting entries --------------------------------------
+  {
+    id: "trouble-overview-empty",
+    category: "signals",
     title: "Overview is empty",
-    body: [
-      "Widen the time window first. If the page is still empty, open Mentions and check whether the connected sources have collected anything recently. An empty window is different from a platform error.",
+    summary:
+      "Widen the time window first, then check whether sources have collected anything recently.",
+    keywords: ["overview", "empty", "no data"],
+    blocks: [
+      {
+        body: [
+          "Widen the time window first. If the page is still empty, open Mentions and check whether the connected sources have collected anything recently. An empty window is different from a platform error.",
+        ],
+      },
     ],
   },
   {
+    id: "trouble-chart-missing",
+    category: "reporting",
     title: "A chart or metric is missing",
-    body: [
-      "Check whether the page has enough data for the selected period. Some charts intentionally wait for more than one data point and some platform metrics only appear when the source returned them.",
+    summary:
+      "Some charts wait for more than one data point, or the source did not return that metric.",
+    keywords: ["chart", "metric", "missing"],
+    blocks: [
+      {
+        body: [
+          "Check whether the page has enough data for the selected period. Some charts intentionally wait for more than one data point and some platform metrics only appear when the source returned them.",
+        ],
+      },
     ],
   },
   {
+    id: "trouble-campaign-stalled",
+    category: "campaigns",
     title: "A campaign is not progressing",
-    body: [
-      "Open Campaign Manager and check whether the campaign is Scheduled, Paused, Running or Completed. Also check whether the campaign reports execution data and whether the connected accounts required for the action are ready for use.",
+    summary: "Check its status in Campaign Manager and whether required accounts are ready.",
+    keywords: ["campaign", "stuck", "not progressing", "stalled"],
+    blocks: [
+      {
+        body: [
+          "Open Campaign Manager and check whether the campaign is Scheduled, Paused, Running or Completed. Also check whether the campaign reports execution data and whether the connected accounts required for the action are ready for use.",
+        ],
+      },
     ],
   },
   {
+    id: "trouble-mention-missing",
+    category: "signals",
     title: "An expected mention is missing",
-    body: [
-      "Confirm the source is part of the connected monitoring set, refresh Mentions, then check the source and topic filters. The item may be outside the source collection window, may not match the listening brief, or may have been removed or unavailable when collection ran.",
+    summary: "Confirm the source is connected, refresh Mentions, then check the filters.",
+    keywords: ["mention", "missing", "expected"],
+    blocks: [
+      {
+        body: [
+          "Confirm the source is part of the connected monitoring set, refresh Mentions, then check the source and topic filters. The item may be outside the source collection window, may not match the listening brief, or may have been removed or unavailable when collection ran.",
+        ],
+      },
     ],
   },
   {
+    id: "trouble-sentiment-wrong",
+    category: "signals",
     title: "Sentiment looks wrong",
-    body: [
-      "Read the full post or article and open the sentiment explanation where available. Sarcasm and reply context can change the intended reading. If the label still appears materially wrong, capture the item link and contact support so it can be reviewed.",
+    summary:
+      "Read the full item and open the sentiment explanation; report it if it still looks wrong.",
+    keywords: ["sentiment", "wrong", "incorrect"],
+    blocks: [
+      {
+        body: [
+          "Read the full post or article and open the sentiment explanation where available. Sarcasm and reply context can change the intended reading. If the label still appears materially wrong, capture the item link and contact support so it can be reviewed.",
+        ],
+      },
     ],
   },
   {
+    id: "trouble-report-wont-open",
+    category: "reporting",
     title: "A report will not open",
-    body: [
-      "Try the Download action as well as View report. If a managed report still cannot be opened, note the report title and contact support. Prepared report links are permission-aware and may expire or need to be regenerated.",
+    summary: "Try Download as well as View report, then contact support with the report title.",
+    keywords: ["report", "will not open", "broken link"],
+    blocks: [
+      {
+        body: [
+          "Try the Download action as well as View report. If a managed report still cannot be opened, note the report title and contact support. Prepared report links are permission-aware and may expire or need to be regenerated.",
+        ],
+      },
     ],
   },
   {
+    id: "trouble-account-unused",
+    category: "campaigns",
+    requiredAccess: "admin",
     title: "A connected account is not being used",
-    body: [
-      "The campaign engine can exclude accounts that are unavailable or not ready for execution. Administrators should review the account status on Connected Accounts rather than forcing repeated actions through an unhealthy account.",
+    summary: "Review the account status on Connected Accounts. Admin access.",
+    keywords: ["connected account", "unused", "unavailable", "admin"],
+    blocks: [
+      {
+        body: [
+          "The campaign engine can exclude accounts that are unavailable or not ready for execution. Administrators should review the account status on Connected Accounts rather than forcing repeated actions through an unhealthy account.",
+        ],
+      },
     ],
   },
 ];
 
-function HelpBlockView({ block }: { block: HelpBlock }) {
+// ---------------------------------------------------------------------------
+// Search
+// ---------------------------------------------------------------------------
+
+function normalise(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function articleBodyText(article: HelpArticle) {
+  return normalise(
+    article.blocks
+      .flatMap((block) => [block.title ?? "", ...block.body, ...(block.bullets ?? [])])
+      .join(" "),
+  );
+}
+
+function scoreArticle(article: HelpArticle, terms: string[]) {
+  if (!terms.length) return 1;
+  const title = normalise(article.title);
+  const keywords = normalise(article.keywords.join(" "));
+  const body = `${normalise(article.summary)} ${articleBodyText(article)}`;
+
+  return terms.reduce((score, term) => {
+    if (score === 0) return 0;
+    if (title.includes(term)) return score + 30;
+    if (keywords.includes(term)) return score + 20;
+    if (body.includes(term)) return score + 10;
+    return 0;
+  }, 1);
+}
+
+function ArticleBlockView({ block }: { block: HelpBlock }) {
   return (
     <div>
-      <h3 className="type-card font-semibold">{block.title}</h3>
-      <div className="mt-2 space-y-2">
+      {block.title ? <h4 className="type-body font-semibold">{block.title}</h4> : null}
+      <div className={cn("space-y-2", block.title && "mt-1.5")}>
         {block.body.map((paragraph) => (
-          <p key={paragraph} className="type-body leading-7 text-muted-foreground">
+          <p key={paragraph} className="type-body leading-6 text-muted-foreground">
             {paragraph}
           </p>
         ))}
       </div>
       {block.bullets?.length ? (
-        <ul className="mt-3 list-disc space-y-2 pl-5 type-body leading-7 text-muted-foreground">
+        <ul className="mt-2 list-disc space-y-1.5 pl-5 type-body leading-6 text-muted-foreground">
           {block.bullets.map((bullet) => (
             <li key={bullet}>{bullet}</li>
           ))}
@@ -555,274 +1027,360 @@ function HelpBlockView({ block }: { block: HelpBlock }) {
   );
 }
 
-function sectionText(section: HelpSection) {
-  return [
-    section.title,
-    section.intro,
-    ...section.blocks.flatMap((block) => [block.title, ...block.body, ...(block.bullets ?? [])]),
-  ]
-    .join(" ")
-    .toLowerCase();
+function HelpSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-5xl animate-pulse px-4 py-10 sm:px-8" aria-hidden="true">
+      <div className="mx-auto h-4 w-24 rounded bg-muted" />
+      <div className="mx-auto mt-3 h-9 w-80 max-w-full rounded bg-muted" />
+      <div className="mx-auto mt-7 h-14 w-full max-w-2xl rounded-2xl bg-muted" />
+      <div className="mt-12 grid gap-3 sm:grid-cols-2">
+        {[0, 1, 2, 3].map((key) => (
+          <div key={key} className="h-28 rounded-2xl bg-muted" />
+        ))}
+      </div>
+      <div className="mt-12 h-64 rounded-[18px] bg-muted" />
+    </div>
+  );
 }
 
 function HelpPage() {
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const searchRef = useRef<HTMLInputElement>(null);
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const isAdmin = isAdminEmail(profile?.email);
+
   const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase();
+  const [activeCategory, setActiveCategory] = useState<HelpCategory | null>(null);
+  const [openArticleId, setOpenArticleId] = useState<string | null>(search.article ?? null);
 
-  const filteredSections = useMemo(
-    () => (q ? SECTIONS.filter((section) => sectionText(section).includes(q)) : SECTIONS),
-    [q],
-  );
-  const filteredFaqs = useMemo(
+  // Command / Control + K focuses the Help Centre search only while this page is mounted.
+  useEffect(() => {
+    function focusSearch(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", focusSearch);
+    return () => window.removeEventListener("keydown", focusSearch);
+  }, []);
+
+  // Keep the open article in sync with a deep link, including browser back/forward.
+  useEffect(() => {
+    setOpenArticleId(search.article ?? null);
+  }, [search.article]);
+
+  const visibleArticles = useMemo(
     () =>
-      q
-        ? FAQS.filter(([question, answer]) => `${question} ${answer}`.toLowerCase().includes(q))
-        : FAQS,
-    [q],
-  );
-  const filteredTroubleshooting = useMemo(
-    () =>
-      q
-        ? TROUBLESHOOTING.filter((block) =>
-            [block.title, ...block.body].join(" ").toLowerCase().includes(q),
-          )
-        : TROUBLESHOOTING,
-    [q],
+      profileLoading
+        ? []
+        : HELP_ARTICLES.filter((article) => article.requiredAccess !== "admin" || isAdmin),
+    [isAdmin, profileLoading],
   );
 
-  const noResults =
-    filteredSections.length === 0 &&
-    filteredFaqs.length === 0 &&
-    filteredTroubleshooting.length === 0;
+  const queryTerms = useMemo(() => normalise(query).split(" ").filter(Boolean), [query]);
+
+  const filteredArticles = useMemo(() => {
+    return visibleArticles
+      .map((article) => ({ article, score: scoreArticle(article, queryTerms) }))
+      .filter(({ article, score }) => {
+        const matchesCategory = !activeCategory || article.category === activeCategory;
+        return matchesCategory && score > 0;
+      })
+      .sort((a, b) => b.score - a.score)
+      .map(({ article }) => article);
+  }, [activeCategory, queryTerms, visibleArticles]);
+
+  const clearFilters = () => {
+    setQuery("");
+    setActiveCategory(null);
+  };
+
+  const toggleCategory = (category: HelpCategory) => {
+    setActiveCategory((current) => (current === category ? null : category));
+  };
+
+  const openArticle = (articleId: string) => {
+    const next = openArticleId === articleId ? undefined : articleId;
+    setOpenArticleId(next ?? null);
+    void navigate({ to: "/help", search: next ? { article: next } : {}, replace: false });
+  };
+
+  const handleContactSupport = () => {
+    document.getElementById("help-support-strip")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  if (profileLoading) {
+    return (
+      <WorkspaceShell title="Help">
+        <HelpSkeleton />
+      </WorkspaceShell>
+    );
+  }
 
   return (
-    <WorkspaceShell title="Help" wide>
-      <PageTitle description="Detailed guidance for monitoring, testing, campaigns, measurement and reporting.">
-        Help Centre
-      </PageTitle>
+    <WorkspaceShell title="Help">
+      <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-8 lg:py-14">
+        <header className="text-center">
+          <p className="type-meta font-semibold uppercase tracking-[0.08em] text-primary">
+            Help Centre
+          </p>
+          <h1 className="mt-2 type-title">What do you need help with?</h1>
 
-      <CommandGrid
-        className="mt-6"
-        left={
-          <div className="hidden xl:block">
-            <RailCard title="Search" icon={Search}>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search help…"
-                  aria-label="Search Help Centre"
-                  className="pl-9"
-                />
-              </div>
-              <p className="type-meta mt-2 text-muted-foreground">
-                Runs locally inside this Help Centre.
-              </p>
-            </RailCard>
+          <label className="relative mx-auto mt-7 flex min-h-14 w-full max-w-[650px] items-center gap-3 rounded-2xl border border-border bg-card px-4 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
+            <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="sr-only">Search Help Centre</span>
+            <input
+              ref={searchRef}
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search campaigns, sentiment, reports…"
+              className="min-h-[52px] min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            />
+            <kbd className="hidden rounded-md border border-border bg-muted px-2 py-1 type-meta text-muted-foreground sm:block">
+              ⌘K
+            </kbd>
+          </label>
 
-            {!q ? (
-              <RailCard title="Sections" icon={BookOpen}>
-                <nav aria-label="Help Centre sections" className="grid gap-1">
-                  {SECTIONS.map((section) => (
-                    <a
-                      key={section.id}
-                      href={`#${section.id}`}
-                      className="type-meta truncate rounded-lg px-2 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      {section.title}
-                    </a>
-                  ))}
-                  <a
-                    href="#faq"
-                    className="type-meta truncate rounded-lg px-2 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    FAQ
-                  </a>
-                  <a
-                    href="#troubleshooting"
-                    className="type-meta truncate rounded-lg px-2 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    Troubleshooting
-                  </a>
-                </nav>
-              </RailCard>
-            ) : null}
+          <div className="mt-3 flex flex-wrap justify-center gap-x-5">
+            <Link
+              to="/changelog"
+              className="min-h-10 type-meta font-medium text-muted-foreground hover:text-primary"
+            >
+              Release notes
+            </Link>
+            <Link
+              to="/governance"
+              className="min-h-10 type-meta font-medium text-muted-foreground hover:text-primary"
+            >
+              Governance
+            </Link>
+            <button
+              type="button"
+              onClick={() =>
+                document.getElementById("metrics")?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="min-h-10 type-meta font-medium text-muted-foreground hover:text-primary"
+            >
+              Glossary
+            </button>
           </div>
-        }
-        right={
-          <>
-            <RailCard title="Support" icon={HelpCircle}>
-              <p className="type-meta text-muted-foreground">
-                If the Help Centre does not resolve the issue, contact Thabo directly for platform
-                support.
-              </p>
-              <p className="type-meta mt-2 font-semibold">Thabo · Platform Support</p>
-              <ContactSupportButton variant="default" size="default" className="mt-3 w-full" />
-            </RailCard>
+        </header>
 
-            <RailCard title="Shortcuts" icon={Keyboard}>
-              <div className="grid gap-2">
-                <RailAction
-                  to="/changelog"
-                  icon={FileClock}
-                  title="Changelog"
-                  description="Recent platform updates"
-                />
-                <RailAction
-                  to="/governance"
-                  icon={ShieldCheck}
-                  title="Governance"
-                  description="Policies and controls"
-                />
-                <RailAction
-                  onClick={() =>
-                    document.getElementById("metrics")?.scrollIntoView({ behavior: "smooth" })
-                  }
-                  icon={ScrollText}
-                  title="Glossary"
-                  description="Metric and label definitions"
-                />
-              </div>
-            </RailCard>
-          </>
-        }
-      >
-        <details className="rounded-xl border border-border bg-card p-3 xl:hidden">
-          <summary className="cursor-pointer list-none type-meta font-semibold text-foreground">
-            Search or browse Help Centre
-          </summary>
-          <div className="mt-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search help…"
-                aria-label="Search Help Centre"
-                className="pl-9"
-              />
+        <section className="mt-12" aria-labelledby="help-categories-title">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <h2 id="help-categories-title" className="type-card font-semibold">
+                Browse by task
+              </h2>
+              <p className="mt-1 type-meta text-muted-foreground">
+                Start with the outcome you are trying to reach.
+              </p>
             </div>
-            {!q ? (
-              <nav aria-label="Help Centre sections" className="mt-3 grid gap-1">
-                {SECTIONS.map((section) => (
-                  <a
-                    key={section.id}
-                    href={`#${section.id}`}
-                    className="rounded-lg px-2.5 py-2 type-meta text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    {section.title}
-                  </a>
-                ))}
-                <a
-                  href="#faq"
-                  className="rounded-lg px-2.5 py-2 type-meta text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  FAQ
-                </a>
-                <a
-                  href="#troubleshooting"
-                  className="rounded-lg px-2.5 py-2 type-meta text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  Troubleshooting
-                </a>
-              </nav>
+            {activeCategory || query ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="min-h-10 type-meta font-medium text-primary"
+              >
+                Show all
+              </button>
             ) : null}
           </div>
-        </details>
 
-        <Card className="p-5">
-          <div className="flex items-center gap-2">
-            <Workflow className="size-5 shrink-0 text-primary" aria-hidden="true" />
-            <SectionTitle>The platform workflow</SectionTitle>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {CATEGORIES.map((category) => {
+              const Icon = category.icon;
+              const selected = activeCategory === category.id;
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleCategory(category.id)}
+                  className={cn(
+                    "grid min-h-28 min-w-0 grid-cols-[auto_1fr_auto] grid-rows-2 items-center gap-x-3 rounded-2xl border p-4 text-left transition-colors",
+                    selected
+                      ? "border-primary/30 bg-primary/5"
+                      : "border-border bg-card hover:border-primary/25",
+                  )}
+                >
+                  <span className="row-span-2 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
+                  <strong className="self-end truncate type-body font-semibold">
+                    {category.title}
+                  </strong>
+                  <span className="self-start truncate type-meta text-muted-foreground">
+                    {category.description}
+                  </span>
+                  <ArrowUpRight
+                    className="row-span-2 size-4 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                </button>
+              );
+            })}
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {["Monitor", "Understand", "Decide", "Test", "Run", "Measure"].map((step, index) => (
-              <div key={step} className="min-w-0 rounded-xl border border-border bg-background p-3">
-                <p className="type-meta text-muted-foreground">{index + 1}</p>
-                <p className="type-card mt-1 truncate font-semibold">{step}</p>
-              </div>
-            ))}
-          </div>
-        </Card>
+        </section>
 
-        {noResults ? (
-          <Card className="p-6 text-center">
-            <HelpCircle className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
-            <p className="type-card mt-3 font-semibold">No matching help article</p>
-            <p className="type-meta mt-1 text-muted-foreground">
-              Try a page name such as Mentions, Overview, Reports or Campaign Manager.
+        <section className="mt-12" aria-labelledby="popular-answers-title">
+          <div className="mb-4">
+            <h2 id="popular-answers-title" className="type-card font-semibold">
+              {query ? "Search results" : "Answers"}
+            </h2>
+            <p className="mt-1 type-meta text-muted-foreground" aria-live="polite">
+              {filteredArticles.length} {filteredArticles.length === 1 ? "answer" : "answers"}
             </p>
-          </Card>
-        ) : null}
-
-        {filteredSections.map((section) => (
-          <section key={section.id} id={section.id} className="scroll-mt-20 min-w-0">
-            <Card className="p-6">
-              <SectionTitle>{section.title}</SectionTitle>
-              <p className="type-body mt-2 max-w-4xl leading-7 text-muted-foreground">
-                {section.intro}
-              </p>
-              <div className="mt-6 grid gap-6">
-                {section.blocks.map((block) => (
-                  <HelpBlockView key={block.title} block={block} />
-                ))}
-              </div>
-            </Card>
-          </section>
-        ))}
-
-        {filteredFaqs.length ? (
-          <section id="faq" className="scroll-mt-20 min-w-0">
-            <Card className="p-6">
-              <SectionTitle>Frequently asked questions</SectionTitle>
-              <div className="mt-4 divide-y divide-border">
-                {filteredFaqs.map(([question, answer]) => (
-                  <details key={question} className="group py-3">
-                    <summary className="cursor-pointer list-none type-body font-semibold [&::-webkit-details-marker]:hidden">
-                      {question}
-                    </summary>
-                    <p className="type-body mt-2 max-w-4xl leading-7 text-muted-foreground">
-                      {answer}
-                    </p>
-                  </details>
-                ))}
-              </div>
-            </Card>
-          </section>
-        ) : null}
-
-        {filteredTroubleshooting.length ? (
-          <section id="troubleshooting" className="scroll-mt-20 min-w-0">
-            <Card className="p-6">
-              <SectionTitle>Troubleshooting</SectionTitle>
-              <p className="type-body mt-2 text-muted-foreground">
-                Start with the visible status and data on the page. These checks do not require
-                backend logs or technical access.
-              </p>
-              <div className="mt-6 grid gap-6 md:grid-cols-2">
-                {filteredTroubleshooting.map((block) => (
-                  <HelpBlockView key={block.title} block={block} />
-                ))}
-              </div>
-            </Card>
-          </section>
-        ) : null}
-
-        <Card className="p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <SectionTitle>Still need help?</SectionTitle>
-              <p className="type-body mt-1 text-muted-foreground">
-                If the Help Centre does not resolve the issue, contact Thabo directly for platform
-                support.
-              </p>
-              <p className="type-meta mt-2 font-semibold">Thabo · Platform Support</p>
-            </div>
-            <ContactSupportButton variant="default" size="lg" className="shrink-0" />
           </div>
-        </Card>
-      </CommandGrid>
+
+          {filteredArticles.length ? (
+            <div className="overflow-hidden rounded-[18px] border border-border bg-card shadow-sm">
+              {filteredArticles.map((article, index) => {
+                const open = openArticleId === article.id;
+                const category = CATEGORIES.find((item) => item.id === article.category);
+
+                return (
+                  <article
+                    key={article.id}
+                    id={article.id}
+                    className={cn(
+                      "scroll-mt-20",
+                      index !== filteredArticles.length - 1 && "border-b border-border",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      aria-controls={`${article.id}-answer`}
+                      onClick={() => openArticle(article.id)}
+                      className="flex min-h-[72px] w-full items-center justify-between gap-5 px-4 py-3 text-left sm:px-5"
+                    >
+                      <span className="grid gap-1">
+                        <small className="type-meta text-muted-foreground">
+                          {category?.title ?? "Getting started"}
+                        </small>
+                        <strong className="type-body font-semibold">{article.title}</strong>
+                      </span>
+                      <motion.span animate={{ rotate: open ? 180 : 0 }}>
+                        <ChevronDown className="size-5 text-muted-foreground" aria-hidden="true" />
+                      </motion.span>
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {open ? (
+                        <motion.div
+                          id={`${article.id}-answer`}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="grid gap-3 px-4 pb-5 sm:px-5 sm:pr-14">
+                            {article.id === "getting-started" ? (
+                              <div className="rounded-xl border border-border bg-background p-4">
+                                <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                                  {[
+                                    "Monitor",
+                                    "Understand",
+                                    "Decide",
+                                    "Test",
+                                    "Run",
+                                    "Measure",
+                                  ].map((step, stepIndex) => (
+                                    <li
+                                      key={step}
+                                      className="min-w-0 rounded-lg border border-border bg-card p-3"
+                                    >
+                                      <p className="type-meta text-muted-foreground">
+                                        {stepIndex + 1}
+                                      </p>
+                                      <p className="type-body mt-1 font-semibold">{step}</p>
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            ) : null}
+                            {article.blocks.map((block, blockIndex) => (
+                              <ArticleBlockView
+                                key={block.title ?? `${article.id}-${blockIndex}`}
+                                block={block}
+                              />
+                            ))}
+                          </div>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid min-h-48 place-items-center rounded-[18px] border border-border bg-card p-6 text-center">
+              <div>
+                <SearchX className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+                <h3 className="mt-3 type-body font-semibold">No matching answer</h3>
+                <p className="mt-1 type-meta text-muted-foreground">
+                  Try a shorter phrase or contact support.
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="min-h-11 rounded-xl border border-border px-4 type-body font-medium"
+                  >
+                    Clear search
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleContactSupport}
+                    className="min-h-11 rounded-xl bg-primary px-4 type-body font-semibold text-primary-foreground"
+                  >
+                    Contact support
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section
+          id="help-support-strip"
+          className="mt-7 scroll-mt-20 grid items-center gap-4 rounded-[18px] border border-border bg-card p-5 shadow-sm sm:grid-cols-[auto_1fr_auto]"
+        >
+          <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <LifeBuoy className="size-5" aria-hidden="true" />
+          </div>
+          <div>
+            <h2 className="type-body font-semibold">Still need help?</h2>
+            <p className="mt-1 type-meta text-muted-foreground">
+              Send the issue, page name and any relevant link to the support team.
+            </p>
+          </div>
+          <ContactSupportButton
+            context="Help Centre"
+            variant="default"
+            size="lg"
+            className="max-sm:w-full sm:shrink-0"
+          />
+        </section>
+
+        <p className="mt-4 flex items-center justify-center gap-1.5 type-meta text-muted-foreground">
+          <ShieldCheck className="size-3.5" aria-hidden="true" />
+          Role-restricted guidance follows your current workspace access.
+        </p>
+        <p className="mt-1 flex items-center justify-center gap-1.5 type-meta text-muted-foreground">
+          <FileClock className="size-3.5" aria-hidden="true" />
+          Looking for what changed recently? See{" "}
+          <Link to="/changelog" className="font-medium text-primary">
+            Release notes
+          </Link>
+          .
+        </p>
+      </div>
     </WorkspaceShell>
   );
 }

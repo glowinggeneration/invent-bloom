@@ -141,10 +141,6 @@ function SetupPage() {
         <div className="flex flex-col items-center text-center">
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-9 w-auto" />
           <h1 className="type-section mt-4">Set up your workspace</h1>
-          <p className="type-meta mt-1 max-w-md text-muted-foreground">
-            A minute now makes mentions, alerts and reports relevant. Only the monitoring step is
-            required — everything else is optional.
-          </p>
         </div>
 
         <Card className="mt-6">
@@ -260,9 +256,7 @@ function SetupPage() {
                   <Field key={field.key} label={field.label} hint="Optional">
                     <Input
                       value={socials[field.key]}
-                      onChange={(e) =>
-                        setSocials((s) => ({ ...s, [field.key]: e.target.value }))
-                      }
+                      onChange={(e) => setSocials((s) => ({ ...s, [field.key]: e.target.value }))}
                       placeholder={field.placeholder}
                       onBlur={(e) =>
                         setSocials((s) => ({ ...s, [field.key]: cleanHandle(e.target.value) }))
@@ -290,11 +284,7 @@ function SetupPage() {
                 </Button>
               )}
               {step < STEPS.length - 1 ? (
-                <Button
-                  type="button"
-                  onClick={() => setStep((s) => s + 1)}
-                  disabled={!canContinue}
-                >
+                <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canContinue}>
                   Continue
                 </Button>
               ) : (

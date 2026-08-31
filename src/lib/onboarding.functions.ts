@@ -131,7 +131,8 @@ export const saveSetup = createServerFn({ method: "POST" })
     }
     for (const [platform, raw] of Object.entries(data.socials)) {
       const value = cleanHandle(String(raw ?? ""));
-      if (value) accounts.push({ platform, value, label: `${data.brandName || value} (${platform})` });
+      if (value)
+        accounts.push({ platform, value, label: `${data.brandName || value} (${platform})` });
     }
 
     let pagesAdded = 0;

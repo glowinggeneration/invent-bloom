@@ -36,11 +36,7 @@ function Index() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="text-center">
-        <img
-          src="/smait-logo.svg"
-          alt="SMAIT logo"
-          className="mx-auto h-12 w-auto"
-        />
+        <img src="/smait-logo.svg" alt="SMAIT logo" className="mx-auto h-12 w-auto" />
         <h1 className="type-section mt-4">CommsIQ</h1>
       </div>
     </div>

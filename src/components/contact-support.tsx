@@ -30,7 +30,7 @@ export function ContactSupportButton({
         className="gap-2"
       >
         <MessageCircle className="size-4 shrink-0" />
-        Chat with Thabo on WhatsApp
+        Contact support
       </a>
     </Button>
   );

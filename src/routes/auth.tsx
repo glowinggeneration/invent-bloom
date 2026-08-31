@@ -155,7 +155,6 @@ function AuthPage() {
             {busy ? "Signing in…" : "Sign in"}
           </Button>
         </form>
-
       </div>
     </div>
   );
