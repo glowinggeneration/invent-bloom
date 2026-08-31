@@ -15,7 +15,7 @@ const DEFAULT_SPRING: SpringOptions = { stiffness: 200, damping: 50, restDelta: 
 
 export function ScrollProgress({ className, springOptions, containerRef }: ScrollProgressProps) {
   const { scrollYProgress } = useScroll(
-    containerRef ? { container: containerRef as RefObject<HTMLElement>, layoutEffect: false } : undefined,
+    containerRef ? { container: containerRef as RefObject<HTMLElement> } : undefined,
   );
   const scaleX = useSpring(scrollYProgress, { ...DEFAULT_SPRING, ...(springOptions ?? {}) });
 

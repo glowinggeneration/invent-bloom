@@ -27,12 +27,12 @@ export function TransitionPanel({
       <AnimatePresence initial={false} mode="popLayout" custom={custom}>
         <motion.div
           key={activeIndex}
-          variants={variants}
-          transition={transition}
+          {...(variants ? { variants } : {})}
+          {...(transition ? { transition } : {})}
           initial="enter"
           animate="center"
           exit="exit"
-          custom={custom}
+          {...(custom !== undefined ? { custom } : {})}
         >
           {children[activeIndex]}
         </motion.div>
