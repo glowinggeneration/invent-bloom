@@ -4,12 +4,14 @@
  * Each child must carry a unique `data-id`.
  */
 import { AnimatePresence, motion, type Transition } from "motion/react";
-import { Children, cloneElement, useEffect, useState, type ReactElement } from "react";
+import { Children, cloneElement, useEffect, useState, type ReactElement, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 export type AnimatedBackgroundProps = {
-  children: ReactElement<{ "data-id": string; className?: string }>[] | ReactElement<{ "data-id": string; className?: string }>;
+  children:
+    | ReactElement<{ "data-id": string; className?: string; children?: ReactNode }>[]
+    | ReactElement<{ "data-id": string; className?: string; children?: ReactNode }>;
   defaultValue?: string;
   onValueChange?: (newActiveId: string | null) => void;
   className?: string;
@@ -60,7 +62,7 @@ export function AnimatedBackground({
             <motion.div
               layoutId={`background-${String(defaultValue ?? "group")}`}
               className={cn("absolute inset-0", className)}
-              transition={transition}
+              {...(transition ? { transition } : {})}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
