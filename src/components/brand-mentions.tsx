@@ -432,6 +432,7 @@ export function BrandMentions({
     audience?.byHandle?.[handle.replace(/^@/, "").trim().toLowerCase()] ?? null;
 
   const hasSidebars = mentions.length > 0;
+  const { data: setupStatus } = useSetupStatus();
 
   return (
     <div
