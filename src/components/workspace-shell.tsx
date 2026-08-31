@@ -63,6 +63,9 @@ function useNavAreas() {
   return { isAdmin, profile };
 }
 
+const activeNavClass =
+  "data-[active=true]:relative data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:before:absolute data-[active=true]:before:left-0 data-[active=true]:before:top-1/2 data-[active=true]:before:h-5 data-[active=true]:before:w-[3px] data-[active=true]:before:-translate-y-1/2 data-[active=true]:before:rounded-full data-[active=true]:before:bg-primary";
+
 function NavGroup({
   label,
   items,
@@ -77,20 +80,24 @@ function NavGroup({
       {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.to}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(item.to)}
-                tooltip={item.label}
-              >
-                <Link to={item.to}>
-                  <item.icon className="size-4 shrink-0" />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const active = pathname.startsWith(item.to);
+            return (
+              <SidebarMenuItem key={item.to}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={active}
+                  tooltip={item.label}
+                  className={activeNavClass}
+                >
+                  <Link to={item.to} aria-current={active ? "page" : undefined} title={item.label}>
+                    <item.icon className="size-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
@@ -99,7 +106,7 @@ function NavGroup({
 
 function AppSidebar() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const { isAdmin } = useNavAreas();
+  const { isAdmin, profile } = useNavAreas();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const profilePath = isAdmin ? "/admin/profile" : "/profile";
@@ -112,9 +119,12 @@ function AppSidebar() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const primaryItems: NavItem[] = [
+  const workspaceItems: NavItem[] = [
     { to: "/overview", label: "Overview", icon: LayoutDashboard },
     { to: "/mentions", label: "Mentions", icon: AtSign },
+  ];
+
+  const workItems: NavItem[] = [
     { to: "/campaign-manager", label: "Campaigns", icon: Gauge },
     { to: "/new", label: "Response Studio", icon: SquarePen },
     ...(isAdmin ? [{ to: "/performance", label: "Performance", icon: Activity }] : []),
@@ -141,12 +151,17 @@ function AppSidebar() {
   ];
 
   const moreActive = moreItems.some((item) => pathname.startsWith(item.to));
+  const moreOpen = showMore || moreActive;
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-3">
-        <Link to="/overview" className="flex items-center gap-3">
-          <img src="/smait-logo.svg" alt="SMAIT logo" className="h-7 w-auto shrink-0 object-contain" />
+        <Link to="/overview" className="flex items-center gap-3" title="CommsIQ">
+          <img
+            src="/smait-logo.svg"
+            alt="SMAIT logo"
+            className="h-7 w-auto shrink-0 object-contain group-data-[collapsible=icon]:h-6"
+          />
           <span className="min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="block truncate type-card font-semibold">
               <span className="text-primary">CommsIQ</span>
@@ -163,16 +178,18 @@ function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => navigate({ to: "/publish", search: { choose: true } })}
-              tooltip="Create"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              tooltip="New campaign"
+              title="New campaign"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
             >
               <Plus className="size-4 shrink-0" />
-              <span>Create</span>
+              <span>New campaign</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <NavGroup label="" items={primaryItems} pathname={pathname} />
+        <NavGroup label="Workspace" items={workspaceItems} pathname={pathname} />
+        <NavGroup label="Work" items={workItems} pathname={pathname} />
 
         <SidebarSeparator className="mx-4 my-1" />
         <SidebarMenu className="px-2">
@@ -180,28 +197,42 @@ function AppSidebar() {
             <SidebarMenuButton
               onClick={() => setShowMore((v) => !v)}
               tooltip="More"
+              title="More"
+              aria-expanded={moreOpen}
               className="text-muted-foreground"
             >
               <ChevronDown
                 className={cn(
-                  "size-4 shrink-0 transition-transform",
-                  showMore || moreActive ? "" : "-rotate-90",
+                  "size-4 shrink-0 transition-transform motion-reduce:transition-none",
+                  moreOpen ? "" : "-rotate-90",
                 )}
               />
               <span>More</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {showMore || moreActive ? (
-          <NavGroup label="" items={moreItems} pathname={pathname} />
-        ) : null}
+        <div
+          className={cn(
+            "grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none",
+            moreOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          )}
+        >
+          <div className="overflow-hidden">
+            <NavGroup label="" items={moreItems} pathname={pathname} />
+          </div>
+        </div>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={pathname.startsWith("/help")} tooltip="Help">
-              <Link to="/help">
+            <SidebarMenuButton
+              asChild
+              isActive={pathname.startsWith("/help")}
+              tooltip="Help"
+              className={activeNavClass}
+            >
+              <Link to="/help" title="Help">
                 <HelpCircle className="size-4 shrink-0" />
                 <span>Help</span>
               </Link>
@@ -212,15 +243,21 @@ function AppSidebar() {
               asChild
               isActive={pathname === profilePath}
               tooltip={isAdmin ? "Admin Profile" : "Profile"}
+              className={activeNavClass}
             >
-              <Link to={profilePath}>
-                <Settings className="size-4 shrink-0" />
-                <span className="min-w-0 truncate">{isAdmin ? "Admin Profile" : "Profile"}</span>
+              <Link to={profilePath} title={isAdmin ? "Admin Profile" : "Profile"}>
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-fkf-green text-[10px] font-semibold text-navy-foreground">
+                  {initialsOf(profile?.fullName)}
+                </span>
+                <span className="min-w-0 flex-1 truncate">
+                  {profile?.fullName || (isAdmin ? "Admin Profile" : "Profile")}
+                </span>
+                <Settings className="size-4 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleSignOut} tooltip="Log out">
+            <SidebarMenuButton onClick={handleSignOut} tooltip="Log out" title="Log out">
               <LogOut className="size-4 shrink-0" />
               <span>Log out</span>
             </SidebarMenuButton>
