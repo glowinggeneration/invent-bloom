@@ -1,10 +1,14 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { PageTitle, Card } from "@/components/ui-kit";
+import { Card } from "@/components/ui-kit";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
+import { OverviewStateGate, type SourceHealth } from "@/components/overview/state-gate";
+import { useProfile } from "@/hooks/use-profile";
+import { isAdminEmail } from "@/lib/access";
+import { listXAccounts } from "@/lib/publish.functions";
 import {
   ConversationMixCard,
   EntityFocusCard,
@@ -57,9 +61,14 @@ export const Route = createFileRoute("/_authenticated/overview")({
 function OverviewPage() {
   const [window, setWindow] = useState<OverviewWindow>("24h");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const fetchOverview = useServerFn(getOverview);
   const fetchIntel = useServerFn(getOverviewIntel);
   const fetchBrandHealth = useServerFn(getBrandHealth);
+  const fetchXAccounts = useServerFn(listXAccounts);
+
+  const { data: profile } = useProfile();
+  const isAdmin = isAdminEmail(profile?.email);
 
   const overview = useQuery({
     queryKey: ["overview", "data", window],
@@ -88,6 +97,27 @@ function OverviewPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Connected-source health: this app only models it for X accounts, and
+  // only administrators can see or manage connections (same gate as the
+  // Linked Accounts page). Reuses that page's query key so the two share a
+  // cache instead of double-fetching.
+  const sourcesQuery = useQuery({
+    queryKey: ["x-accounts", "all"],
+    queryFn: () => fetchXAccounts({ data: { scope: "all" } }),
+    enabled: isAdmin,
+    refetchInterval: 60_000,
+  });
+
+  const sources: SourceHealth[] = useMemo(
+    () =>
+      (sourcesQuery.data ?? []).map((account) => ({
+        id: account.id,
+        label: account.displayName || account.handle,
+        status: account.suspended || !account.isActive || !account.hasToken ? "error" : "ready",
+      })),
+    [sourcesQuery.data],
+  );
+
   const refreshIntel = async () => {
     const fresh = await fetchIntel({ data: { refresh: true } });
     queryClient.setQueryData(["overview", "intel"], fresh);
@@ -96,150 +126,109 @@ function OverviewPage() {
   const rangeLabel =
     OVERVIEW_WINDOWS.find((item) => item.value === window)?.label ?? "Current window";
 
+  const lastCheckedLabel = overview.dataUpdatedAt
+    ? `Checked ${new Date(overview.dataUpdatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+    : undefined;
+
   return (
     <WorkspaceShell title="Overview" wide>
-      <PageTitle
-        description="How the federation and the president are being talked about, across every connected platform."
-        actions={
-          <div className="flex items-center gap-1 rounded-full border border-border p-1">
-            {OVERVIEW_WINDOWS.map((w) => (
-              <button
-                key={w.value}
-                type="button"
-                onClick={() => setWindow(w.value)}
-                className={
-                  w.value === window
-                    ? "rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
-                    : "rounded-full px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted"
-                }
-              >
-                {w.label}
-              </button>
-            ))}
-          </div>
-        }
+      <OverviewStateGate
+        loading={overview.isLoading || (isAdmin && sourcesQuery.isLoading)}
+        fatalQueryError={overview.isError || (!overview.isLoading && !overview.data)}
+        sourcesKnown={isAdmin && !sourcesQuery.isLoading}
+        sources={sources}
+        empty={overview.data?.empty ?? false}
+        range={window}
+        lastCheckedLabel={lastCheckedLabel}
+        isAdmin={isAdmin}
+        onRangeChange={setWindow}
+        onViewMentions={() => void navigate({ to: "/mentions" })}
+        onOpenConnections={() => void navigate({ to: "/linked-accounts" })}
+        onRefresh={() => {
+          void overview.refetch();
+          void intel.refetch();
+          if (isAdmin) void sourcesQuery.refetch();
+        }}
       >
-        Overview
-      </PageTitle>
+        {overview.data ? (
+          <div className="grid gap-5">
+            {/* Full-width executive KPIs */}
+            <OverviewKpis data={overview.data} />
 
-      {overview.isLoading ? (
-        <SkeletonRegion label="Loading overview" className="grid gap-5">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="rounded-2xl border border-border bg-card p-4">
-                <Skeleton className="h-3 w-2/5" />
-                <Skeleton className="mt-3 h-7 w-1/3" />
+            {/* Left context · centre intelligence · right decisions */}
+            <div className="grid items-start gap-5 xl:grid-cols-[15rem_minmax(0,1fr)_19rem]">
+              <div className="grid gap-4 xl:order-1">
+                <ConversationMixCard data={overview.data} />
+                <EntityFocusCard data={overview.data} />
+                <ComparedWithNormalCard />
               </div>
-            ))}
-          </div>
-          <div className="grid items-start gap-5 xl:grid-cols-[15rem_minmax(0,1fr)_19rem]">
-            <div className="grid gap-4 xl:order-1">
-              <Skeleton className="h-40 rounded-2xl" />
-              <Skeleton className="h-40 rounded-2xl" />
-              <Skeleton className="h-28 rounded-2xl" />
-            </div>
-            <div className="grid min-w-0 gap-4 xl:order-2">
-              <Skeleton className="h-48 rounded-2xl" />
-              <Skeleton className="h-32 rounded-2xl" />
-              <div className="grid gap-4 2xl:grid-cols-2">
-                <Skeleton className="h-40 rounded-2xl" />
-                <Skeleton className="h-40 rounded-2xl" />
+
+              <div className="grid min-w-0 gap-4 xl:order-2">
+                <VolumeCard data={overview.data} />
+                <TopNarrativesCard />
+                <div className="grid gap-4 2xl:grid-cols-2">
+                  <ConversationContextPanel />
+                  <TopContentCard data={overview.data} />
+                </div>
               </div>
-            </div>
-            <div className="grid gap-4 xl:order-3">
-              <Skeleton className="h-56 rounded-2xl" />
-              <Skeleton className="h-32 rounded-2xl" />
-              <Skeleton className="h-32 rounded-2xl" />
-            </div>
-          </div>
-        </SkeletonRegion>
-      ) : overview.data ? (
-        <div className="grid gap-5">
-          {overview.data.empty ? (
-            <Card className="p-5">
-              <p className="type-body">Nothing here yet.</p>
-              <p className="type-meta mt-1 text-muted-foreground">
-                Check Mentions, or widen the time range.
-              </p>
-            </Card>
-          ) : null}
 
-          {/* Full-width executive KPIs */}
-          <OverviewKpis data={overview.data} />
-
-          {/* Left context · centre intelligence · right decisions */}
-          <div className="grid items-start gap-5 xl:grid-cols-[15rem_minmax(0,1fr)_19rem]">
-            <div className="grid gap-4 xl:order-1">
-              <ConversationMixCard data={overview.data} />
-              <EntityFocusCard data={overview.data} />
-              <ComparedWithNormalCard />
-            </div>
-
-            <div className="grid min-w-0 gap-4 xl:order-2">
-              <VolumeCard data={overview.data} />
-              <TopNarrativesCard />
-              <div className="grid gap-4 2xl:grid-cols-2">
-                <ConversationContextPanel />
-                <TopContentCard data={overview.data} />
+              <div className="grid gap-4 xl:order-3">
+                {brandHealth.data ? (
+                  <OverviewNextMove data={brandHealth.data} rangeLabel={rangeLabel} />
+                ) : brandHealth.isLoading ? (
+                  <SkeletonRegion label="Loading recommended next move">
+                    <Skeleton className="h-56 rounded-2xl" />
+                  </SkeletonRegion>
+                ) : null}
+                <RisksCard />
+                <OpportunitiesCard />
+                <ConversationsToJoinCard intel={intel.data} loading={intel.isFetching} />
               </div>
             </div>
 
-            <div className="grid gap-4 xl:order-3">
-              {brandHealth.data ? (
-                <OverviewNextMove data={brandHealth.data} rangeLabel={rangeLabel} />
-              ) : brandHealth.isLoading ? (
-                <SkeletonRegion label="Loading recommended next move">
-                  <Skeleton className="h-56 rounded-2xl" />
-                </SkeletonRegion>
-              ) : null}
-              <RisksCard />
-              <OpportunitiesCard />
-              <ConversationsToJoinCard intel={intel.data} loading={intel.isFetching} />
-            </div>
-          </div>
+            {/* Jump nav so the deeper sections are reachable from the top */}
+            <OverviewSectionNav />
 
-          {/* Jump nav so the deeper sections are reachable from the top */}
-          <OverviewSectionNav />
+            {/* Deeper intelligence: dominant narrative column + narrow evidence column */}
+            <div className="grid gap-5 border-t border-border pt-5 xl:grid-cols-[minmax(0,1fr)_19rem]">
+              <div className="grid min-w-0 gap-4">
+                <div id="signals" className="scroll-mt-28">
+                  <OverviewSignals data={overview.data} />
+                </div>
+                <div id="intelligence" className="scroll-mt-28">
+                  <OverviewIntelPanel
+                    intel={intel.data}
+                    loading={intel.isFetching}
+                    onRefresh={() => void refreshIntel()}
+                  />
+                </div>
+                <div id="brief" className="scroll-mt-28">
+                  <IntelligenceBriefSection includeSourceAuthority={false} />
+                </div>
+                <div id="official" className="scroll-mt-28">
+                  <OfficialPosts />
+                </div>
+              </div>
 
-          {/* Deeper intelligence: dominant narrative column + narrow evidence column */}
-          <div className="grid gap-5 border-t border-border pt-5 xl:grid-cols-[minmax(0,1fr)_19rem]">
-            <div className="grid min-w-0 gap-4">
-              <div id="signals" className="scroll-mt-28">
-                <OverviewSignals data={overview.data} />
-              </div>
-              <div id="intelligence" className="scroll-mt-28">
-                <OverviewIntelPanel
-                  intel={intel.data}
-                  loading={intel.isFetching}
-                  onRefresh={() => void refreshIntel()}
-                />
-              </div>
-              <div id="brief" className="scroll-mt-28">
-                <IntelligenceBriefSection includeSourceAuthority={false} />
-              </div>
-              <div id="official" className="scroll-mt-28">
-                <OfficialPosts />
-              </div>
-            </div>
-
-            <div className="grid gap-4">
-              <div id="accounts" className="scroll-mt-28">
-                <AccountsCard data={overview.data} />
-              </div>
-              <div id="topics" className="scroll-mt-28">
-                <TrendingTopicsCard intel={intel.data} loading={intel.isFetching} />
-              </div>
-              <div id="sources" className="scroll-mt-28">
-                <SourceAuthorityPanel />
+              <div className="grid gap-4">
+                <div id="accounts" className="scroll-mt-28">
+                  <AccountsCard data={overview.data} />
+                </div>
+                <div id="topics" className="scroll-mt-28">
+                  <TrendingTopicsCard intel={intel.data} loading={intel.isFetching} />
+                </div>
+                <div id="sources" className="scroll-mt-28">
+                  <SourceAuthorityPanel />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <Card className="p-5">
-          <p className="type-meta text-muted-foreground">We couldn't load this right now.</p>
-        </Card>
-      )}
+        ) : (
+          <Card className="p-5">
+            <p className="type-meta text-muted-foreground">We couldn't load this right now.</p>
+          </Card>
+        )}
+      </OverviewStateGate>
     </WorkspaceShell>
   );
 }

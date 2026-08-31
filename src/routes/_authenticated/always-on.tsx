@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ExternalLink, FileCheck2, Loader2, Search } from "lucide-react";
+import { ExternalLink, FileCheck2, Loader2 } from "lucide-react";
+import { SearchToolbar } from "@/components/core/expandable-toolbar";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { useProfile } from "@/hooks/use-profile";
 import { isAdminEmail } from "@/lib/access";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageTitle, StatCard, LockScreen, EmptyState, PageToolbar } from "@/components/ui-kit";
@@ -103,19 +103,7 @@ function AlwaysOnPage() {
       </div>
 
       <PageToolbar className="mt-5">
-        <div className="relative w-full sm:max-w-md">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search published content or account…"
-            aria-label="Search published content"
-            className="h-10 bg-background pl-9"
-          />
-        </div>
+        <SearchToolbar onSearch={setSearch} placeholder="Search published content or account…" />
         <Button asChild variant="outline" size="sm" className="sm:ml-auto">
           <Link to="/admin/accounts">Manage account planning</Link>
         </Button>

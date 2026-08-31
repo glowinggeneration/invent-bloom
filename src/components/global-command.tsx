@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { isAdminEmail } from "@/lib/access";
 
@@ -249,21 +248,23 @@ export function GlobalCommandPalette() {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="gap-2"
+      <button
+        type="button"
         onClick={() => setOpen(true)}
-        aria-label="Open global search"
+        aria-label="Open search"
+        title="Search"
+        className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-[220px] sm:justify-start sm:border-border sm:bg-muted sm:px-3"
       >
-        <Search className="size-4" />
-        <span className="hidden lg:inline">Search</span>
-        <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground xl:inline">
+        <Search aria-hidden="true" className="size-[18px] shrink-0" />
+        <span className="hidden flex-1 truncate text-left text-sm font-medium sm:inline">
+          Search
+        </span>
+        <kbd className="hidden h-6 min-w-[34px] items-center justify-center rounded-md border border-border bg-background px-1.5 text-[11px] font-medium text-muted-foreground shadow-sm sm:inline-flex">
           {typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
             ? "⌘K"
             : "Ctrl K"}
         </kbd>
-      </Button>
+      </button>
 
       <Dialog
         open={open}

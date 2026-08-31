@@ -7,7 +7,13 @@
  */
 
 export type SendSlot = { id: string; from: string; to: string };
-export type SendDay = { id: string; weekday: number; label: string; enabled: boolean; slots: SendSlot[] };
+export type SendDay = {
+  id: string;
+  weekday: number;
+  label: string;
+  enabled: boolean;
+  slots: SendSlot[];
+};
 
 export const WEEKDAY_LABELS = [
   "Sunday",
@@ -77,5 +83,7 @@ export function nextWindowStart(days: SendDay[], from: Date = new Date()): Date 
 export function sendWindowSummary(days: SendDay[]): string {
   const active = days.filter((d) => d.enabled && d.slots.length > 0);
   if (active.length === 0) return "Any time";
-  return active.map((d) => `${d.label.slice(0, 3)} ${d.slots.map((s) => `${s.from}–${s.to}`).join(", ")}`).join(" · ");
+  return active
+    .map((d) => `${d.label.slice(0, 3)} ${d.slots.map((s) => `${s.from}–${s.to}`).join(", ")}`)
+    .join(" · ");
 }

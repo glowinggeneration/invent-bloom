@@ -8,7 +8,6 @@ import {
   FileUp,
   Loader2,
   RefreshCw,
-  Search,
   ShieldCheck,
   Trash2,
   Upload,
@@ -16,6 +15,7 @@ import {
 import { toast } from "sonner";
 
 import { AccountCostSummary } from "@/components/account-cost-summary";
+import { FilterableDataTable } from "@/components/core/filterable-data-table";
 import { friendlyError } from "@/lib/friendly-errors";
 import { DataFreshness } from "@/components/data-freshness";
 import { WorkspaceShell } from "@/components/workspace-shell";
@@ -228,7 +228,6 @@ function AdminAccountsPage() {
   const removeAccount = useServerFn(deleteXAccount);
   const syncHandles = useServerFn(syncAccountHandles);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState("");
   const [codes, setCodes] = useState<Record<string, string>>({});
   const [lastUpload, setLastUpload] = useState<{
     results: UploadResult[];
@@ -361,15 +360,6 @@ function AdminAccountsPage() {
   });
 
   const accounts = accountsQuery.data ?? [];
-  const visible = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return accounts;
-    return accounts.filter((account) =>
-      `${account.displayName} ${account.personaLabel} ${account.handle}`
-        .toLowerCase()
-        .includes(term),
-    );
-  }, [accounts, query]);
   const ready = accounts.filter(
     (account) => account.isActive && account.hasToken && !account.suspended,
   ).length;
@@ -557,15 +547,6 @@ function AdminAccountsPage() {
       ) : null}
 
       <PageToolbar>
-        <div className="relative w-full sm:max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search linked accounts…"
-            className="h-10 bg-background pl-9"
-          />
-        </div>
         <div className="type-meta text-muted-foreground sm:ml-auto">
           <DataFreshness
             at={accounts[0]?.handleSyncedAt ?? accounts[0]?.lastActivityAt}
@@ -582,74 +563,71 @@ function AdminAccountsPage() {
               <div key={item} className="h-24 animate-pulse rounded-xl bg-muted" />
             ))}
           </div>
-        ) : !visible.length ? (
+        ) : !accounts.length ? (
           <EmptyState
-            title={accounts.length ? "No accounts match that search" : "Nothing here yet."}
-            description={
-              accounts.length
-                ? "Clear the search to see all linked accounts."
-                : "Nothing here yet. Import a CSV or text file to connect authorised X accounts."
-            }
+            title="Nothing here yet."
+            description="Nothing here yet. Import a CSV or text file to connect authorised X accounts."
           />
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            <ul className="divide-y divide-border">
-              {visible.map((account) => {
-                const readyNow = account.isActive && account.hasToken && !account.suspended;
-                return (
-                  <li
-                    key={account.id}
-                    className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5"
+          <FilterableDataTable
+            rows={accounts}
+            getId={(account) => account.id}
+            searchableText={(account) =>
+              `${account.displayName} ${account.personaLabel} ${account.handle}`
+            }
+            avatarField={{
+              getUrl: (account) => account.avatarUrl ?? undefined,
+              getFallback: (account) => account.handle.slice(0, 2).toUpperCase(),
+            }}
+            titleColumn={{
+              header: "Account",
+              render: (account) => (
+                <div className="min-w-0">
+                  <p className="truncate type-body font-semibold">
+                    {account.displayName || account.personaLabel || account.handle}
+                  </p>
+                  <p className="truncate type-meta text-muted-foreground">
+                    @{account.handle} · {relativeTime(account.lastActivityAt)}
+                  </p>
+                </div>
+              ),
+            }}
+            statusField={{
+              label: "Status",
+              getValue: (account) =>
+                account.isActive && account.hasToken && !account.suspended
+                  ? "Ready"
+                  : account.suspended
+                    ? "Suspended"
+                    : account.hasToken
+                      ? "Inactive"
+                      : "Reconnect",
+              options: ["Ready", "Suspended", "Inactive", "Reconnect"],
+              badgeClassName: (value) =>
+                value === "Ready"
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  : value === "Suspended"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+            }}
+            extraColumns={[
+              {
+                key: "actions",
+                header: "",
+                render: (account) => (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => remove.mutate(account.id)}
+                    disabled={remove.isPending}
+                    aria-label={`Remove ${account.handle}`}
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {account.avatarUrl ? (
-                        <img
-                          src={account.avatarUrl}
-                          alt=""
-                          loading="lazy"
-                          className="size-10 shrink-0 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted type-meta font-semibold text-muted-foreground">
-                          {account.handle.slice(0, 2).toUpperCase()}
-                        </span>
-                      )}
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate type-body font-semibold">
-                            {account.displayName || account.personaLabel || account.handle}
-                          </p>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${readyNow ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : account.suspended ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-700 dark:text-amber-300"}`}
-                          >
-                            {readyNow
-                              ? "Ready"
-                              : account.suspended
-                                ? "Suspended"
-                                : account.hasToken
-                                  ? "Inactive"
-                                  : "Reconnect"}
-                          </span>
-                        </div>
-                        <p className="truncate type-meta text-muted-foreground">
-                          @{account.handle} · {relativeTime(account.lastActivityAt)}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => remove.mutate(account.id)}
-                      disabled={remove.isPending}
-                      aria-label={`Remove ${account.handle}`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+                    <Trash2 className="size-4" />
+                  </Button>
+                ),
+              },
+            ]}
+          />
         )}
       </div>
 

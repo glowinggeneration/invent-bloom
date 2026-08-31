@@ -26,9 +26,6 @@ export function PageTitle({
     <header className="mb-5 grid grid-cols-1 items-start gap-3 lg:mb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-5">
       <div className="min-w-0">
         <h1 className="type-title max-w-full break-words lg:truncate">{children}</h1>
-        {description ? (
-          <p className="type-meta mt-1.5 max-w-3xl text-muted-foreground sm:mt-2">{description}</p>
-        ) : null}
       </div>
       {actions ? (
         <div className="flex min-w-0 flex-wrap items-center gap-2 lg:shrink-0 lg:justify-end">

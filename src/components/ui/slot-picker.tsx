@@ -150,7 +150,10 @@ export function SlotPicker({
                       type="button"
                       transition={spring}
                       onClick={() =>
-                        patch(day.id, (d) => ({ ...d, slots: [...d.slots, newSlot("14:00", "16:00")] }))
+                        patch(day.id, (d) => ({
+                          ...d,
+                          slots: [...d.slots, newSlot("14:00", "16:00")],
+                        }))
                       }
                       className="mt-1 flex w-full items-center justify-center gap-2 rounded-md border border-border bg-muted py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
                     >

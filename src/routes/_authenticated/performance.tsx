@@ -36,6 +36,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
+import { MinimalCarousel, type MinimalCarouselCard } from "@/components/core/minimal-carousel";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import {
   CommandGrid,
@@ -53,7 +54,6 @@ import {
   PageTitle,
   PageToolbar,
   SectionTitle,
-  StatCard,
 } from "@/components/ui-kit";
 import { useProfile } from "@/hooks/use-profile";
 import { isAdminEmail } from "@/lib/access";
@@ -518,32 +518,43 @@ function PerformancePage() {
         </div>
       ) : (
         <div className="mt-5 grid gap-5">
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              icon={Eye}
-              label="Impressions"
-              value={formatCount(totals.impressions)}
-              hint={`Across ${totals.posts + totals.replies} published items`}
-            />
-            <StatCard
-              icon={Users}
-              label="Reach"
-              value={formatCount(totals.reach)}
-              hint={report ? `${report.headline.personas} participating accounts` : undefined}
-            />
-            <StatCard
-              icon={Activity}
-              label="Engagements"
-              value={formatCount(totals.engagements)}
-              hint={`${totals.engagementRate}% engagement rate`}
-            />
-            <StatCard
-              icon={MessageCircle}
-              label="Posts & replies"
-              value={formatCount(totals.posts + totals.replies)}
-              hint={`${totals.posts} posts · ${totals.replies} replies`}
-            />
-          </section>
+          <MinimalCarousel
+            className="max-w-none"
+            cards={
+              [
+                {
+                  id: "impressions",
+                  title: "Impressions",
+                  value: `${formatCount(totals.impressions)} · ${totals.posts + totals.replies} items`,
+                  colorClassName: "bg-primary",
+                  icon: Eye,
+                },
+                {
+                  id: "reach",
+                  title: "Reach",
+                  value: report
+                    ? `${formatCount(totals.reach)} · ${report.headline.personas} accounts`
+                    : formatCount(totals.reach),
+                  colorClassName: "bg-sky-600",
+                  icon: Users,
+                },
+                {
+                  id: "engagements",
+                  title: "Engagements",
+                  value: `${formatCount(totals.engagements)} · ${totals.engagementRate}% rate`,
+                  colorClassName: "bg-emerald-600",
+                  icon: Activity,
+                },
+                {
+                  id: "posts",
+                  title: "Posts & replies",
+                  value: `${totals.posts} posts · ${totals.replies} replies`,
+                  colorClassName: "bg-amber-600",
+                  icon: MessageCircle,
+                },
+              ] satisfies MinimalCarouselCard[]
+            }
+          />
 
           <CommandGrid left={leftRail} right={rightRail}>
             {view === "overview" ? (

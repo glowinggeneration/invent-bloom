@@ -745,7 +745,8 @@ export function TimingFields({
       <div className="space-y-2">
         <p className="text-xs font-medium">Preferred send windows</p>
         <p className="text-[11px] text-muted-foreground">
-          Optional. The campaign start moves forward to the next open window — {sendWindowSummary(timing.windows)}.
+          Optional. The campaign start moves forward to the next open window —{" "}
+          {sendWindowSummary(timing.windows)}.
         </p>
         <SlotPicker days={timing.windows} onChange={timing.setWindows} />
       </div>

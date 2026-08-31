@@ -270,7 +270,6 @@ function RecommendationsPage() {
             </Link>
           </Button>
           <h1 className="mt-1 type-title">Recommendations</h1>
-          <p className="mt-1 type-meta text-muted-foreground">Pick a rewrite to save or copy.</p>
         </div>
         {analysis && (
           <div className="flex flex-wrap items-center gap-2">

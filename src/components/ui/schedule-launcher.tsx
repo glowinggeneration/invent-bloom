@@ -6,6 +6,7 @@ import { CalendarClock, Loader2, Send, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 
+import { TimeMaskInput } from "@/components/core/time-mask-input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ function todayISO() {
 function nextHour() {
   const now = new Date();
   now.setHours(now.getHours() + 1, 0, 0, 0);
-  return `${String(now.getHours()).padStart(2, "0")}:00`;
+  return `${String(now.getHours()).padStart(2, "0")}:00:00`;
 }
 
 export function ScheduleLauncher({
@@ -94,18 +95,12 @@ export function ScheduleLauncher({
                     className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium" htmlFor="schedule-time">
-                    Start time
-                  </label>
-                  <input
-                    id="schedule-time"
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                </div>
+                <TimeMaskInput
+                  label="Start time"
+                  value={time}
+                  onChange={(next) => setTime(next)}
+                  className="max-w-none space-y-1.5"
+                />
               </div>
 
               <Button
@@ -113,7 +108,11 @@ export function ScheduleLauncher({
                 disabled={disabled || busy || !valid}
                 onClick={() => at && onSchedule(at)}
               >
-                {busy ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <CalendarClock className="size-4" />
+                )}
                 Schedule campaign
               </Button>
 

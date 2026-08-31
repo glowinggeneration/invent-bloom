@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useLocation } from "@tanstack/react-router";
 import { Loader2, RefreshCw, Users } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { InlineAction } from "@/components/core/inline-action";
 import { SectionTitle } from "@/components/ui-kit";
 import { OverviewActions } from "@/components/overview-actions";
 import { OverviewIntelligencePanel } from "@/components/overview-intelligence";
@@ -97,19 +97,13 @@ export function BrandAccounts() {
               Live followers and activity pulled straight from X.
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => refresh.mutate()}
-            disabled={refresh.isPending}
-          >
-            {refresh.isPending ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <RefreshCw className="size-4" aria-hidden="true" />
-            )}
-            Check for updates
-          </Button>
+          <InlineAction
+            label="Check for updates"
+            icon={<RefreshCw className="size-4" aria-hidden="true" />}
+            actionText="Refresh"
+            onAction={() => refresh.mutateAsync().then(() => undefined)}
+            className="w-auto max-w-none"
+          />
         </div>
 
         {isPending ? (
