@@ -57,7 +57,7 @@ function PublishPage() {
 
   return (
     <WorkspaceShell title="Create campaign">
-      <PageTitle description="Choose the publishing outcome you need. Each workflow takes you through content, account selection, review and timing.">
+      <PageTitle description="Choose the action the campaign should take. Each route remains reviewed and controlled.">
         Create campaign
       </PageTitle>
       <PublishLanding startChoosing={search.choose !== false} />

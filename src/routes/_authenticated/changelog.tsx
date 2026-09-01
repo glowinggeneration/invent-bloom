@@ -1,16 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  Activity,
-  ChevronDown,
-  FileText,
-  Radar,
-  ShieldCheck,
-  Sparkles,
-  Wrench,
-} from "lucide-react";
+import { Activity, ChevronDown, FileText, Radar, ShieldCheck, Sparkles } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { Card, PageTitle, SectionTitle } from "@/components/ui-kit";
+import { PageTitle } from "@/components/ui-kit";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/changelog")({
   head: () => ({
@@ -79,70 +72,95 @@ const ENTRIES = [
 ] as const;
 
 function ChangelogPage() {
-  const [expanded, setExpanded] = useState<number[]>([0]);
+  const [expanded, setExpanded] = useState<string[]>([ENTRIES[0].title]);
+  const dates = Array.from(new Set(ENTRIES.map((entry) => entry.date)));
 
-  function toggle(index: number) {
+  function toggle(title: string) {
     setExpanded((current) =>
-      current.includes(index) ? current.filter((item) => item !== index) : [...current, index],
+      current.includes(title) ? current.filter((item) => item !== title) : [...current, title],
     );
   }
 
   return (
-    <WorkspaceShell title="Changelog" wide>
-      <PageTitle description="A concise internal record of material product changes. Minor fixes and maintenance are intentionally omitted.">
+    <WorkspaceShell title="Changelog">
+      <PageTitle description="Material product changes that affect how teams monitor, decide, test, execute and report.">
         Changelog
       </PageTitle>
 
-      <Card className="mt-6 p-5">
-        <div className="flex items-start gap-3">
-          <Wrench className="mt-0.5 size-5 shrink-0 text-primary" />
-          <div>
-            <SectionTitle>How to read this page</SectionTitle>
-            <p className="type-body mt-2 max-w-4xl leading-7 text-muted-foreground">
-              This is a user-facing product summary, not a technical deployment log. It describes
-              changes that affect how teams monitor, decide, test, execute or report without
-              exposing internal architecture, credentials or proprietary implementation details.
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      <div className="mt-6 grid gap-4">
-        {ENTRIES.map((entry, index) => {
-          const Icon = entry.icon;
+      <div className="grid gap-8">
+        {dates.map((date) => {
+          const entries = ENTRIES.filter((entry) => entry.date === date);
           return (
-            <Card key={`${entry.title}-${index}`} className="p-0">
-              <button
-                type="button"
-                onClick={() => toggle(index)}
-                aria-expanded={expanded.includes(index)}
-                className="flex w-full items-start gap-3 p-5 text-left sm:p-6"
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10">
-                  <Icon className="size-5 text-primary" />
+            <section key={date} aria-labelledby={`changelog-${date.replaceAll(" ", "-")}`}>
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <h2
+                  id={`changelog-${date.replaceAll(" ", "-")}`}
+                  className="type-card font-semibold"
+                >
+                  {date}
+                </h2>
+                <span className="type-meta text-muted-foreground">
+                  {entries.length} product updates
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block type-meta font-semibold text-muted-foreground">
-                    {entry.date}
-                  </span>
-                  <span className="mt-1 block type-section">{entry.title}</span>
-                  <span className="mt-1 block type-meta text-muted-foreground">
-                    {entry.items.length} updates
-                  </span>
-                </span>
-                <ChevronDown
-                  className={`mt-1 size-5 shrink-0 text-muted-foreground transition-transform ${expanded.includes(index) ? "rotate-180" : ""}`}
-                  aria-hidden="true"
-                />
-              </button>
-              {expanded.includes(index) ? (
-                <ul className="border-t border-border px-6 pb-6 pt-4 list-disc space-y-2 pl-11 type-body leading-7 text-muted-foreground">
-                  {entry.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              ) : null}
-            </Card>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                {entries.map((entry, index) => {
+                  const Icon = entry.icon;
+                  const isExpanded = expanded.includes(entry.title);
+                  const contentId = `changelog-entry-${entry.title
+                    .toLowerCase()
+                    .replaceAll(/[^a-z0-9]+/g, "-")}`;
+
+                  return (
+                    <article
+                      key={entry.title}
+                      className={cn(index > 0 && "border-t border-border")}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggle(entry.title)}
+                        aria-expanded={isExpanded}
+                        aria-controls={contentId}
+                        className="flex min-h-20 w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50 sm:px-6"
+                      >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10">
+                          <Icon className="size-5 text-primary" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block type-card font-semibold">{entry.title}</span>
+                          <span className="mt-1 block type-meta text-muted-foreground">
+                            {entry.items.length} updates
+                          </span>
+                        </span>
+                        <ChevronDown
+                          className={cn(
+                            "size-5 shrink-0 text-muted-foreground transition-transform",
+                            isExpanded && "rotate-180",
+                          )}
+                          aria-hidden="true"
+                        />
+                      </button>
+
+                      {isExpanded ? (
+                        <div id={contentId} className="border-t border-border px-5 py-5 sm:px-6">
+                          <ul className="grid gap-3 pl-14 type-body text-muted-foreground">
+                            {entry.items.map((item) => (
+                              <li
+                                key={item}
+                                className="relative pl-4 before:absolute before:left-0 before:top-[0.65em] before:size-1 before:rounded-full before:bg-muted-foreground/60"
+                              >
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
           );
         })}
       </div>

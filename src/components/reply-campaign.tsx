@@ -6,7 +6,6 @@ import {
   Columns2,
   BarChart3,
   Bookmark,
-  CalendarClock,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -32,7 +31,6 @@ import { ExternalIdentity } from "@/components/external-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
 import { GoalSwitcher } from "@/components/publish-goals";
 import {
-  CampaignNameStep,
   CampaignRunningDialog,
   LaunchActions,
   PersonaPicker,
@@ -509,6 +507,25 @@ export function ReplyCampaign() {
   );
 
   const groupLabel = personas.groupLabel;
+  const requirementsReady = [
+    campaignName.trim().length > 0,
+    trimmedTarget.length > 0,
+    commentText.trim().length > 0 && remaining >= 0,
+    selected.length > 0,
+    reviewed,
+  ].filter(Boolean).length;
+  const setupSteps = [
+    { id: "reply-details", label: "Details" },
+    { id: "reply-personas", label: "Personas" },
+    { id: "reply-voice", label: "Voice" },
+    { id: "reply-timing", label: "Timing" },
+    { id: "reply-review", label: "Review" },
+  ];
+  const queueReplies = () => {
+    const spread = spreadHours === 0 ? 4 : spreadHours;
+    if (spreadHours === 0) setSpreadHours(4);
+    publishMutation.mutate({ now: false, spread });
+  };
 
   return (
     <WorkspaceShell title="Reply campaign">
@@ -540,402 +557,484 @@ export function ReplyCampaign() {
               busy={publishMutation.isPending}
               disabled={!canSubmit}
               onLaunch={() => publishMutation.mutate({ now: true })}
-              onQueue={() => publishMutation.mutate({ now: false })}
+              onQueue={queueReplies}
               launchLabel="Publish now"
               queueLabel="Queue replies"
             />
           </div>
         </header>
 
+        <div className="sticky top-16 z-10 mb-4 flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-background/95 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
+          <nav
+            className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1"
+            aria-label="Reply campaign setup steps"
+          >
+            {setupSteps.map((step, index) => (
+              <a
+                key={step.id}
+                href={`#${step.id}`}
+                className="flex min-h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <span className="grid size-5 place-items-center rounded-full bg-muted text-[11px] text-foreground">
+                  {index + 1}
+                </span>
+                {step.label}
+              </a>
+            ))}
+          </nav>
+          <span className="shrink-0 px-2 text-xs font-medium text-muted-foreground">
+            {requirementsReady} of 5 requirements ready
+          </span>
+        </div>
+
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           {/* -------- form column -------- */}
           <div className="min-w-0 space-y-4">
-            <CampaignNameStep
-              index={1}
-              value={campaignName}
-              onChange={setCampaignName}
-              placeholder="e.g. Reply to league fixture backlash"
-            />
-
-            <Step
-              index={2}
-              title="Target tweet"
-              description="Add the tweet you want your personas to reply to."
-            >
-              <div className="relative">
-                <Link2 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={targetTweetUrl}
-                  onChange={(e) => setTargetTweetUrl(e.target.value)}
-                  placeholder="https://x.com/user/status/123…"
-                  className="h-11 pl-9"
-                  aria-label="Target tweet link"
-                />
-                {targetPreview.isFetching && (
-                  <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                )}
-              </div>
-              {trimmedTarget && targetPreview.data?.error && (
-                <p className="text-xs text-destructive">{targetPreview.data.error}</p>
-              )}
-            </Step>
-
-            <Step
-              index={3}
-              title="Reply message"
-              description="Write the message your personas will use."
-              aside={
-                <span
-                  className={cn(
-                    "text-xs tabular-nums",
-                    remaining < 0 ? "text-destructive" : "text-muted-foreground",
-                  )}
-                >
-                  {textLength(commentText)} / {TWEET_LIMIT}
-                </span>
-              }
-            >
-              {suggesting || suggestion ? (
-                <div className="rounded-xl border border-primary/25 bg-primary/5 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-2 text-xs font-semibold text-primary">
-                      <Sparkles className="size-4" aria-hidden="true" />
-                      Suggested response
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      disabled={suggesting || !/status\/\d+/.test(trimmedTarget)}
-                      onClick={() => suggestNow({ url: trimmedTarget, apply: true })}
-                    >
-                      {suggesting ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                      {suggesting ? "Drafting…" : "Suggest again"}
-                    </Button>
-                  </div>
-                  {suggestion ? (
-                    <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
-                      {suggestion.objective ? (
-                        <p>
-                          <span className="font-semibold text-foreground">Objective: </span>
-                          {suggestion.objective}
-                        </p>
-                      ) : null}
-                      {suggestion.rationale ? <p>{suggestion.rationale}</p> : null}
-                      {suggestion.notice ? (
-                        <p className="text-destructive">{suggestion.notice}</p>
-                      ) : null}
-                      <p>Edit the draft below before anything is sent.</p>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Reading the post and drafting a reply and objective…
-                    </p>
-                  )}
-                </div>
-              ) : null}
-
-              <Textarea
-                rows={4}
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="What the personas should reply…"
-                className="resize-y"
-                aria-label="Reply message"
-              />
-
-              <div className="rounded-xl border border-border bg-muted/30 p-3">
-                <label htmlFor="persona-briefing" className="text-xs font-medium">
-                  Brief your personas (optional)
-                </label>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Tell them how to frame their replies - angle, what to avoid, what to emphasise.
-                </p>
-                <Textarea
-                  id="persona-briefing"
-                  rows={3}
-                  value={briefing}
-                  onChange={(e) => setBriefing(e.target.value)}
-                  placeholder="e.g. Stay supportive of the federation, question the reporting, no insults, mention grassroots football."
-                  className="mt-2 resize-y"
-                />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setShowLink((v) => !v)}
-                  className="inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground"
-                >
-                  <Link2 className="size-4" /> Add link (optional)
-                </button>
-                <span className="hidden h-4 w-px bg-border sm:block" />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading || media.length >= 4}
-                  className="inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground disabled:opacity-50"
-                >
-                  {uploading ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="size-4" />
-                  )}
-                  Add media (optional)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => variationsMutation.mutate()}
-                  disabled={
-                    variationsMutation.isPending ||
-                    selected.length === 0 ||
-                    commentText.trim().length === 0
-                  }
-                  className="ml-auto inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground disabled:opacity-50"
-                >
-                  {variationsMutation.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="size-4 text-primary" />
-                  )}
-                  Add variations
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept="image/*,image/gif,video/*"
-                  multiple
-                  onChange={(e) => handleFiles(e.target.files)}
-                />
-              </div>
-
-              {showLink && (
-                <Input
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://footballkenya.org/…"
-                  aria-label="Link to append"
-                />
-              )}
-
-              {media.length > 0 && (
-                <ul className="flex flex-wrap gap-3">
-                  {media.map((m) => (
-                    <li
-                      key={m.url}
-                      className="relative w-24 overflow-hidden rounded-xl border border-border bg-muted"
-                    >
-                      {m.kind === "video" ? (
-                        <video src={m.url} className="h-16 w-full object-cover" muted playsInline />
-                      ) : (
-                        <img src={m.url} alt={m.name} className="h-16 w-full object-cover" />
-                      )}
-                      <button
-                        type="button"
-                        className="absolute right-1 top-1 rounded-full bg-background/90 p-1"
-                        onClick={() => setMedia((p) => p.filter((x) => x.url !== m.url))}
-                        aria-label={`Remove ${m.name}`}
-                      >
-                        <X className="size-3" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <label className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={likeTarget}
-                  onChange={(e) => setLikeTarget(e.target.checked)}
-                  className="size-4 accent-[hsl(var(--primary))]"
-                />
-                Also like the target tweet from each account
-              </label>
-
-              {variations.length > 0 && (
-                <details className="rounded-xl border border-border bg-muted/30 p-3">
-                  <summary className="cursor-pointer text-xs font-medium">
-                    {variations.length} persona variation{variations.length === 1 ? "" : "s"} ready
-                  </summary>
-                  <ul className="mt-3 space-y-2">
-                    {variations.map((v) => (
-                      <li key={v.accountId} className="rounded-lg bg-background p-2 text-xs">
-                        <span className="font-medium">{v.personaName || v.handle}</span>
-                        <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
-                          {v.commentText}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-            </Step>
-
-            <Step index={4} title="Personas" description="Choose who will reply.">
-              <PersonaPicker
-                id="reply-personas"
-                selection={personas}
-                loading={accountsQuery.isLoading}
-                label="How many personas should respond?"
-              />
-            </Step>
-
-            <Step
-              index={5}
-              title="Tone & intensity"
-              description="Control how your personas write and sound."
-            >
-              <div className="grid gap-4 sm:grid-cols-2">
+            <div id="reply-details" className="scroll-mt-36">
+              <Step
+                index={1}
+                title="Campaign details"
+                description="Name the run, choose the conversation and define the reply."
+              >
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium" htmlFor="reply-tone">
-                    Tone
+                  <label className="text-xs font-medium" htmlFor="reply-campaign-name">
+                    Campaign name
                   </label>
-                  <div className="relative">
-                    <select
-                      id="reply-tone"
-                      value={tone}
-                      onChange={(e) => setTone(e.target.value as PublishTone)}
-                      className="h-11 w-full appearance-none rounded-md border border-input bg-background px-3 pr-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      {TONE_OPTIONS.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">{toneOption(tone).hint}</p>
+                  <Input
+                    id="reply-campaign-name"
+                    value={campaignName}
+                    onChange={(e) => setCampaignName(e.target.value.slice(0, 80))}
+                    placeholder="e.g. Reply to league fixture backlash"
+                    className="max-w-md"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Used to find this run again in Campaigns and Performance.
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium" htmlFor="reply-intensity">
-                      Intensity
-                    </label>
-                    <span className="text-[11px] text-muted-foreground">
-                      {intensityLabel(intensity)}
+
+                <div className="space-y-3 border-t border-border pt-4">
+                  <div>
+                    <p className="text-xs font-medium">Target conversation</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      Add the X post your personas should reply to.
+                    </p>
+                  </div>
+                  <div className="relative">
+                    <Link2 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={targetTweetUrl}
+                      onChange={(e) => setTargetTweetUrl(e.target.value)}
+                      placeholder="https://x.com/user/status/123…"
+                      className="h-11 pl-9"
+                      aria-label="Target tweet link"
+                    />
+                    {targetPreview.isFetching && (
+                      <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {trimmedTarget && targetPreview.data?.error && (
+                    <p className="text-xs text-destructive">{targetPreview.data.error}</p>
+                  )}
+                </div>
+
+                <div className="space-y-4 border-t border-border pt-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-medium">Reply message</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        Write the base message and optional direction for each persona.
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-xs tabular-nums",
+                        remaining < 0 ? "text-destructive" : "text-muted-foreground",
+                      )}
+                    >
+                      {textLength(commentText)} / {TWEET_LIMIT}
                     </span>
                   </div>
-                  <input
-                    id="reply-intensity"
-                    type="range"
-                    min={INTENSITY_MIN}
-                    max={INTENSITY_MAX}
-                    step={1}
-                    value={intensity}
-                    onChange={(e) => setIntensity(clampIntensity(e.target.value))}
-                    className="h-2 w-full cursor-pointer accent-[hsl(var(--primary))]"
-                    aria-valuetext={intensityLabel(intensity)}
+                  {suggesting || suggestion ? (
+                    <div className="rounded-xl border border-primary/25 bg-primary/5 p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-2 text-xs font-semibold text-primary">
+                          <Sparkles className="size-4" aria-hidden="true" />
+                          Suggested response
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          disabled={suggesting || !/status\/\d+/.test(trimmedTarget)}
+                          onClick={() => suggestNow({ url: trimmedTarget, apply: true })}
+                        >
+                          {suggesting ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                          {suggesting ? "Drafting…" : "Suggest again"}
+                        </Button>
+                      </div>
+                      {suggestion ? (
+                        <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                          {suggestion.objective ? (
+                            <p>
+                              <span className="font-semibold text-foreground">Objective: </span>
+                              {suggestion.objective}
+                            </p>
+                          ) : null}
+                          {suggestion.rationale ? <p>{suggestion.rationale}</p> : null}
+                          {suggestion.notice ? (
+                            <p className="text-destructive">{suggestion.notice}</p>
+                          ) : null}
+                          <p>Edit the draft below before anything is sent.</p>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Reading the post and drafting a reply and objective…
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+
+                  <Textarea
+                    rows={4}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="What the personas should reply…"
+                    className="resize-y"
+                    aria-label="Reply message"
                   />
-                  <div className="flex justify-between text-[11px] text-muted-foreground">
-                    <span>Subtle</span>
-                    <span>Full</span>
+
+                  <div className="rounded-xl border border-border bg-muted/30 p-3">
+                    <label htmlFor="persona-briefing" className="text-xs font-medium">
+                      Brief your personas (optional)
+                    </label>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Tell them how to frame their replies - angle, what to avoid, what to
+                      emphasise.
+                    </p>
+                    <Textarea
+                      id="persona-briefing"
+                      rows={3}
+                      value={briefing}
+                      onChange={(e) => setBriefing(e.target.value)}
+                      placeholder="e.g. Stay supportive of the federation, question the reporting, no insults, mention grassroots football."
+                      className="mt-2 resize-y"
+                    />
                   </div>
-                </div>
-              </div>
-            </Step>
 
-            <Step index={6} title="Timing" description="When should the replies be sent?">
-              <div className="relative">
-                <Clock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <select
-                  value={spreadHours}
-                  onChange={(e) => setSpreadHours(Number(e.target.value))}
-                  aria-label="Timing"
-                  className="h-11 w-full appearance-none rounded-md border border-input bg-background pl-9 pr-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {SPREAD_OPTIONS.map((h) => (
-                    <option key={h} value={h}>
-                      {spreadLabel(h)}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Spreading scatters each reply across the window so nothing goes out in one burst.
-              </p>
-            </Step>
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setShowLink((v) => !v)}
+                      className="inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground"
+                    >
+                      <Link2 className="size-4" /> Add link (optional)
+                    </button>
+                    <span className="hidden h-4 w-px bg-border sm:block" />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || media.length >= 4}
+                      className="inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                    >
+                      {uploading ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <ImagePlus className="size-4" />
+                      )}
+                      Add media (optional)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => variationsMutation.mutate()}
+                      disabled={
+                        variationsMutation.isPending ||
+                        selected.length === 0 ||
+                        commentText.trim().length === 0
+                      }
+                      className="ml-auto inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                    >
+                      {variationsMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-4 text-primary" />
+                      )}
+                      Add variations
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept="image/*,image/gif,video/*"
+                      multiple
+                      onChange={(e) => handleFiles(e.target.files)}
+                    />
+                  </div>
 
-            {/* Review gate: replies are previewed before anything is posted */}
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold tracking-tight">Preview before posting</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {variations.length === 0
-                    ? "Generate the replies and read them in the preview panel first."
-                    : `${variations.length} reply(s) ready to review — edit any of them on the right.`}
-                </p>
-              </div>
-              {variations.length === 0 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => variationsMutation.mutate()}
-                  disabled={
-                    variationsMutation.isPending ||
-                    selected.length === 0 ||
-                    commentText.trim().length === 0
-                  }
-                >
-                  {variationsMutation.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="size-4 text-primary" />
+                  {showLink && (
+                    <Input
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                      placeholder="https://footballkenya.org/…"
+                      aria-label="Link to append"
+                    />
                   )}
-                  Preview replies
-                </Button>
-              ) : (
-                <label className="inline-flex items-center gap-2 text-xs font-medium">
-                  <input
-                    type="checkbox"
-                    checked={previewApproved}
-                    onChange={(e) => setPreviewApproved(e.target.checked)}
-                    className="size-4 accent-[hsl(var(--primary))]"
-                  />
-                  I've reviewed these replies
-                </label>
-              )}
+
+                  {media.length > 0 && (
+                    <ul className="flex flex-wrap gap-3">
+                      {media.map((m) => (
+                        <li
+                          key={m.url}
+                          className="relative w-24 overflow-hidden rounded-xl border border-border bg-muted"
+                        >
+                          {m.kind === "video" ? (
+                            <video
+                              src={m.url}
+                              className="h-16 w-full object-cover"
+                              muted
+                              playsInline
+                            />
+                          ) : (
+                            <img src={m.url} alt={m.name} className="h-16 w-full object-cover" />
+                          )}
+                          <button
+                            type="button"
+                            className="absolute right-1 top-1 rounded-full bg-background/90 p-1"
+                            onClick={() => setMedia((p) => p.filter((x) => x.url !== m.url))}
+                            aria-label={`Remove ${m.name}`}
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <label className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={likeTarget}
+                      onChange={(e) => setLikeTarget(e.target.checked)}
+                      className="size-4 accent-[hsl(var(--primary))]"
+                    />
+                    Also like the target tweet from each account
+                  </label>
+
+                  {variations.length > 0 && (
+                    <details className="rounded-xl border border-border bg-muted/30 p-3">
+                      <summary className="cursor-pointer text-xs font-medium">
+                        {variations.length} persona variation{variations.length === 1 ? "" : "s"}{" "}
+                        ready
+                      </summary>
+                      <ul className="mt-3 space-y-2">
+                        {variations.map((v) => (
+                          <li key={v.accountId} className="rounded-lg bg-background p-2 text-xs">
+                            <span className="font-medium">{v.personaName || v.handle}</span>
+                            <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                              {v.commentText}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </div>
+              </Step>
             </div>
 
-            {/* Action bar */}
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
-              <LaunchActions
-                scheduled
-                size="default"
-                busy={publishMutation.isPending}
-                disabled={!canSubmit}
-                onLaunch={() => publishMutation.mutate({ now: true })}
-                onQueue={() => {
-                  const spread = spreadHours === 0 ? 4 : spreadHours;
-                  if (spreadHours === 0) setSpreadHours(4);
-                  publishMutation.mutate({ now: false, spread });
-                }}
-                launchLabel="Publish now"
-                queueLabel="Add to queue"
-              />
-              <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
-                {draftSavedAt && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <CheckCircle2 className="size-3.5 text-emerald-500" />
-                    Draft saved ·{" "}
-                    {new Date(draftSavedAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+            <div id="reply-personas" className="scroll-mt-36">
+              <Step index={2} title="Personas" description="Choose who will reply.">
+                <PersonaPicker
+                  id="reply-personas-picker"
+                  selection={personas}
+                  loading={accountsQuery.isLoading}
+                  label="How many personas should respond?"
+                />
+              </Step>
+            </div>
+
+            <div id="reply-voice" className="scroll-mt-36">
+              <Step
+                index={3}
+                title="Voice"
+                description="Control how your personas write and sound."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium" htmlFor="reply-tone">
+                      Tone
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="reply-tone"
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value as PublishTone)}
+                        className="h-11 w-full appearance-none rounded-md border border-input bg-background px-3 pr-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {TONE_OPTIONS.map((t) => (
+                          <option key={t.value} value={t.value}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">{toneOption(tone).hint}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium" htmlFor="reply-intensity">
+                        Intensity
+                      </label>
+                      <span className="text-[11px] text-muted-foreground">
+                        {intensityLabel(intensity)}
+                      </span>
+                    </div>
+                    <input
+                      id="reply-intensity"
+                      type="range"
+                      min={INTENSITY_MIN}
+                      max={INTENSITY_MAX}
+                      step={1}
+                      value={intensity}
+                      onChange={(e) => setIntensity(clampIntensity(e.target.value))}
+                      className="h-2 w-full cursor-pointer accent-[hsl(var(--primary))]"
+                      aria-valuetext={intensityLabel(intensity)}
+                    />
+                    <div className="flex justify-between text-[11px] text-muted-foreground">
+                      <span>Subtle</span>
+                      <span>Full</span>
+                    </div>
+                  </div>
+                </div>
+              </Step>
+            </div>
+
+            <div id="reply-timing" className="scroll-mt-36">
+              <Step index={4} title="Timing" description="Choose paced queueing or a fixed spread.">
+                <div className="relative">
+                  <Clock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <select
+                    value={spreadHours}
+                    onChange={(e) => setSpreadHours(Number(e.target.value))}
+                    aria-label="Timing"
+                    className="h-11 w-full appearance-none rounded-md border border-input bg-background pl-9 pr-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {SPREAD_OPTIONS.map((h) => (
+                      <option key={h} value={h}>
+                        {spreadLabel(h)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Queueing spaces replies across the selected window so they do not publish in one
+                  burst. Publish now remains a deliberate immediate action.
+                </p>
+              </Step>
+            </div>
+
+            <div id="reply-review" className="scroll-mt-36">
+              <Step
+                index={5}
+                title="Review and publish"
+                description="Read every persona reply before anything is published or queued."
+                aside={
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {requirementsReady} of 5 ready
                   </span>
-                )}
-                <button
-                  type="button"
-                  onClick={discardDraft}
-                  className="underline underline-offset-2 hover:text-foreground"
-                >
-                  Discard
-                </button>
-              </div>
+                }
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">Persona replies</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {variations.length === 0
+                        ? "Generate the replies, then edit anything that needs a change."
+                        : `${variations.length} reply(s) are ready for final review.`}
+                    </p>
+                  </div>
+                  {variations.length === 0 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => variationsMutation.mutate()}
+                      disabled={
+                        variationsMutation.isPending ||
+                        selected.length === 0 ||
+                        commentText.trim().length === 0
+                      }
+                    >
+                      {variationsMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-4 text-primary" />
+                      )}
+                      Generate replies
+                    </Button>
+                  ) : (
+                    <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-xs font-medium">
+                      <input
+                        type="checkbox"
+                        checked={previewApproved}
+                        onChange={(e) => setPreviewApproved(e.target.checked)}
+                        className="size-4 accent-[hsl(var(--primary))]"
+                      />
+                      Reviewed and approved
+                    </label>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+                  <LaunchActions
+                    scheduled
+                    size="default"
+                    busy={publishMutation.isPending}
+                    disabled={!canSubmit}
+                    onLaunch={() => publishMutation.mutate({ now: true })}
+                    onQueue={queueReplies}
+                    launchLabel="Publish now"
+                    queueLabel="Add to queue"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {!campaignName.trim()
+                      ? "Name the campaign."
+                      : !trimmedTarget
+                        ? "Add the target conversation."
+                        : !commentText.trim()
+                          ? "Write the reply message."
+                          : remaining < 0
+                            ? `Trim the reply to ${TWEET_LIMIT} characters.`
+                            : selected.length === 0
+                              ? "Select at least one persona."
+                              : variations.length === 0
+                                ? "Generate the persona replies."
+                                : !previewApproved
+                                  ? "Confirm that every reply has been reviewed."
+                                  : "Ready for an authorised launch."}
+                  </span>
+                  <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+                    {draftSavedAt && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <CheckCircle2 className="size-3.5 text-emerald-500" />
+                        Draft saved{" "}
+                        {new Date(draftSavedAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={discardDraft}
+                      className="underline underline-offset-2 hover:text-foreground"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                </div>
+              </Step>
             </div>
 
             {publishMutation.isPending && (
@@ -950,213 +1049,23 @@ export function ReplyCampaign() {
             )}
 
             {result && <RunResults result={result} />}
-
-            <details className="rounded-2xl border border-border bg-card p-5">
-              <summary className="cursor-pointer text-[15px] font-semibold tracking-tight">
-                Past reply runs ({replyRuns.length})
-              </summary>
-              <ul className="mt-3 space-y-2">
-                {replyRuns.slice(0, 20).map((j) => (
-                  <li key={j.id}>
-                    <button
-                      type="button"
-                      onClick={() => setCampaignId(j.id)}
-                      className="w-full rounded-xl border border-border/70 px-3 py-2 text-left text-xs transition hover:border-primary/50 hover:bg-muted/40"
-                    >
-                      <p className="truncate">{j.commentText || j.tweetText || "-"}</p>
-                      <p className="mt-1 truncate text-muted-foreground">
-                        {j.succeeded} delivered{j.failed > 0 ? ` · ${j.failed} in progress` : ""} ·{" "}
-                        {new Date(j.createdAt).toLocaleString()}
-                      </p>
-                    </button>
-                  </li>
-                ))}
-                {replyRuns.length === 0 && (
-                  <li className="text-xs text-muted-foreground">No reply runs yet.</li>
-                )}
-              </ul>
-            </details>
           </div>
 
           {/* -------- preview / summary column -------- */}
-          <aside className="min-w-0 space-y-4 xl:sticky xl:top-24">
+          <aside className="min-w-0 xl:sticky xl:top-32">
             <section className="rounded-2xl border border-border bg-card p-5">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h2 className="text-[15px] font-semibold tracking-tight">Live preview</h2>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-[15px] font-semibold tracking-tight">Reply overview</h2>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    How each persona will reply — edit any of them
+                    Check the setup and generated replies before launch.
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setCompare((v) => !v)}
-                    aria-pressed={compare}
-                    className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground"
-                  >
-                    <Columns2 className="size-4" />
-                    {compare ? "Stacked view" : "Compare side by side"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => variationsMutation.mutate()}
-                    disabled={
-                      variationsMutation.isPending ||
-                      selected.length === 0 ||
-                      commentText.trim().length === 0
-                    }
-                    className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-50"
-                  >
-                    {variationsMutation.isPending ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="size-4 text-primary" />
-                    )}
-                    Generate per persona
-                  </button>
-                </div>
+                <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                  {requirementsReady}/5 ready
+                </span>
               </div>
 
-              <div className="mt-4 rounded-xl border border-border p-4">
-                {previewTweet ? (
-                  <div className="space-y-2">
-                    <ExternalIdentity
-                      handle={previewTweet.authorHandle}
-                      fallbackName={previewTweet.authorName ?? null}
-                      avatarClassName="size-9"
-                      nameClassName="truncate text-sm font-semibold"
-                    />
-                    <p className="whitespace-pre-wrap text-sm">{previewTweet.text}</p>
-                    <div className="flex items-center gap-6 pt-1 text-muted-foreground">
-                      <MessageCircle className="size-4" />
-                      <Repeat2 className="size-4" />
-                      <Heart className="size-4" />
-                      <Bookmark className="size-4" />
-                      <Share className="size-4" />
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Paste a tweet link to see the post being replied to.
-                  </p>
-                )}
-
-                <div
-                  className={
-                    compare
-                      ? "mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2"
-                      : "mt-4 space-y-3 border-t border-border pt-4"
-                  }
-                >
-                  {personas.selectedAccounts.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Select personas to see how each one will reply.
-                    </p>
-                  )}
-                  {personas.selectedAccounts.slice(0, 30).map((a) => {
-                    const variation = variations.find((v) => v.accountId === a.id);
-                    const text = [(variation?.commentText ?? commentText).trim(), linkUrl.trim()]
-                      .filter(Boolean)
-                      .join("\n\n");
-                    const editing = editingId === a.id;
-                    return (
-                      <div
-                        key={a.id}
-                        className={
-                          compare
-                            ? "rounded-xl border border-border p-3"
-                            : "border-l-2 border-border pl-3"
-                        }
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <AccountIdentity
-                            handle={a.handle}
-                            displayName={a.displayName}
-                            avatarUrl={a.avatarUrl}
-                            avatarClassName="size-9"
-                            nameClassName="truncate text-sm font-semibold"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(editing ? null : a.id)}
-                            className="shrink-0 text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                          >
-                            {editing ? "Done" : "Edit"}
-                          </button>
-                        </div>
-                        <div className="mt-1 flex flex-wrap gap-1.5">
-                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {personas.groupFor(a)}
-                          </span>
-                          {a.personaLabel && (
-                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                              {a.personaLabel}
-                            </span>
-                          )}
-                        </div>
-                        {editing ? (
-                          <Textarea
-                            rows={3}
-                            value={variation?.commentText ?? commentText}
-                            onChange={(e) => setVariationText(a, e.target.value)}
-                            className="mt-2 text-sm"
-                            aria-label={`Reply for ${a.displayName}`}
-                          />
-                        ) : (
-                          <p className="mt-2 whitespace-pre-wrap text-sm">
-                            {text || (
-                              <span className="text-muted-foreground">
-                                Their reply will appear here.
-                              </span>
-                            )}
-                          </p>
-                        )}
-                        {media.length > 0 && (
-                          <div className="mt-2 grid grid-cols-2 gap-2">
-                            {media
-                              .slice(0, 4)
-                              .map((m) =>
-                                m.kind === "video" ? (
-                                  <video
-                                    key={m.url}
-                                    src={m.url}
-                                    className="h-20 w-full rounded-lg object-cover"
-                                    muted
-                                    playsInline
-                                  />
-                                ) : (
-                                  <img
-                                    key={m.url}
-                                    src={m.url}
-                                    alt={m.name}
-                                    className="h-20 w-full rounded-lg object-cover"
-                                  />
-                                ),
-                              )}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-6 pt-3 text-muted-foreground">
-                          <MessageCircle className="size-4" />
-                          <Repeat2 className="size-4" />
-                          <Heart className="size-4" />
-                          <BarChart3 className="size-4" />
-                          <Share className="size-4" />
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {personas.selectedAccounts.length > 30 && (
-                    <p className="text-[11px] text-muted-foreground">
-                      Showing 30 of {personas.selectedAccounts.length} personas.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-border bg-card p-5">
-              <h2 className="text-[15px] font-semibold tracking-tight">Publish summary</h2>
               <div className="mt-2 divide-y divide-border">
                 <SummaryRow
                   icon={Users}
@@ -1175,8 +1084,10 @@ export function ReplyCampaign() {
                 <SummaryRow icon={Clock} label="Timing" value={spreadLabel(spreadHours)} />
                 <SummaryRow
                   icon={Shield}
-                  label="Safety"
-                  value={spreadHours > 0 ? "Smart delays enabled" : "Sending immediately"}
+                  label="Pacing"
+                  value={
+                    spreadHours > 0 ? `${spreadHours}h controlled spread` : "Automatic spacing"
+                  }
                 />
                 <SummaryRow
                   icon={Sparkles}
@@ -1187,21 +1098,208 @@ export function ReplyCampaign() {
                   <SummaryRow icon={ImagePlus} label="Media" value={`${media.length} file(s)`} />
                 )}
               </div>
-              {!canSubmit && (
-                <p className="mt-3 text-[11px] text-muted-foreground">
-                  {variations.length === 0
-                    ? "Preview the replies before publishing."
-                    : !previewApproved
-                      ? "Tick the review box once the replies look right."
-                      : selected.length === 0
-                        ? "Select at least one persona to publish."
-                        : !trimmedTarget
-                          ? "Add the tweet you want to reply to."
-                          : remaining < 0
-                            ? "The reply is too long."
-                            : "Write the reply message."}
-                </p>
-              )}
+
+              <div className="mt-5 border-t border-border pt-5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h2 className="text-[15px] font-semibold tracking-tight">Live preview</h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Review and edit each persona reply.
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCompare((v) => !v)}
+                      aria-pressed={compare}
+                      className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground"
+                    >
+                      <Columns2 className="size-4" />
+                      {compare ? "Stacked view" : "Compare side by side"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => variationsMutation.mutate()}
+                      disabled={
+                        variationsMutation.isPending ||
+                        selected.length === 0 ||
+                        commentText.trim().length === 0
+                      }
+                      className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                    >
+                      {variationsMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-4 text-primary" />
+                      )}
+                      Generate per persona
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-border p-4">
+                  {previewTweet ? (
+                    <div className="space-y-2">
+                      <ExternalIdentity
+                        handle={previewTweet.authorHandle}
+                        fallbackName={previewTweet.authorName ?? null}
+                        avatarClassName="size-9"
+                        nameClassName="truncate text-sm font-semibold"
+                      />
+                      <p className="whitespace-pre-wrap text-sm">{previewTweet.text}</p>
+                      <div className="flex items-center gap-6 pt-1 text-muted-foreground">
+                        <MessageCircle className="size-4" />
+                        <Repeat2 className="size-4" />
+                        <Heart className="size-4" />
+                        <Bookmark className="size-4" />
+                        <Share className="size-4" />
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Paste a tweet link to see the post being replied to.
+                    </p>
+                  )}
+
+                  <div
+                    className={
+                      compare
+                        ? "mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2"
+                        : "mt-4 space-y-3 border-t border-border pt-4"
+                    }
+                  >
+                    {personas.selectedAccounts.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Select personas to see how each one will reply.
+                      </p>
+                    )}
+                    {personas.selectedAccounts.slice(0, 30).map((a) => {
+                      const variation = variations.find((v) => v.accountId === a.id);
+                      const text = [(variation?.commentText ?? commentText).trim(), linkUrl.trim()]
+                        .filter(Boolean)
+                        .join("\n\n");
+                      const editing = editingId === a.id;
+                      return (
+                        <div
+                          key={a.id}
+                          className={
+                            compare
+                              ? "rounded-xl border border-border p-3"
+                              : "border-l-2 border-border pl-3"
+                          }
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <AccountIdentity
+                              handle={a.handle}
+                              displayName={a.displayName}
+                              avatarUrl={a.avatarUrl}
+                              avatarClassName="size-9"
+                              nameClassName="truncate text-sm font-semibold"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(editing ? null : a.id)}
+                              className="shrink-0 text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                            >
+                              {editing ? "Done" : "Edit"}
+                            </button>
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {personas.groupFor(a)}
+                            </span>
+                            {a.personaLabel && (
+                              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                                {a.personaLabel}
+                              </span>
+                            )}
+                          </div>
+                          {editing ? (
+                            <Textarea
+                              rows={3}
+                              value={variation?.commentText ?? commentText}
+                              onChange={(e) => setVariationText(a, e.target.value)}
+                              className="mt-2 text-sm"
+                              aria-label={`Reply for ${a.displayName}`}
+                            />
+                          ) : (
+                            <p className="mt-2 whitespace-pre-wrap text-sm">
+                              {text || (
+                                <span className="text-muted-foreground">
+                                  Their reply will appear here.
+                                </span>
+                              )}
+                            </p>
+                          )}
+                          {media.length > 0 && (
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                              {media
+                                .slice(0, 4)
+                                .map((m) =>
+                                  m.kind === "video" ? (
+                                    <video
+                                      key={m.url}
+                                      src={m.url}
+                                      className="h-20 w-full rounded-lg object-cover"
+                                      muted
+                                      playsInline
+                                    />
+                                  ) : (
+                                    <img
+                                      key={m.url}
+                                      src={m.url}
+                                      alt={m.name}
+                                      className="h-20 w-full rounded-lg object-cover"
+                                    />
+                                  ),
+                                )}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-6 pt-3 text-muted-foreground">
+                            <MessageCircle className="size-4" />
+                            <Repeat2 className="size-4" />
+                            <Heart className="size-4" />
+                            <BarChart3 className="size-4" />
+                            <Share className="size-4" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {personas.selectedAccounts.length > 30 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Showing 30 of {personas.selectedAccounts.length} personas.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <details className="mt-5 border-t border-border pt-5">
+                <summary className="cursor-pointer text-sm font-semibold">
+                  Past reply runs ({replyRuns.length})
+                </summary>
+                <ul className="mt-3 space-y-2">
+                  {replyRuns.slice(0, 20).map((j) => (
+                    <li key={j.id}>
+                      <button
+                        type="button"
+                        onClick={() => setCampaignId(j.id)}
+                        className="w-full rounded-xl border border-border/70 px-3 py-2 text-left text-xs transition hover:border-primary/50 hover:bg-muted/40"
+                      >
+                        <p className="truncate">{j.commentText || j.tweetText || "Reply run"}</p>
+                        <p className="mt-1 truncate text-muted-foreground">
+                          {j.succeeded} delivered
+                          {j.failed > 0 ? ` · ${j.failed} in progress` : ""} ·{" "}
+                          {new Date(j.createdAt).toLocaleString()}
+                        </p>
+                      </button>
+                    </li>
+                  ))}
+                  {replyRuns.length === 0 ? (
+                    <li className="text-xs text-muted-foreground">No reply runs yet.</li>
+                  ) : null}
+                </ul>
+              </details>
             </section>
           </aside>
         </div>

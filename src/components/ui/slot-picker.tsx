@@ -3,7 +3,7 @@
  * more time ranges; campaigns are queued to start inside the next open window.
  */
 import { Plus, X } from "lucide-react";
-import { AnimatePresence, LayoutGroup, motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 
 import type { SendDay } from "@/lib/send-windows";
 import { cn } from "@/lib/utils";
@@ -28,144 +28,152 @@ export function SlotPicker({
   const patch = (dayId: string, fn: (day: SendDay) => SendDay) =>
     onChange(days.map((day) => (day.id === dayId ? fn(day) : day)));
 
+  const toggleDay = (day: SendDay) =>
+    patch(day.id, (current) => {
+      const enabled = !current.enabled;
+      return {
+        ...current,
+        enabled,
+        slots: enabled && current.slots.length === 0 ? [newSlot("09:00", "11:00")] : current.slots,
+      };
+    });
+
+  const activeDays = days.filter((day) => day.enabled);
+
   return (
-    <div className={cn("flex w-full flex-col gap-3", className)}>
-      <LayoutGroup>
+    <div className={cn("w-full space-y-3", className)}>
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-7" aria-label="Preferred send days">
         {days.map((day) => (
+          <button
+            key={day.id}
+            type="button"
+            role="switch"
+            aria-checked={day.enabled}
+            aria-label={`Send on ${day.label}`}
+            onClick={() => toggleDay(day)}
+            className={cn(
+              "min-h-11 rounded-xl border px-2 text-xs font-semibold transition-colors",
+              day.enabled
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+            )}
+          >
+            {day.label.slice(0, 3)}
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence initial={false} mode="popLayout">
+        {activeDays.map((day) => (
           <motion.div
             layout
             key={day.id}
-            initial={false}
+            initial={{ opacity: 0, scale: 0.98, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: -6 }}
             transition={spring}
-            className={cn(
-              "overflow-hidden rounded-2xl border transition-colors",
-              day.enabled ? "border-border bg-card shadow-sm" : "border-transparent bg-muted/50",
-            )}
+            className="rounded-2xl border border-border bg-card p-4 shadow-sm"
           >
-            <motion.div
-              layout
-              transition={spring}
-              className="flex h-14 items-center justify-between px-4"
-            >
+            <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-semibold">{day.label}</span>
               <button
                 type="button"
-                role="switch"
-                aria-checked={day.enabled}
-                aria-label={`Send on ${day.label}`}
-                onClick={() =>
-                  patch(day.id, (d) => {
-                    const enabled = !d.enabled;
-                    return {
-                      ...d,
-                      enabled,
-                      slots:
-                        enabled && d.slots.length === 0 ? [newSlot("09:00", "11:00")] : d.slots,
-                    };
-                  })
-                }
-                className={cn(
-                  "relative h-7 w-12 rounded-full transition-colors",
-                  day.enabled ? "bg-primary" : "bg-muted-foreground/25",
-                )}
+                aria-label={`Remove ${day.label} send windows`}
+                onClick={() => toggleDay(day)}
+                className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                <motion.span
-                  layout
-                  className="absolute left-1 top-1 size-5 rounded-full bg-background shadow-sm"
-                  animate={{ x: day.enabled ? 20 : 0 }}
-                  transition={spring}
-                />
+                <X className="size-4" />
               </button>
-            </motion.div>
+            </div>
 
-            <AnimatePresence initial={false}>
-              {day.enabled ? (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={spring}
-                >
-                  <div className="flex flex-col gap-2 px-4 pb-4">
-                    <AnimatePresence mode="popLayout" initial={false}>
-                      {day.slots.map((slot) => (
-                        <motion.div
-                          key={slot.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.95, y: -8 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95, y: -8 }}
-                          transition={spring}
-                          className="flex items-center gap-2"
-                        >
-                          <span className="w-9 text-xs text-muted-foreground">From</span>
-                          <input
-                            type="time"
-                            value={slot.from}
-                            aria-label={`${day.label} window start`}
-                            onChange={(e) =>
-                              patch(day.id, (d) => ({
-                                ...d,
-                                slots: d.slots.map((s) =>
-                                  s.id === slot.id ? { ...s, from: e.target.value } : s,
-                                ),
-                              }))
-                            }
-                            className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          />
-                          <span className="text-xs text-muted-foreground">To</span>
-                          <input
-                            type="time"
-                            value={slot.to}
-                            aria-label={`${day.label} window end`}
-                            onChange={(e) =>
-                              patch(day.id, (d) => ({
-                                ...d,
-                                slots: d.slots.map((s) =>
-                                  s.id === slot.id ? { ...s, to: e.target.value } : s,
-                                ),
-                              }))
-                            }
-                            className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          />
-                          <button
-                            type="button"
-                            aria-label="Remove window"
-                            onClick={() =>
-                              patch(day.id, (d) => {
-                                const slots = d.slots.filter((s) => s.id !== slot.id);
-                                return { ...d, slots, enabled: slots.length > 0 };
-                              })
-                            }
-                            className="rounded-md bg-muted p-2 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
-                          >
-                            <X className="size-4" />
-                          </button>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-
-                    <motion.button
-                      layout
+            <div className="mt-3 space-y-2">
+              <AnimatePresence mode="popLayout" initial={false}>
+                {day.slots.map((slot) => (
+                  <motion.div
+                    key={slot.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.98, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98, y: -6 }}
+                    transition={spring}
+                    className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-end gap-2"
+                  >
+                    <label className="space-y-1 text-xs text-muted-foreground">
+                      <span className="block">From</span>
+                      <input
+                        type="time"
+                        value={slot.from}
+                        aria-label={`${day.label} window start`}
+                        onChange={(e) =>
+                          patch(day.id, (d) => ({
+                            ...d,
+                            slots: d.slots.map((s) =>
+                              s.id === slot.id ? { ...s, from: e.target.value } : s,
+                            ),
+                          }))
+                        }
+                        className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </label>
+                    <span className="pb-3 text-xs text-muted-foreground">to</span>
+                    <label className="space-y-1 text-xs text-muted-foreground">
+                      <span className="block">To</span>
+                      <input
+                        type="time"
+                        value={slot.to}
+                        aria-label={`${day.label} window end`}
+                        onChange={(e) =>
+                          patch(day.id, (d) => ({
+                            ...d,
+                            slots: d.slots.map((s) =>
+                              s.id === slot.id ? { ...s, to: e.target.value } : s,
+                            ),
+                          }))
+                        }
+                        className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </label>
+                    <button
                       type="button"
-                      transition={spring}
+                      aria-label="Remove window"
                       onClick={() =>
-                        patch(day.id, (d) => ({
-                          ...d,
-                          slots: [...d.slots, newSlot("14:00", "16:00")],
-                        }))
+                        patch(day.id, (d) => {
+                          const slots = d.slots.filter((s) => s.id !== slot.id);
+                          return { ...d, slots, enabled: slots.length > 0 };
+                        })
                       }
-                      className="mt-1 flex w-full items-center justify-center gap-2 rounded-md border border-border bg-muted py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                      className="rounded-md bg-muted p-2.5 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
                     >
-                      <Plus className="size-4" /> Add window
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
+                      <X className="size-4" />
+                    </button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              <motion.button
+                layout
+                type="button"
+                transition={spring}
+                onClick={() =>
+                  patch(day.id, (d) => ({
+                    ...d,
+                    slots: [...d.slots, newSlot("14:00", "16:00")],
+                  }))
+                }
+                className="flex w-full items-center justify-center gap-2 rounded-md border border-border bg-muted py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+              >
+                <Plus className="size-4" /> Add window
+              </motion.button>
+            </div>
           </motion.div>
         ))}
-      </LayoutGroup>
+      </AnimatePresence>
+
+      {activeDays.length === 0 ? (
+        <p className="rounded-xl bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          No preferred days selected. The campaign may start on any day.
+        </p>
+      ) : null}
     </div>
   );
 }

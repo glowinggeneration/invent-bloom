@@ -4,7 +4,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowUpRight,
-  Calendar,
   Download,
   Eye,
   MessageSquare,
@@ -16,14 +15,7 @@ import {
 
 import { DataFreshness } from "@/components/data-freshness";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import {
-  CommandGrid,
-  RailAction,
-  RailCard,
-  RailStat,
-  RailStatList,
-} from "@/components/command-layout";
-import { Card, PageTitle, StatCard } from "@/components/ui-kit";
+import { Card, PageTitle } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { downloadCommandReportPdf } from "@/lib/command-report-pdf";
 import { getOverview } from "@/lib/overview.functions";
@@ -168,107 +160,23 @@ function ExecutiveBriefPage() {
     }
   };
 
-  const leftRail = (
-    <>
-      <RailCard title="Period" icon={Calendar}>
-        <RailStatList>
-          <RailStat label="Window" value="Last 24h" />
-          <RailStat
-            label="Generated"
-            value={
-              data?.generatedAt
-                ? new Date(data.generatedAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "—"
-            }
-          />
-        </RailStatList>
-      </RailCard>
-
-      <RailCard title="Conversation counts" icon={MessageSquare}>
-        <RailStatList>
-          <RailStat label="Mentions" value={data?.health.mentions.value ?? "—"} />
-          <RailStat label="Views" value={data?.health.views.value.toLocaleString() ?? "—"} />
-          <RailStat label="Engagements" value={data?.health.engagements.value ?? "—"} />
-        </RailStatList>
-      </RailCard>
-
-      <RailCard title="Sentiment mix" icon={ShieldAlert}>
-        <RailStatList>
-          <RailStat
-            label="Positive"
-            value={data ? `${data.health.sentiment.positivePct}%` : "—"}
-            tone="positive"
-          />
-          <RailStat
-            label="Neutral"
-            value={data ? `${data.health.sentiment.neutralPct}%` : "—"}
-            tone="neutral"
-          />
-          <RailStat
-            label="Negative"
-            value={data ? `${data.health.sentiment.negativePct}%` : "—"}
-            tone="negative"
-          />
-        </RailStatList>
-      </RailCard>
-    </>
-  );
-
-  const rightRail = (
-    <>
-      <RailCard title="Actions" icon={Sparkles}>
-        <div className="grid gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={download}
-            disabled={!data}
-            className="justify-start"
-          >
-            <Download className="size-4" /> Download PDF
-          </Button>
-          <Button variant="outline" size="sm" onClick={share} className="justify-start">
-            <Share2 className="size-4" /> Copy share link
-          </Button>
-        </div>
-      </RailCard>
-
-      <RailCard title="Shortcuts" icon={ArrowUpRight}>
-        <div className="grid gap-2">
-          <RailAction
-            to="/crisis"
-            icon={ShieldAlert}
-            title="Crisis Command"
-            description="Manage active risks"
-          />
-          <RailAction
-            to="/overview"
-            icon={TrendingUp}
-            title="Full intelligence"
-            description="Explore the overview"
-          />
-        </div>
-      </RailCard>
-
-      <RailCard title="Insight" icon={Sparkles}>
-        <p className="type-meta text-muted-foreground">
-          {intelligence?.brief?.[0] ??
-            "Recommendations will appear here once enough monitoring data has accumulated."}
-        </p>
-      </RailCard>
-    </>
-  );
+  const generatedAt = data?.generatedAt
+    ? new Date(data.generatedAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "Loading";
 
   return (
     <WorkspaceShell title="Executive Brief">
       <PageTitle
-        description="What happened, why it matters and what should happen next. Designed for leadership rather than platform operators."
+        description="A leadership view of what changed, what matters and what should happen next."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <DataFreshness at={data?.generatedAt} label="Brief" staleMinutes={30} />
+            <Button variant="outline" size="sm" onClick={share}>
+              <Share2 className="size-4" /> Copy share link
+            </Button>
             <Button variant="outline" size="sm" onClick={download} disabled={!data}>
               <Download className="size-4" /> Download PDF
             </Button>
@@ -278,35 +186,45 @@ function ExecutiveBriefPage() {
         Executive Brief
       </PageTitle>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Mentions · 24h"
-          value={data?.health.mentions.value ?? "—"}
-          icon={MessageSquare}
-        />
-        <StatCard
-          label="Recorded views"
-          value={data?.health.views.value.toLocaleString() ?? "—"}
-          icon={Eye}
-        />
-        <StatCard
-          label="Negative sentiment"
-          value={data ? `${data.health.sentiment.negativePct}%` : "—"}
-          icon={ShieldAlert}
-          tone={(data?.health.sentiment.negativePct ?? 0) >= 35 ? "negative" : "neutral"}
-        />
-        <StatCard
-          label="Conversation change"
-          value={intelligence ? signed(intelligence.mentionChange) : "—"}
-          icon={TrendingUp}
-        />
-      </div>
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3 type-meta text-muted-foreground">
+          <span>
+            Reporting window: <strong className="text-foreground">Last 24 hours</strong>
+          </span>
+          <span>
+            Generated at <strong className="text-foreground">{generatedAt}</strong>
+          </span>
+        </div>
+        <div className="grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <BriefMetric
+            label="Mentions"
+            value={data?.health.mentions.value ?? "Loading"}
+            icon={MessageSquare}
+          />
+          <BriefMetric
+            label="Recorded views"
+            value={data?.health.views.value.toLocaleString() ?? "Loading"}
+            icon={Eye}
+          />
+          <BriefMetric
+            label="Negative sentiment"
+            value={data ? `${data.health.sentiment.negativePct}%` : "Loading"}
+            icon={ShieldAlert}
+            tone={(data?.health.sentiment.negativePct ?? 0) >= 35 ? "negative" : "neutral"}
+          />
+          <BriefMetric
+            label="Conversation change"
+            value={intelligence ? signed(intelligence.mentionChange) : "Loading"}
+            icon={TrendingUp}
+          />
+        </div>
+      </Card>
 
-      <CommandGrid left={leftRail} right={rightRail} className="mt-5">
+      <div className="mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(20rem,0.75fr)]">
         <Card>
           <div className="flex min-w-0 items-center gap-2">
             <Sparkles className="size-5 shrink-0 text-primary" />
-            <h2 className="type-section truncate">Today in 5 minutes</h2>
+            <h2 className="type-section">Today in 5 minutes</h2>
           </div>
           <div className="mt-4 divide-y divide-border">
             {brief.length ? (
@@ -331,15 +249,20 @@ function ExecutiveBriefPage() {
           </div>
         </Card>
 
-        <div className="grid gap-5 md:grid-cols-2">
-          <Card className={topRisk ? "min-w-0 border-destructive/20" : "min-w-0"}>
+        <Card className="min-w-0">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="size-4 text-muted-foreground" aria-hidden="true" />
+            <h2 className="type-section">Decision summary</h2>
+          </div>
+
+          <section className="mt-5">
             <p className="type-meta font-semibold uppercase tracking-wide text-muted-foreground">
               Risk requiring attention
             </p>
-            <h2 className="mt-2 type-section truncate">
+            <h3 className="mt-2 type-card">
               {topRisk?.title ?? "No priority risk currently detected"}
-            </h2>
-            <p className="mt-2 type-meta text-muted-foreground">
+            </h3>
+            <p className="mt-2 type-meta leading-relaxed text-muted-foreground">
               {topRisk?.detail ??
                 "Continue monitoring and use the full intelligence view for developing signals."}
             </p>
@@ -348,16 +271,16 @@ function ExecutiveBriefPage() {
                 Open Crisis Command <ArrowUpRight className="size-4" />
               </Link>
             </Button>
-          </Card>
+          </section>
 
-          <Card className="min-w-0">
+          <section className="mt-6 border-t border-border pt-6">
             <p className="type-meta font-semibold uppercase tracking-wide text-muted-foreground">
               Opportunity to use
             </p>
-            <h2 className="mt-2 type-section truncate">
+            <h3 className="mt-2 type-card">
               {topOpportunity?.title ?? "Stay ready to amplify positive movement"}
-            </h2>
-            <p className="mt-2 type-meta text-muted-foreground">
+            </h3>
+            <p className="mt-2 type-meta leading-relaxed text-muted-foreground">
               {topOpportunity?.detail ??
                 "Use the Overview intelligence layer to identify the next constructive conversation worth joining."}
             </p>
@@ -366,9 +289,38 @@ function ExecutiveBriefPage() {
                 Open full intelligence <ArrowUpRight className="size-4" />
               </Link>
             </Button>
-          </Card>
-        </div>
-      </CommandGrid>
+          </section>
+        </Card>
+      </div>
     </WorkspaceShell>
+  );
+}
+
+function BriefMetric({
+  label,
+  value,
+  icon: Icon,
+  tone = "default",
+}: {
+  label: string;
+  value: string | number;
+  icon: typeof MessageSquare;
+  tone?: "default" | "negative" | "neutral";
+}) {
+  const valueClass =
+    tone === "negative"
+      ? "text-destructive"
+      : tone === "neutral"
+        ? "text-muted-foreground"
+        : "text-foreground";
+
+  return (
+    <div className="min-w-0 bg-card px-5 py-4">
+      <div className="flex items-center gap-2 type-meta text-muted-foreground">
+        <Icon className="size-4 shrink-0" aria-hidden="true" />
+        <span className="truncate">{label}</span>
+      </div>
+      <p className={`mt-2 text-2xl font-semibold tabular-nums ${valueClass}`}>{value}</p>
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertCircle,
   BarChart3,
   Bookmark,
   CalendarClock,
@@ -11,6 +12,7 @@ import {
   Gauge,
   Heart,
   Loader2,
+  Megaphone,
   MessageCircle,
   MoreHorizontal,
   Pause,
@@ -31,6 +33,7 @@ import { WorkspaceShell } from "@/components/workspace-shell";
 import { EmptyState, PageTabs, PageTitle, PageToolbar, StatCard } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,6 +64,7 @@ import {
 } from "@/lib/campaign-manager";
 import { formatCount } from "@/lib/performance";
 import { friendlyError } from "@/lib/friendly-errors";
+import { deriveCampaignManagerMode } from "@/lib/campaign-manager-state";
 
 export const Route = createFileRoute("/_authenticated/campaign-manager")({
   head: () => ({
@@ -116,8 +120,118 @@ const KIND_ICON: Record<CampaignActionKind, typeof Heart> = {
   follow: UserPlus,
 };
 
+const CAMPAIGN_STEPS = [
+  {
+    title: "Prepare",
+    description: "Choose the message, account and objective.",
+  },
+  {
+    title: "Schedule",
+    description: "Set timing and review planned actions.",
+  },
+  {
+    title: "Run",
+    description: "Monitor execution without leaving the page.",
+  },
+  {
+    title: "Review",
+    description: "See proof, outcomes and performance.",
+  },
+] as const;
+
+function CampaignManagerSkeleton() {
+  return (
+    <div className="space-y-5" aria-label="Loading campaigns">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div key={index} className="card-surface p-5 sm:p-6">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="mt-4 h-8 w-12" />
+            <Skeleton className="mt-3 h-4 w-40 max-w-full" />
+          </div>
+        ))}
+      </section>
+      <Skeleton className="h-12 w-full rounded-xl" />
+      <Skeleton className="h-16 w-full rounded-xl" />
+      <Skeleton className="h-56 w-full rounded-2xl" />
+    </div>
+  );
+}
+
+function CampaignFirstUse() {
+  return (
+    <>
+      <section className="card-surface flex min-h-[22rem] items-center justify-center px-5 py-12 text-center sm:px-8">
+        <div className="max-w-xl">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Megaphone className="size-6" aria-hidden="true" />
+          </div>
+          <h2 className="type-section mt-5">Create your first campaign</h2>
+          <p className="type-body mt-3 text-muted-foreground">
+            Turn a tested message into a scheduled, measurable campaign.
+          </p>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button asChild>
+              <Link to="/publish" search={{ choose: true }}>
+                <Plus className="size-4" aria-hidden="true" /> Create campaign
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/new">Open Response Studio</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8" aria-labelledby="campaign-workflow-title">
+        <h2 id="campaign-workflow-title" className="type-section">
+          One campaign, one clear path
+        </h2>
+        <p className="type-meta mt-2 text-muted-foreground">
+          Status controls and performance tools appear after the first campaign is created.
+        </p>
+        <ol className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {CAMPAIGN_STEPS.map((step, index) => (
+            <li key={step.title} className="min-w-0">
+              <div className="flex items-center gap-2.5">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted type-meta font-semibold text-muted-foreground">
+                  {index + 1}
+                </span>
+                <h3 className="type-card">{step.title}</h3>
+              </div>
+              <p className="type-meta mt-2 text-muted-foreground">{step.description}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </>
+  );
+}
+
+function CampaignManagerError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <section
+      className="card-surface flex min-h-[22rem] items-center justify-center px-5 py-12 text-center sm:px-8"
+      role="alert"
+    >
+      <div className="max-w-lg">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+          <AlertCircle className="size-6" aria-hidden="true" />
+        </div>
+        <h2 className="type-section mt-5">Campaigns could not be loaded</h2>
+        <p className="type-body mt-3 text-muted-foreground">
+          Your campaign data has not been changed. Check the connection and try again.
+        </p>
+        <Button className="mt-7" onClick={onRetry}>
+          <RefreshCw className="size-4" aria-hidden="true" /> Try again
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 function stamp(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "Not set";
   return new Date(iso).toLocaleDateString(undefined, {
     day: "2-digit",
     month: "short",
@@ -247,7 +361,7 @@ function CampaignManagerPage() {
   const [draftName, setDraftName] = useState("");
   const namedOnce = useRef(false);
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["managed-campaigns"],
     queryFn: () => fetchCampaigns(),
     refetchInterval: 60_000,
@@ -338,305 +452,319 @@ function CampaignManagerPage() {
 
   const busyKey = control.isPending ? control.variables?.campaign.key : null;
   const tabs = FILTERS.map((item) => ({ ...item, count: counts[item.value] }));
+  const hasActiveFilters = Boolean(query.trim()) || filter !== "all";
+  const mode = deriveCampaignManagerMode({
+    isLoading,
+    isError,
+    totalCampaigns: campaigns.length,
+    visibleCampaigns: shown.length,
+    hasActiveFilters,
+  });
+
+  const createCampaignAction = (
+    <Disclosure
+      triggerLabel="Create campaign"
+      items={PUBLISH_GOALS.map((goal) => ({
+        icon: <goal.icon className="size-5" aria-hidden="true" />,
+        label: goal.title,
+        onSelect: () => navigate({ to: "/campaign/$action", params: { action: goal.action } }),
+      }))}
+    />
+  );
 
   return (
     <WorkspaceShell title="Campaigns" wide>
-      <PageTitle description="Create, monitor and review campaigns from one place.">
+      <PageTitle
+        description="Plan, run and review campaigns from one place."
+        actions={mode === "ready" || mode === "filtered-empty" ? createCampaignAction : undefined}
+      >
         Campaigns
       </PageTitle>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon={Gauge}
-          label="Running"
-          value={counts.running}
-          hint="Campaigns executing now"
-        />
-        <StatCard
-          icon={CalendarClock}
-          label="Scheduled"
-          value={counts.scheduled}
-          hint="Waiting for their next action"
-        />
-        <StatCard
-          icon={PauseCircle}
-          label="Paused"
-          value={counts.paused}
-          hint="Held until resumed"
-          tone={counts.paused ? "neutral" : "default"}
-        />
-        <StatCard
-          icon={CheckCircle2}
-          label="Completed"
-          value={counts.completed}
-          hint="Ready for proof and performance review"
-        />
-      </section>
+      {mode === "loading" ? <CampaignManagerSkeleton /> : null}
 
-      <PageTabs
-        className="mt-5"
-        items={tabs}
-        value={filter}
-        onChange={setFilter}
-        ariaLabel="Campaign status"
-      />
+      {mode === "error" ? <CampaignManagerError onRetry={() => void refetch()} /> : null}
 
-      <PageToolbar className="mt-4">
-        <div className="relative w-full sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search campaigns…"
-            aria-label="Search campaigns"
-            className="h-10 w-full bg-background pl-9"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2 sm:ml-auto">
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <RefreshCw className="size-4" />
-            )}
-            Check for updates
-          </Button>
-          <Disclosure
-            triggerLabel="Create campaign"
-            items={PUBLISH_GOALS.map((goal) => ({
-              icon: <goal.icon className="size-5" aria-hidden="true" />,
-              label: goal.title,
-              onSelect: () =>
-                navigate({ to: "/campaign/$action", params: { action: goal.action } }),
-            }))}
-          />
-        </div>
-      </PageToolbar>
+      {mode === "first-use" ? <CampaignFirstUse /> : null}
 
-      {isLoading ? (
-        <div className="mt-4 flex items-center gap-2 card-surface p-6 type-body text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" /> Loading campaigns…
-        </div>
-      ) : shown.length === 0 ? (
-        <div className="mt-4">
-          <EmptyState
-            title={
-              query
-                ? "No results for this search."
-                : filter === "all"
-                  ? "Nothing here yet."
-                  : `No ${filter} campaigns.`
-            }
-            description={
-              query
-                ? "Try a different keyword."
-                : filter === "all"
-                  ? "Campaigns you create will appear here with live progress."
-                  : "Choose another status or create a new campaign."
-            }
-            action={
-              !query && filter === "all" ? (
-                <Button asChild size="sm">
-                  <Link to="/publish" search={{ choose: true }}>
-                    <Plus className="size-4" /> Create campaign
-                  </Link>
-                </Button>
-              ) : undefined
-            }
-          />
-        </div>
-      ) : (
+      {mode === "ready" || mode === "filtered-empty" ? (
         <>
-          {/* Phone: purpose-built cards instead of a collapsed desktop table. */}
-          <ul className="mt-4 grid gap-3 md:hidden">
-            {shown.map((campaign) => (
-              <li key={campaign.key} className="card-surface overflow-hidden">
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link
-                        to="/campaign-proof"
-                        search={{ campaign: campaign.key }}
-                        className="type-card block truncate font-semibold hover:text-primary"
-                      >
-                        {campaign.name}
-                      </Link>
-                      <p className="type-meta mt-1 line-clamp-2 text-muted-foreground">
-                        {campaign.summary || campaign.type}
-                      </p>
-                    </div>
-                    <StatusPill status={campaign.status} />
-                  </div>
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              icon={Gauge}
+              label="Running"
+              value={counts.running}
+              hint="Campaigns executing now"
+            />
+            <StatCard
+              icon={CalendarClock}
+              label="Scheduled"
+              value={counts.scheduled}
+              hint="Waiting for their next action"
+            />
+            <StatCard
+              icon={PauseCircle}
+              label="Paused"
+              value={counts.paused}
+              hint="Held until resumed"
+              tone={counts.paused ? "neutral" : "default"}
+            />
+            <StatCard
+              icon={CheckCircle2}
+              label="Completed"
+              value={counts.completed}
+              hint="Ready for proof and performance review"
+            />
+          </section>
 
-                  <ActionSummary campaign={campaign} />
+          <PageTabs
+            className="mt-5"
+            items={tabs}
+            value={filter}
+            onChange={setFilter}
+            ariaLabel="Campaign status"
+          />
 
-                  <div className="mt-4">
-                    <Progress campaign={campaign} compact />
-                  </div>
+          <PageToolbar className="mt-4">
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search campaigns…"
+                aria-label="Search campaigns"
+                className="h-10 w-full bg-background pl-9"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 sm:ml-auto">
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                {isFetching ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                Check for updates
+              </Button>
+            </div>
+          </PageToolbar>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-muted/40 p-3">
-                    <div>
-                      <p className="text-[11px] text-muted-foreground">Started</p>
-                      <p className="type-meta mt-0.5 font-semibold">{stamp(campaign.startedAt)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-muted-foreground">
-                        {campaign.status === "completed" ? "Completed" : "Next action"}
-                      </p>
-                      <p className="type-meta mt-0.5 font-semibold">
-                        {campaign.status === "completed"
-                          ? stamp(campaign.completedAt)
-                          : stamp(campaign.nextRunAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 border-t border-border px-3 py-2.5">
-                  <Button asChild size="sm" className="flex-1">
-                    <Link to="/campaign-proof" search={{ campaign: campaign.key }}>
-                      <FileCheck2 className="size-4" /> View details
-                    </Link>
-                  </Button>
-                  {campaign.status === "running" ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={busyKey === campaign.key}
-                      onClick={() => control.mutate({ action: "pause", campaign })}
-                    >
-                      <Pause className="size-4" /> Pause
-                    </Button>
-                  ) : null}
-                  {campaign.status === "paused" ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={busyKey === campaign.key}
-                      onClick={() => control.mutate({ action: "resume", campaign })}
-                    >
-                      <Play className="size-4" /> Resume
-                    </Button>
-                  ) : null}
-                  <CampaignMenu
-                    campaign={campaign}
-                    onPause={() => control.mutate({ action: "pause", campaign })}
-                    onResume={() => control.mutate({ action: "resume", campaign })}
-                    onRename={() => {
-                      setRenaming(campaign);
-                      setDraftName(campaign.name);
+          {mode === "filtered-empty" ? (
+            <div className="mt-4">
+              <EmptyState
+                title={query ? "No results for this search." : `No ${filter} campaigns.`}
+                description={
+                  query ? "Try a different keyword." : "Choose another status or clear the filters."
+                }
+                action={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setQuery("");
+                      setFilter("all");
                     }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {/* Tablet/desktop: compact management table with only decision-critical columns. */}
-          <div className="mt-4 hidden overflow-hidden rounded-xl border border-border bg-card md:block">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[780px] text-left type-body">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30 type-meta text-muted-foreground">
-                    <th className="px-5 py-3 font-semibold">Campaign</th>
-                    <th className="px-3 py-3 font-semibold">Status</th>
-                    <th className="px-3 py-3 font-semibold">Progress</th>
-                    <th className="px-3 py-3 font-semibold">Schedule</th>
-                    <th className="px-5 py-3 text-right font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shown.map((campaign) => (
-                    <tr
-                      key={campaign.key}
-                      className="border-b border-border/70 last:border-0 hover:bg-muted/30"
-                    >
-                      <td className="px-5 py-4 align-top">
-                        <Link
-                          to="/campaign-proof"
-                          search={{ campaign: campaign.key }}
-                          className="font-semibold hover:text-primary"
-                        >
-                          {campaign.name}
-                        </Link>
-                        <p className="type-meta mt-1 max-w-xl line-clamp-1 text-muted-foreground">
-                          {campaign.summary || campaign.type}
-                        </p>
-                        <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-                          {campaign.type}
-                        </p>
-                        <ActionSummary campaign={campaign} />
-                      </td>
-                      <td className="px-3 py-4 align-top">
-                        <StatusPill status={campaign.status} />
-                      </td>
-                      <td className="px-3 py-4 align-top">
-                        <Progress campaign={campaign} />
-                      </td>
-                      <td className="px-3 py-4 align-top">
-                        <p className="type-meta font-semibold">{stamp(campaign.startedAt)}</p>
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          {campaign.status === "completed"
-                            ? `Completed ${stamp(campaign.completedAt)}`
-                            : campaign.nextRunAt
-                              ? `Next ${stamp(campaign.nextRunAt)}`
-                              : "No future action scheduled"}
-                        </p>
-                      </td>
-                      <td className="px-5 py-4 align-top">
-                        <div className="flex items-center justify-end gap-2">
-                          {campaign.status === "running" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={busyKey === campaign.key}
-                              onClick={() => control.mutate({ action: "pause", campaign })}
-                            >
-                              <Pause className="size-4" /> Pause
-                            </Button>
-                          ) : null}
-                          {campaign.status === "paused" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={busyKey === campaign.key}
-                              onClick={() => control.mutate({ action: "resume", campaign })}
-                            >
-                              <Play className="size-4" /> Resume
-                            </Button>
-                          ) : null}
-                          <Button
-                            asChild
-                            size="sm"
-                            variant={campaign.status === "completed" ? "default" : "outline"}
+                  >
+                    Clear filters
+                  </Button>
+                }
+              />
+            </div>
+          ) : (
+            <>
+              {/* Phone: purpose-built cards instead of a collapsed desktop table. */}
+              <ul className="mt-4 grid gap-3 md:hidden">
+                {shown.map((campaign) => (
+                  <li key={campaign.key} className="card-surface overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <Link
+                            to="/campaign-proof"
+                            search={{ campaign: campaign.key }}
+                            className="type-card block truncate font-semibold hover:text-primary"
                           >
-                            <Link to="/campaign-proof" search={{ campaign: campaign.key }}>
-                              <FileCheck2 className="size-4" /> View
-                            </Link>
-                          </Button>
-                          <CampaignMenu
-                            campaign={campaign}
-                            onPause={() => control.mutate({ action: "pause", campaign })}
-                            onResume={() => control.mutate({ action: "resume", campaign })}
-                            onRename={() => {
-                              setRenaming(campaign);
-                              setDraftName(campaign.name);
-                            }}
-                          />
+                            {campaign.name}
+                          </Link>
+                          <p className="type-meta mt-1 line-clamp-2 text-muted-foreground">
+                            {campaign.summary || campaign.type}
+                          </p>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="border-t border-border px-5 py-2.5 type-meta text-muted-foreground">
-              Showing {shown.length.toLocaleString()} of {campaigns.length.toLocaleString()}{" "}
-              campaigns
-            </div>
-          </div>
+                        <StatusPill status={campaign.status} />
+                      </div>
+
+                      <ActionSummary campaign={campaign} />
+
+                      <div className="mt-4">
+                        <Progress campaign={campaign} compact />
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-muted/40 p-3">
+                        <div>
+                          <p className="text-[11px] text-muted-foreground">Started</p>
+                          <p className="type-meta mt-0.5 font-semibold">
+                            {stamp(campaign.startedAt)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-muted-foreground">
+                            {campaign.status === "completed" ? "Completed" : "Next action"}
+                          </p>
+                          <p className="type-meta mt-0.5 font-semibold">
+                            {campaign.status === "completed"
+                              ? stamp(campaign.completedAt)
+                              : stamp(campaign.nextRunAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 border-t border-border px-3 py-2.5">
+                      <Button asChild size="sm" className="flex-1">
+                        <Link to="/campaign-proof" search={{ campaign: campaign.key }}>
+                          <FileCheck2 className="size-4" /> View details
+                        </Link>
+                      </Button>
+                      {campaign.status === "running" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={busyKey === campaign.key}
+                          onClick={() => control.mutate({ action: "pause", campaign })}
+                        >
+                          <Pause className="size-4" /> Pause
+                        </Button>
+                      ) : null}
+                      {campaign.status === "paused" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={busyKey === campaign.key}
+                          onClick={() => control.mutate({ action: "resume", campaign })}
+                        >
+                          <Play className="size-4" /> Resume
+                        </Button>
+                      ) : null}
+                      <CampaignMenu
+                        campaign={campaign}
+                        onPause={() => control.mutate({ action: "pause", campaign })}
+                        onResume={() => control.mutate({ action: "resume", campaign })}
+                        onRename={() => {
+                          setRenaming(campaign);
+                          setDraftName(campaign.name);
+                        }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Tablet/desktop: compact management table with only decision-critical columns. */}
+              <div className="mt-4 hidden overflow-hidden rounded-xl border border-border bg-card md:block">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[780px] text-left type-body">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30 type-meta text-muted-foreground">
+                        <th className="px-5 py-3 font-semibold">Campaign</th>
+                        <th className="px-3 py-3 font-semibold">Status</th>
+                        <th className="px-3 py-3 font-semibold">Progress</th>
+                        <th className="px-3 py-3 font-semibold">Schedule</th>
+                        <th className="px-5 py-3 text-right font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shown.map((campaign) => (
+                        <tr
+                          key={campaign.key}
+                          className="border-b border-border/70 last:border-0 hover:bg-muted/30"
+                        >
+                          <td className="px-5 py-4 align-top">
+                            <Link
+                              to="/campaign-proof"
+                              search={{ campaign: campaign.key }}
+                              className="font-semibold hover:text-primary"
+                            >
+                              {campaign.name}
+                            </Link>
+                            <p className="type-meta mt-1 max-w-xl line-clamp-1 text-muted-foreground">
+                              {campaign.summary || campaign.type}
+                            </p>
+                            <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+                              {campaign.type}
+                            </p>
+                            <ActionSummary campaign={campaign} />
+                          </td>
+                          <td className="px-3 py-4 align-top">
+                            <StatusPill status={campaign.status} />
+                          </td>
+                          <td className="px-3 py-4 align-top">
+                            <Progress campaign={campaign} />
+                          </td>
+                          <td className="px-3 py-4 align-top">
+                            <p className="type-meta font-semibold">{stamp(campaign.startedAt)}</p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {campaign.status === "completed"
+                                ? `Completed ${stamp(campaign.completedAt)}`
+                                : campaign.nextRunAt
+                                  ? `Next ${stamp(campaign.nextRunAt)}`
+                                  : "No future action scheduled"}
+                            </p>
+                          </td>
+                          <td className="px-5 py-4 align-top">
+                            <div className="flex items-center justify-end gap-2">
+                              {campaign.status === "running" ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={busyKey === campaign.key}
+                                  onClick={() => control.mutate({ action: "pause", campaign })}
+                                >
+                                  <Pause className="size-4" /> Pause
+                                </Button>
+                              ) : null}
+                              {campaign.status === "paused" ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={busyKey === campaign.key}
+                                  onClick={() => control.mutate({ action: "resume", campaign })}
+                                >
+                                  <Play className="size-4" /> Resume
+                                </Button>
+                              ) : null}
+                              <Button
+                                asChild
+                                size="sm"
+                                variant={campaign.status === "completed" ? "default" : "outline"}
+                              >
+                                <Link to="/campaign-proof" search={{ campaign: campaign.key }}>
+                                  <FileCheck2 className="size-4" /> View
+                                </Link>
+                              </Button>
+                              <CampaignMenu
+                                campaign={campaign}
+                                onPause={() => control.mutate({ action: "pause", campaign })}
+                                onResume={() => control.mutate({ action: "resume", campaign })}
+                                onRename={() => {
+                                  setRenaming(campaign);
+                                  setDraftName(campaign.name);
+                                }}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="border-t border-border px-5 py-2.5 type-meta text-muted-foreground">
+                  Showing {shown.length.toLocaleString()} of {campaigns.length.toLocaleString()}{" "}
+                  campaigns
+                </div>
+              </div>
+            </>
+          )}
         </>
-      )}
+      ) : null}
 
       <Dialog open={Boolean(renaming)} onOpenChange={(open) => !open && setRenaming(null)}>
         <DialogContent className="sm:max-w-md">

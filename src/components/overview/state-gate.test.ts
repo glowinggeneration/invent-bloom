@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveOverviewMode, type SourceHealth } from "./state-gate";
+import { deriveOverviewMode, getNextOverviewWindow, type SourceHealth } from "./state-gate";
 
 const readySource: SourceHealth = { id: "x", label: "X", status: "ready" };
 const failedSource: SourceHealth = { id: "news", label: "News", status: "error" };
@@ -108,5 +108,16 @@ describe("deriveOverviewMode", () => {
         empty: false,
       }),
     ).toBe("ready");
+  });
+});
+
+describe("getNextOverviewWindow", () => {
+  it("widens the two shorter ranges in sequence", () => {
+    expect(getNextOverviewWindow("24h")).toBe("7d");
+    expect(getNextOverviewWindow("7d")).toBe("30d");
+  });
+
+  it("returns no wider option at 30 days", () => {
+    expect(getNextOverviewWindow("30d")).toBeNull();
   });
 });
