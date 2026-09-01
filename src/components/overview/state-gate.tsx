@@ -66,6 +66,11 @@ export function deriveOverviewMode({
   return empty ? "empty-window" : "ready";
 }
 
+export function getNextOverviewWindow(range: OverviewWindow): OverviewWindow | null {
+  const currentIndex = OVERVIEW_WINDOWS.findIndex((option) => option.value === range);
+  return OVERVIEW_WINDOWS[currentIndex + 1]?.value ?? null;
+}
+
 type OverviewStateGateProps = OverviewStateInput & {
   range: OverviewWindow;
   lastCheckedLabel?: string | undefined;
@@ -94,15 +99,17 @@ export function OverviewStateGate({
 }: OverviewStateGateProps) {
   const mode = deriveOverviewMode({ loading, fatalQueryError, sourcesKnown, sources, empty });
   const failedSources = sources.filter((source) => source.status === "error");
+  const isFocusedState =
+    mode === "empty-window" || mode === "no-sources" || mode === "connection-error";
 
   return (
-    <div>
+    <div className={cn(isFocusedState && "mx-auto w-full max-w-6xl")}>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="type-title">Overview</h1>
         <RangeSelector value={range} onChange={onRangeChange} />
       </header>
 
-      <div className="mt-5 flex min-h-11 flex-wrap items-center justify-between gap-3">
+      <div className="mt-4 flex min-h-11 flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 type-meta text-muted-foreground">
           <CheckCircle2
             className={cn(
@@ -136,7 +143,7 @@ export function OverviewStateGate({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
-          className="mt-5"
+          className="mt-4"
         >
           {mode === "loading" ? <OverviewSkeleton /> : null}
 
@@ -233,7 +240,7 @@ function StateSurface({
 }) {
   return (
     <section
-      className="flex min-h-[360px] items-center justify-center rounded-[18px] border border-border bg-card px-5 py-14 text-center shadow-sm"
+      className="flex min-h-[320px] items-center justify-center rounded-[18px] border border-border bg-card px-5 py-10 text-center shadow-sm sm:min-h-[340px]"
       aria-live="polite"
     >
       <div className="max-w-xl">
@@ -257,8 +264,8 @@ function OverviewEmptyWindow({
   onRangeChange: (range: OverviewWindow) => void;
   onViewMentions: () => void;
 }) {
-  const nextRange =
-    OVERVIEW_WINDOWS[OVERVIEW_WINDOWS.findIndex((option) => option.value === range) + 1];
+  const nextRangeValue = getNextOverviewWindow(range);
+  const nextRange = OVERVIEW_WINDOWS.find((option) => option.value === nextRangeValue);
   const rangeLabel = OVERVIEW_WINDOWS.find((option) => option.value === range)?.label ?? range;
 
   return (

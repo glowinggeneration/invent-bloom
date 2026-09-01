@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Gauge } from "lucide-react";
+import { Gauge, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui-kit";
@@ -20,12 +20,9 @@ export function PublishLanding({ startChoosing = true }: { startChoosing?: boole
     <Card className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <SectionTitle>
-            {startChoosing ? "What do you want to do?" : "Create a campaign"}
-          </SectionTitle>
+          <SectionTitle>{startChoosing ? "Choose one outcome" : "Create a campaign"}</SectionTitle>
           <p className="mt-1 type-meta text-muted-foreground">
-            Choose Post for original content or Reply for one reviewed response to a specific
-            conversation.
+            Start with the action. The relevant accounts, review controls and timing options follow.
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
@@ -37,10 +34,13 @@ export function PublishLanding({ startChoosing = true }: { startChoosing?: boole
 
       <PublishGoalGrid onPick={(title) => setLoadingGoal(title)} />
 
-      <p className="type-meta border-t border-border pt-4 text-muted-foreground">
-        Monitoring, intelligence and watchlists are managed separately so creating a campaign always
-        remains a deliberate action.
-      </p>
+      <div className="flex items-start gap-3 border-t border-border pt-4">
+        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <p className="type-meta text-muted-foreground">
+          Every path requires an authorised account, content review and confirmed timing before it
+          can run.
+        </p>
+      </div>
     </Card>
   );
 }

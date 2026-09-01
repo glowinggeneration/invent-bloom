@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { focusManager, onlineManager, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { PauseCircle, Play } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart", "scrol
 /**
  * Pauses all background data fetching (monitoring, refreshes) after 30 minutes of
  * inactivity so the workspace stops spending credits while nobody is using it.
- * Server-side queued campaigns keep running — only browser polling is paused.
+ * Server-side queued campaigns keep running. Only browser polling is paused.
  */
 export function IdleSessionGuard() {
   const [idle, setIdle] = useState(false);
@@ -35,7 +36,7 @@ export function IdleSessionGuard() {
 
   const resume = useCallback(() => {
     setIdle(false);
-    onlineManager.setOnline(true);
+    onlineManager.setOnline(navigator.onLine);
     focusManager.setFocused(undefined);
   }, []);
 
@@ -65,18 +66,28 @@ export function IdleSessionGuard() {
 
   return (
     <AlertDialog open={idle}>
-      <AlertDialogContent className="max-w-sm">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Still here?</AlertDialogTitle>
-          <AlertDialogDescription>
-            You've been inactive for a little while. Would you like to keep this session open?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="gap-2">
-          <Button variant="ghost" onClick={handleSignOut}>
+      <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md gap-0 overflow-hidden rounded-2xl border-border/80 p-0 shadow-2xl">
+        <div className="p-6 sm:p-7">
+          <div className="mb-5 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <PauseCircle className="size-5" aria-hidden="true" />
+          </div>
+          <AlertDialogHeader className="space-y-2 text-left">
+            <AlertDialogTitle className="type-section">Workspace paused</AlertDialogTitle>
+            <AlertDialogDescription className="type-body leading-relaxed">
+              Updates paused after 30 minutes of inactivity. Resume to continue receiving new data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <p className="mt-5 rounded-xl bg-muted px-3.5 py-3 type-meta leading-relaxed text-muted-foreground">
+            Queued campaigns continue running in the background.
+          </p>
+        </div>
+        <AlertDialogFooter className="gap-2 border-t border-border bg-muted/30 p-4 sm:space-x-0 sm:p-5">
+          <Button variant="outline" onClick={handleSignOut}>
             Sign out
           </Button>
-          <Button onClick={resume}>Keep working</Button>
+          <Button className="gap-2" onClick={resume}>
+            <Play className="size-4" aria-hidden="true" /> Resume workspace
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

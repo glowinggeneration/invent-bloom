@@ -1,13 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowUpDown, ImageIcon, LayoutGrid, Loader2, Search } from "lucide-react";
+import {
+  ArrowUpDown,
+  ImageIcon,
+  LayoutGrid,
+  Loader2,
+  Megaphone,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -22,20 +29,17 @@ import {
   syncPersonaImages,
   type PersonaImage,
 } from "@/lib/persona-images.functions";
-import { listPersonaLearning } from "@/lib/persona-learning.functions";
 import { isAdminEmail } from "@/lib/access";
 import { useProfile } from "@/hooks/use-profile";
 import { PageTitle } from "@/components/ui-kit";
 import { friendlyError } from "@/lib/friendly-errors";
 import {
-  CommandGrid,
-  RailAction,
-  RailBar,
-  RailCard,
-  RailStat,
-  RailStatList,
-} from "@/components/command-layout";
-import { Sparkles, SlidersHorizontal, Users, Megaphone, Link2, LifeBuoy } from "lucide-react";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated/personas")({
   head: () => ({
@@ -85,6 +89,8 @@ function PersonasPage() {
   const [ageBand, setAgeBand] = useState<string>("all");
   const [sort, setSort] = useState<string>("default");
   const [grouped, setGrouped] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
   const [visibleLimit, setVisibleLimit] = useState(PERSONA_PAGE_SIZE);
 
   const queryClient = useQueryClient();
@@ -120,28 +126,6 @@ function PersonasPage() {
     },
     onError: (e: Error) => toast.error(friendlyError(e)),
   });
-
-  const fetchLearning = useServerFn(listPersonaLearning);
-  const { data: learning } = useQuery({
-    queryKey: ["persona-learning"],
-    queryFn: () => fetchLearning(),
-    enabled: !isLoading,
-    staleTime: 60 * 1000,
-  });
-
-  const learningSummary = useMemo(() => {
-    const rows = learning ?? [];
-    if (!rows.length) return null;
-    const avg = (pick: (r: (typeof rows)[number]) => number) =>
-      Math.round((rows.reduce((s, r) => s + pick(r), 0) / rows.length) * 100);
-    return {
-      evolved: rows.length,
-      directness: avg((r) => r.communicationHabit),
-      trust: avg((r) => r.institutionalTrust),
-      review: rows.filter((r) => r.driftScore >= 0.36).length,
-      frozen: rows.filter((r) => r.frozen).length,
-    };
-  }, [learning]);
 
   const missingCount = PERSONAS.length - imageMap.size;
 
@@ -218,403 +202,257 @@ function PersonasPage() {
     <WorkspaceShell title="Personas" wide>
       <PageTitle
         description={`${PERSONAS.length} research-grounded urban Kenyan personas review every message you test.`}
+        actions={
+          <>
+            {missingCount > 0 && isAdminEmail(profile?.email) ? (
+              <Button
+                variant="outline"
+                className="gap-2"
+                disabled={sync.isPending}
+                onClick={() => sync.mutate()}
+              >
+                {sync.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <ImageIcon className="size-4" />
+                )}
+                Load artwork
+              </Button>
+            ) : null}
+            <Button asChild className="gap-2">
+              <Link to="/campaign-manager">
+                <Megaphone className="size-4" /> Test a campaign
+              </Link>
+            </Button>
+          </>
+        }
       >
         Persona panel
       </PageTitle>
 
-      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="card-surface p-4">
-          <p className="type-meta text-muted-foreground">Personas</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{PERSONAS.length}</p>
-        </div>
-        <div className="card-surface p-4">
-          <p className="type-meta text-muted-foreground">Showing</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{filtered.length}</p>
-        </div>
-        <div className="card-surface p-4">
-          <p className="type-meta text-muted-foreground">Clusters</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{clusterCounts.length}</p>
-        </div>
-        <div className="card-surface p-4">
-          <p className="type-meta text-muted-foreground">Missing artwork</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{missingCount}</p>
-        </div>
+      <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-border bg-card px-4 py-3 type-meta text-muted-foreground">
+        <span>
+          <strong className="text-foreground">{PERSONAS.length}</strong> personas
+        </span>
+        <span>
+          <strong className="text-foreground">{clusterCounts.length}</strong> clusters
+        </span>
+        <span>
+          <strong className="text-foreground">{filtered.length}</strong> matching
+        </span>
+        {missingCount > 0 && isAdminEmail(profile?.email) ? (
+          <span>
+            <strong className="text-foreground">{missingCount}</strong> need artwork
+          </span>
+        ) : null}
       </div>
 
-      <CommandGrid
-        left={
-          <div className="hidden xl:block">
-            <RailCard title="Search & filters" icon={SlidersHorizontal}>
-              <div className="space-y-3">
-                <div className="relative min-w-0">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search personas…"
-                    aria-label="Search personas"
-                    className="h-9 rounded-xl pl-9"
-                  />
-                </div>
-                <FilterField label="Platform">
-                  <Select value={platform} onValueChange={setPlatform}>
-                    <SelectTrigger className="h-9 rounded-xl" aria-label="Filter by platform">
-                      <SelectValue placeholder="All platforms" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All platforms</SelectItem>
-                      {platforms.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                <FilterField label="Cluster">
-                  <Select value={cluster} onValueChange={setCluster}>
-                    <SelectTrigger className="h-9 rounded-xl" aria-label="Filter by cluster">
-                      <SelectValue placeholder="All clusters" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All clusters ({PERSONAS.length})</SelectItem>
-                      {clusterCounts.map((c) => (
-                        <SelectItem key={c.cluster} value={c.cluster}>
-                          {c.cluster} ({c.count})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                <FilterField label="Segment">
-                  <Select value={segment} onValueChange={setSegment}>
-                    <SelectTrigger className="h-9 rounded-xl" aria-label="Filter by segment">
-                      <SelectValue placeholder="All segments" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All segments</SelectItem>
-                      {segments.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                <FilterField label="Age">
-                  <Select value={ageBand} onValueChange={setAgeBand}>
-                    <SelectTrigger className="h-9 rounded-xl" aria-label="Filter by age">
-                      <SelectValue placeholder="All ages" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All ages</SelectItem>
-                      {AGE_BANDS.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                <FilterField label="Sort">
-                  <Select value={sort} onValueChange={setSort}>
-                    <SelectTrigger className="h-9 rounded-xl" aria-label="Sort personas">
-                      <ArrowUpDown className="size-4 text-muted-foreground" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">Default order</SelectItem>
-                      <SelectItem value="name">Name A–Z</SelectItem>
-                      <SelectItem value="age-asc">Youngest first</SelectItem>
-                      <SelectItem value="age-desc">Oldest first</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FilterField>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={grouped ? "secondary" : "outline"}
-                    className="h-9 flex-1 gap-2 rounded-xl"
-                    onClick={() => setGrouped((v) => !v)}
-                  >
-                    <LayoutGrid className="size-4" /> {grouped ? "Clustered" : "Flat list"}
-                  </Button>
-                  {activeFilters > 0 ? (
-                    <Button
-                      variant="ghost"
-                      className="h-9 rounded-xl type-meta text-muted-foreground"
-                      onClick={clearAll}
-                    >
-                      Clear
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-            </RailCard>
-
-            <RailCard title="Cluster mix" icon={Users}>
-              <div>
-                {clusterCounts.map((c) => (
-                  <RailBar
-                    key={c.cluster}
-                    label={c.cluster}
-                    value={c.count}
-                    total={PERSONAS.length}
-                    valueLabel={`${c.count}`}
-                  />
-                ))}
-              </div>
-            </RailCard>
-
-            {learningSummary ? (
-              <RailCard title="Adaptive learning" icon={Sparkles}>
-                <RailStatList>
-                  <RailStat label="Personas evolved" value={learningSummary.evolved} />
-                  <RailStat label="Avg directness" value={`${learningSummary.directness}%`} />
-                  <RailStat label="Avg official trust" value={`${learningSummary.trust}%`} />
-                  <RailStat
-                    label="Needs review"
-                    value={learningSummary.review}
-                    tone={learningSummary.review > 0 ? "negative" : "positive"}
-                  />
-                  <RailStat label="Learning frozen" value={learningSummary.frozen} tone="neutral" />
-                </RailStatList>
-              </RailCard>
-            ) : null}
+      <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1 lg:max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search personas…"
+              aria-label="Search personas"
+              className="h-10 rounded-xl pl-9"
+            />
           </div>
-        }
-        right={
-          <>
-            <RailCard title="Actions" icon={Megaphone}>
-              <div className="space-y-2">
-                {missingCount > 0 && isAdminEmail(profile?.email) ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 w-full gap-2 rounded-xl type-meta"
-                    disabled={sync.isPending}
-                    onClick={() => sync.mutate()}
-                  >
-                    {sync.isPending ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <ImageIcon className="size-3.5" />
-                    )}
-                    Load artwork ({missingCount} left)
-                  </Button>
-                ) : null}
-                <RailAction
-                  to="/campaign-manager"
-                  icon={Megaphone}
-                  title="Test a campaign"
-                  description="Run messages past these personas"
-                />
-                <RailAction
-                  to="/linked-accounts"
-                  icon={Link2}
-                  title="Linked accounts"
-                  description="Manage connected platforms"
-                />
-              </div>
-            </RailCard>
-
-            <RailCard title="Guidance" icon={LifeBuoy}>
-              <p className="type-meta leading-relaxed text-muted-foreground">
-                Every persona reviews content through its own cluster, vibe, and decision style.
-                Filter by segment or platform to focus testing on the audiences that matter most for
-                a campaign.
-              </p>
-              <div className="mt-3">
-                <RailAction
-                  to="/help"
-                  icon={LifeBuoy}
-                  title="Help center"
-                  description="Learn how persona scoring works"
-                />
-              </div>
-            </RailCard>
-          </>
-        }
-      >
-        <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="type-meta text-muted-foreground">
-              Showing {displayed.length} of {filtered.length} matching personas
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant={filtersOpen || activeFilters > 0 ? "secondary" : "outline"}
+              className="h-10 gap-2 rounded-xl"
+              aria-expanded={filtersOpen}
+              onClick={() => setFiltersOpen((value) => !value)}
+            >
+              <SlidersHorizontal className="size-4" />
+              Filters{activeFilters > 0 ? ` (${activeFilters})` : ""}
+            </Button>
+            <Button
+              type="button"
+              variant={grouped ? "secondary" : "outline"}
+              className="h-10 gap-2 rounded-xl"
+              onClick={() => setGrouped((value) => !value)}
+            >
+              <LayoutGrid className="size-4" /> {grouped ? "Clustered" : "Flat list"}
+            </Button>
+            <p className="ml-auto type-meta text-muted-foreground lg:ml-2">
+              Showing {displayed.length} of {filtered.length}
             </p>
+          </div>
+        </div>
+
+        {filtersOpen ? (
+          <div className="mt-3 grid gap-3 rounded-xl border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-5">
+            <FilterField label="Platform">
+              <Select value={platform} onValueChange={setPlatform}>
+                <SelectTrigger className="h-10" aria-label="Filter by platform">
+                  <SelectValue placeholder="All platforms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All platforms</SelectItem>
+                  {platforms.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
+            <FilterField label="Cluster">
+              <Select value={cluster} onValueChange={setCluster}>
+                <SelectTrigger className="h-10" aria-label="Filter by cluster">
+                  <SelectValue placeholder="All clusters" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All clusters</SelectItem>
+                  {clusterCounts.map((item) => (
+                    <SelectItem key={item.cluster} value={item.cluster}>
+                      {item.cluster} ({item.count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
+            <FilterField label="Segment">
+              <Select value={segment} onValueChange={setSegment}>
+                <SelectTrigger className="h-10" aria-label="Filter by segment">
+                  <SelectValue placeholder="All segments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All segments</SelectItem>
+                  {segments.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
+            <FilterField label="Age">
+              <Select value={ageBand} onValueChange={setAgeBand}>
+                <SelectTrigger className="h-10" aria-label="Filter by age">
+                  <SelectValue placeholder="All ages" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All ages</SelectItem>
+                  {AGE_BANDS.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
+            <FilterField label="Sort">
+              <Select value={sort} onValueChange={setSort}>
+                <SelectTrigger className="h-10" aria-label="Sort personas">
+                  <ArrowUpDown className="size-4 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default order</SelectItem>
+                  <SelectItem value="name">Name A–Z</SelectItem>
+                  <SelectItem value="age-asc">Youngest first</SelectItem>
+                  <SelectItem value="age-desc">Oldest first</SelectItem>
+                </SelectContent>
+              </Select>
+            </FilterField>
             {activeFilters > 0 ? (
-              <Button variant="ghost" size="sm" className="xl:hidden" onClick={clearAll}>
-                Clear filters
-              </Button>
+              <div className="flex items-end lg:col-span-5">
+                <Button variant="ghost" size="sm" onClick={clearAll}>
+                  Clear all filters
+                </Button>
+              </div>
             ) : null}
           </div>
+        ) : null}
 
-          <details className="mt-3 rounded-xl border border-border bg-muted/20 p-3 xl:hidden">
-            <summary className="cursor-pointer list-none type-meta font-semibold text-foreground">
-              Refine personas{activeFilters > 0 ? ` · ${activeFilters} active` : ""}
-            </summary>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <div className="relative min-w-0 sm:col-span-2">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search personas…"
-                  aria-label="Search personas"
-                  className="h-10 pl-9"
-                />
-              </div>
-              <FilterField label="Platform">
-                <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger className="h-10" aria-label="Filter by platform">
-                    <SelectValue placeholder="All platforms" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All platforms</SelectItem>
-                    {platforms.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FilterField>
-              <FilterField label="Cluster">
-                <Select value={cluster} onValueChange={setCluster}>
-                  <SelectTrigger className="h-10" aria-label="Filter by cluster">
-                    <SelectValue placeholder="All clusters" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All clusters</SelectItem>
-                    {clusterCounts.map((item) => (
-                      <SelectItem key={item.cluster} value={item.cluster}>
-                        {item.cluster} ({item.count})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FilterField>
-              <FilterField label="Segment">
-                <Select value={segment} onValueChange={setSegment}>
-                  <SelectTrigger className="h-10" aria-label="Filter by segment">
-                    <SelectValue placeholder="All segments" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All segments</SelectItem>
-                    {segments.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FilterField>
-              <FilterField label="Age">
-                <Select value={ageBand} onValueChange={setAgeBand}>
-                  <SelectTrigger className="h-10" aria-label="Filter by age">
-                    <SelectValue placeholder="All ages" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All ages</SelectItem>
-                    {AGE_BANDS.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FilterField>
-              <FilterField label="Sort">
-                <Select value={sort} onValueChange={setSort}>
-                  <SelectTrigger className="h-10" aria-label="Sort personas">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default order</SelectItem>
-                    <SelectItem value="name">Name A–Z</SelectItem>
-                    <SelectItem value="age-asc">Youngest first</SelectItem>
-                    <SelectItem value="age-desc">Oldest first</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterField>
-              <Button
-                type="button"
-                variant={grouped ? "secondary" : "outline"}
-                className="h-10 self-end"
-                onClick={() => setGrouped((value) => !value)}
-              >
-                {grouped ? "Clustered" : "Flat list"}
-              </Button>
-            </div>
-          </details>
+        {grouped ? (
+          <div className="mt-6 space-y-8">
+            {groups.map((group) => (
+              <section key={group.cluster}>
+                <div className="flex items-center gap-2">
+                  <h2 className="type-card">{group.cluster}</h2>
+                  <span className="rounded-full bg-secondary px-2 py-1 type-meta text-secondary-foreground">
+                    {group.personas.length}
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                  {group.personas.map((persona) => (
+                    <PersonaCard
+                      key={persona.id}
+                      persona={persona}
+                      image={imageMap.get(persona.id)}
+                      onOpen={() => setSelectedPersona(persona)}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+            {groups.length === 0 ? (
+              <p className="type-body text-muted-foreground">
+                Nothing here yet. Personas matching your filters will appear here.
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {displayed.map((persona) => (
+              <PersonaCard
+                key={persona.id}
+                persona={persona}
+                image={imageMap.get(persona.id)}
+                onOpen={() => setSelectedPersona(persona)}
+              />
+            ))}
+          </div>
+        )}
 
-          {grouped ? (
-            <div className="mt-4 space-y-8">
-              {groups.map((group) => (
-                <section key={group.cluster}>
-                  <div className="flex items-center gap-2">
-                    <h2 className="type-card">{group.cluster}</h2>
-                    <span className="rounded-full bg-secondary px-2 py-1 type-meta text-secondary-foreground">
-                      {group.personas.length}
-                    </span>
-                  </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {group.personas.map((persona) => (
-                      <PersonaCard
-                        key={persona.id}
-                        persona={persona}
-                        image={imageMap.get(persona.id)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
-              {groups.length === 0 ? (
-                <p className="type-body text-muted-foreground">
-                  Nothing here yet. Personas matching your filters will appear here.
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {displayed.map((persona) => (
-                <PersonaCard key={persona.id} persona={persona} image={imageMap.get(persona.id)} />
-              ))}
-            </div>
-          )}
+        {displayed.length < filtered.length ? (
+          <div className="mt-5 flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setVisibleLimit((current) => current + PERSONA_PAGE_SIZE)}
+            >
+              Show 18 more personas
+            </Button>
+          </div>
+        ) : null}
+      </div>
 
-          {displayed.length < filtered.length ? (
-            <div className="mt-5 flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setVisibleLimit((current) => current + PERSONA_PAGE_SIZE)}
-              >
-                Show 18 more personas
-              </Button>
-            </div>
-          ) : null}
-        </div>
-      </CommandGrid>
+      <Sheet
+        open={selectedPersona !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPersona(null);
+        }}
+      >
+        {selectedPersona ? (
+          <PersonaDetails persona={selectedPersona} image={imageMap.get(selectedPersona.id)} />
+        ) : null}
+      </Sheet>
     </WorkspaceShell>
   );
 }
 
-function PersonaCard({ persona, image }: { persona: Persona; image?: PersonaImage | undefined }) {
-  const [open, setOpen] = useState(false);
+function PersonaCard({
+  persona,
+  image,
+  onOpen,
+}: {
+  persona: Persona;
+  image?: PersonaImage | undefined;
+  onOpen: () => void;
+}) {
   const initials = persona.name
     .split(" ")
     .slice(0, 2)
     .map((name) => name[0])
     .join("");
-  const topTraits = Object.entries(persona.traits ?? {})
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
-
   return (
-    <article
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      aria-expanded={open}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card transition-shadow duration-200 hover:shadow-lg"
-    >
+    <article className="group flex h-full min-h-64 flex-col overflow-hidden rounded-2xl border border-border bg-card transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg">
       <div
         className="h-14 w-full bg-gradient-to-br from-secondary to-muted bg-cover bg-center"
         style={
@@ -650,12 +488,12 @@ function PersonaCard({ persona, image }: { persona: Persona; image?: PersonaImag
           </p>
         </div>
 
-        <span className="mt-2 w-fit max-w-full truncate rounded-full bg-primary/10 px-2 py-0.5 type-meta font-medium text-primary">
+        <span className="mt-2 line-clamp-2 min-h-9 w-fit max-w-full rounded-lg bg-primary/10 px-2 py-1 type-meta font-medium leading-4 text-primary">
           {persona.segment}
         </span>
 
         <div className="mt-auto flex flex-wrap gap-1 pt-3">
-          {persona.platforms.slice(0, 3).map((platform) => (
+          {persona.platforms.slice(0, 2).map((platform) => (
             <span
               key={platform}
               className="max-w-full truncate rounded-full bg-secondary px-2 py-0.5 type-meta text-secondary-foreground"
@@ -663,9 +501,9 @@ function PersonaCard({ persona, image }: { persona: Persona; image?: PersonaImag
               {platform}
             </span>
           ))}
-          {persona.platforms.length > 3 ? (
+          {persona.platforms.length > 2 ? (
             <span className="rounded-full bg-secondary px-2 py-0.5 type-meta text-muted-foreground">
-              +{persona.platforms.length - 3}
+              +{persona.platforms.length - 2}
             </span>
           ) : null}
         </div>
@@ -675,76 +513,121 @@ function PersonaCard({ persona, image }: { persona: Persona; image?: PersonaImag
           variant="ghost"
           size="sm"
           className="mt-3 w-full justify-center border border-border"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
+          onClick={onOpen}
         >
-          {open ? "Hide details" : "View details"}
+          View profile
         </Button>
-
-        <div
-          className={cn(
-            "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-            open ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-          )}
-        >
-          <div className="min-h-0 overflow-hidden">
-            <div className="border-t border-border pt-3">
-              <p className="type-meta text-muted-foreground">{persona.role}</p>
-              <p className="mt-2 border-l-2 border-primary/40 pl-3 type-meta italic leading-relaxed text-foreground">
-                “{persona.quote}”
-              </p>
-
-              <dl className="mt-3 space-y-1.5">
-                <Row label="Cluster" value={personaCluster(persona)} />
-                <Row label="Vibe" value={persona.vibe} />
-                <Row label="Decides by" value={persona.decisionStyle} />
-                <Row label="Platforms" value={persona.platforms.join(", ")} />
-              </dl>
-
-              {topTraits.length > 0 ? (
-                <div className="mt-3 space-y-1.5 border-t border-border pt-3">
-                  {topTraits.map(([trait, value]) => (
-                    <div key={trait} className="flex items-center gap-2">
-                      <span className="w-24 shrink-0 truncate type-meta capitalize text-muted-foreground">
-                        {trait}
-                      </span>
-                      <span className="h-1 flex-1 overflow-hidden rounded-full bg-secondary">
-                        <span
-                          className="block h-full rounded-full bg-primary"
-                          style={{ width: `${Math.round(Math.min(1, value) * 100)}%` }}
-                        />
-                      </span>
-                      <span className="w-7 shrink-0 text-right type-meta tabular-nums text-muted-foreground">
-                        {Math.round(Math.min(1, value) * 100)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              <p className="mt-3 border-t border-border pt-3 type-meta leading-relaxed text-muted-foreground">
-                {persona.profile}
-              </p>
-
-              {image ? (
-                <p className="mt-3 truncate type-meta text-muted-foreground/70">
-                  Art by{" "}
-                  <a
-                    href={`${image.photographerUrl}?utm_source=fkf_commsiq&utm_medium=referral`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    {image.photographerName}
-                  </a>{" "}
-                  on Unsplash
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
       </div>
     </article>
+  );
+}
+
+function PersonaDetails({
+  persona,
+  image,
+}: {
+  persona: Persona;
+  image?: PersonaImage | undefined;
+}) {
+  const initials = persona.name
+    .split(" ")
+    .slice(0, 2)
+    .map((name) => name[0])
+    .join("");
+  const topTraits = Object.entries(persona.traits ?? {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+
+  return (
+    <SheetContent side="right" className="w-full overflow-y-auto p-0 sm:max-w-lg">
+      <div
+        className="h-28 bg-gradient-to-br from-secondary to-muted bg-cover bg-center"
+        style={image ? { backgroundImage: `url(${image.backgroundUrl})` } : undefined}
+        aria-hidden="true"
+      />
+      <div className="px-6 pb-8">
+        <div className="-mt-9">
+          {image ? (
+            <img
+              src={image.avatarUrl}
+              alt={`Abstract artwork representing ${persona.name}`}
+              className="size-18 rounded-full border-4 border-background object-cover shadow-sm"
+            />
+          ) : (
+            <span className="flex size-18 items-center justify-center rounded-full border-4 border-background bg-secondary text-base font-bold shadow-sm">
+              {initials}
+            </span>
+          )}
+        </div>
+
+        <SheetHeader className="mt-4">
+          <SheetTitle>{persona.name}</SheetTitle>
+          <SheetDescription>
+            {persona.age} · {persona.location} · {persona.role}
+          </SheetDescription>
+        </SheetHeader>
+
+        {!image ? (
+          <p className="mt-3 w-fit rounded-full bg-muted px-2.5 py-1 type-meta text-muted-foreground">
+            Artwork pending
+          </p>
+        ) : null}
+
+        <p className="mt-5 border-l-2 border-primary/40 pl-4 type-body italic leading-relaxed text-foreground">
+          “{persona.quote}”
+        </p>
+
+        <dl className="mt-6 space-y-2 border-t border-border pt-5">
+          <Row label="Segment" value={persona.segment} />
+          <Row label="Cluster" value={personaCluster(persona)} />
+          <Row label="Vibe" value={persona.vibe} />
+          <Row label="Decides by" value={persona.decisionStyle} />
+          <Row label="Platforms" value={persona.platforms.join(", ")} />
+        </dl>
+
+        {topTraits.length > 0 ? (
+          <div className="mt-6 space-y-2 border-t border-border pt-5">
+            <h3 className="type-card">Strongest traits</h3>
+            {topTraits.map(([trait, value]) => (
+              <div key={trait} className="flex items-center gap-2">
+                <span className="w-28 shrink-0 truncate type-meta capitalize text-muted-foreground">
+                  {trait}
+                </span>
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+                  <span
+                    className="block h-full rounded-full bg-primary"
+                    style={{ width: `${Math.round(Math.min(1, value) * 100)}%` }}
+                  />
+                </span>
+                <span className="w-8 text-right type-meta tabular-nums text-muted-foreground">
+                  {Math.round(Math.min(1, value) * 100)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="mt-6 border-t border-border pt-5">
+          <h3 className="type-card">Profile</h3>
+          <p className="mt-2 type-body leading-relaxed text-muted-foreground">{persona.profile}</p>
+        </div>
+
+        {image ? (
+          <p className="mt-5 type-meta text-muted-foreground/70">
+            Art by{" "}
+            <a
+              href={`${image.photographerUrl}?utm_source=fkf_commsiq&utm_medium=referral`}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2"
+            >
+              {image.photographerName}
+            </a>{" "}
+            on Unsplash
+          </p>
+        ) : null}
+      </div>
+    </SheetContent>
   );
 }
 

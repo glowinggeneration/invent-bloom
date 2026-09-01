@@ -672,7 +672,7 @@ export function useTiming(initialDelay = 60): Timing {
 export function timingLabel(t: Timing) {
   if (t.spreadHours > 0) return spreadLabel(t.spreadHours);
   if (t.delaySeconds > 0) return delayLabel(t.delaySeconds);
-  return "Run now";
+  return spreadLabel(0);
 }
 
 export function TimingFields({
@@ -745,7 +745,7 @@ export function TimingFields({
       <div className="space-y-2">
         <p className="text-xs font-medium">Preferred send windows</p>
         <p className="text-[11px] text-muted-foreground">
-          Optional. The campaign start moves forward to the next open window —{" "}
+          Optional. The campaign start moves forward to the next open window. Current preference:{" "}
           {sendWindowSummary(timing.windows)}.
         </p>
         <SlotPicker days={timing.windows} onChange={timing.setWindows} />

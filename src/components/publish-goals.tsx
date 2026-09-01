@@ -1,5 +1,13 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Check, ChevronDown, Heart, MessageCircle, Send, type LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Heart,
+  MessageCircle,
+  Send,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +28,8 @@ type Goal = {
   tone: "red" | "green" | "black";
   /** URL segment under /campaign. */
   action: string;
+  category: string;
+  cta: string;
   suggested?: boolean;
 };
 
@@ -37,6 +47,8 @@ export const PUBLISH_GOALS: Goal[] = [
     icon: Send,
     tone: "black",
     action: "post",
+    category: "Original content",
+    cta: "Create a post",
     suggested: true,
   },
   {
@@ -47,7 +59,8 @@ export const PUBLISH_GOALS: Goal[] = [
     icon: MessageCircle,
     tone: "red",
     action: "reply",
-    suggested: true,
+    category: "Direct response",
+    cta: "Create a reply",
   },
   {
     key: "engage",
@@ -57,6 +70,8 @@ export const PUBLISH_GOALS: Goal[] = [
     icon: Heart,
     tone: "green",
     action: "engage",
+    category: "Amplification",
+    cta: "Boost a post",
   },
 ];
 
@@ -66,7 +81,7 @@ const TONES: Record<Goal["tone"], string> = {
   black: "bg-foreground/10 text-foreground",
 };
 
-/** Meta-style "choose a goal" grid. Each card routes to the matching tool. */
+/** Outcome grid. Each card makes the execution path and next step explicit. */
 export function PublishGoalGrid({
   onPick,
 }: {
@@ -74,7 +89,7 @@ export function PublishGoalGrid({
   onPick?: (title: string) => void;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 md:grid-cols-3">
       {PUBLISH_GOALS.map((goal, i) => (
         <Link
           key={goal.key}
@@ -82,24 +97,41 @@ export function PublishGoalGrid({
           params={{ action: goal.action }}
           onClick={() => onPick?.(goal.title)}
           style={{ animationDelay: `${i * 60}ms` }}
-          className="group flex animate-in fade-in-0 slide-in-from-bottom-2 flex-col items-center gap-2 rounded-2xl border border-border bg-card p-5 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none"
+          className={cn(
+            "group flex min-h-64 animate-in fade-in-0 slide-in-from-bottom-2 flex-col rounded-2xl border bg-card p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none",
+            goal.suggested ? "border-primary/35 ring-1 ring-primary/10" : "border-border",
+          )}
         >
-          <span
-            className={cn(
-              "flex size-11 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110",
-              TONES[goal.tone],
-            )}
-          >
-            <goal.icon className="size-5" aria-hidden="true" />
+          <span className="flex w-full items-start justify-between gap-3">
+            <span
+              className={cn(
+                "flex size-11 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-105",
+                TONES[goal.tone],
+              )}
+            >
+              <goal.icon className="size-5" aria-hidden="true" />
+            </span>
+            {goal.suggested ? (
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                Recommended
+              </span>
+            ) : null}
           </span>
 
-          <span className="type-card">{goal.title}</span>
-          <span className="type-meta text-muted-foreground">{goal.description}</span>
-          {goal.suggested && (
-            <span className="mt-1 rounded-full bg-muted px-2 py-0.5 type-meta text-muted-foreground">
-              Suggested
-            </span>
-          )}
+          <span className="mt-6 type-meta font-semibold uppercase tracking-wide text-muted-foreground">
+            {goal.category}
+          </span>
+          <span className="mt-1 type-card">{goal.title}</span>
+          <span className="mt-2 type-meta leading-relaxed text-muted-foreground">
+            {goal.description}
+          </span>
+          <span className="mt-auto flex items-center gap-2 pt-6 type-meta font-semibold text-foreground">
+            {goal.cta}
+            <ArrowRight
+              className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
         </Link>
       ))}
     </div>

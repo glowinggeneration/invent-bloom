@@ -31,7 +31,6 @@ import {
   timingLabel,
   usePersonaSelection,
   useTiming,
-  CampaignNameStep,
   CampaignRunningDialog,
 } from "@/components/campaign-kit";
 import { PublishProgress } from "@/components/publish-progress";
@@ -267,6 +266,20 @@ export function PostCampaign() {
 
   const firstPersona = personas.selectedAccounts[0] ?? null;
   const firstVariation = variations.find((v) => v.accountId === firstPersona?.id) ?? variations[0];
+  const requirementsReady = [
+    campaignName.trim().length > 0,
+    tweetText.trim().length > 0 && !overLimit,
+    personas.selected.length > 0,
+    reviewed,
+  ].filter(Boolean).length;
+
+  const setupSteps = [
+    { id: "post-details", label: "Details" },
+    { id: "post-personas", label: "Personas" },
+    { id: "post-voice", label: "Voice" },
+    { id: "post-timing", label: "Timing" },
+    { id: "post-review", label: "Review" },
+  ];
 
   return (
     <WorkspaceShell title="Post campaign">
@@ -279,280 +292,232 @@ export function PostCampaign() {
           action={runButton}
         />
 
+        <div className="sticky top-16 z-10 mb-4 flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-background/95 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
+          <nav
+            className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1"
+            aria-label="Campaign setup steps"
+          >
+            {setupSteps.map((step, index) => (
+              <a
+                key={step.id}
+                href={`#${step.id}`}
+                className="flex min-h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <span className="grid size-5 place-items-center rounded-full bg-muted text-[11px] text-foreground">
+                  {index + 1}
+                </span>
+                {step.label}
+              </a>
+            ))}
+          </nav>
+          <span className="shrink-0 px-2 text-xs font-medium text-muted-foreground">
+            {requirementsReady} of 4 requirements ready
+          </span>
+        </div>
+
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-4">
-            <CampaignNameStep
-              index={1}
-              value={campaignName}
-              onChange={setCampaignName}
-              placeholder="e.g. Harambee Stars matchday push"
-            />
-
-            <Step
-              index={2}
-              title="Message"
-              description="Write the post, or set an objective each persona writes for themselves."
-              aside={
-                <span
-                  className={cn(
-                    "text-xs tabular-nums",
-                    overLimit ? "text-destructive" : "text-muted-foreground",
-                  )}
-                >
-                  {length}/{TWEET_LIMIT}
-                </span>
-              }
-            >
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { on: false, label: "Exact message", hint: "Everyone posts this text" },
-                  { on: true, label: "Objective", hint: "Each persona writes their own version" },
-                ].map((opt) => (
-                  <button
-                    key={String(opt.on)}
-                    type="button"
-                    aria-pressed={objectiveMode === opt.on}
-                    onClick={() => setObjectiveMode(opt.on)}
+            <div id="post-details" className="scroll-mt-36">
+              <Step
+                index={1}
+                title="Campaign details"
+                description="Name the run and define the message it should publish."
+                aside={
+                  <span
                     className={cn(
-                      "flex-1 rounded-xl border p-3 text-left transition",
-                      objectiveMode === opt.on
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40 hover:bg-muted/40",
+                      "text-xs tabular-nums",
+                      overLimit ? "text-destructive" : "text-muted-foreground",
                     )}
                   >
-                    <p className="text-sm font-medium">{opt.label}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">{opt.hint}</p>
-                  </button>
-                ))}
-              </div>
-
-              <Textarea
-                rows={5}
-                value={tweetText}
-                onChange={(e) => setTweetText(e.target.value)}
-                placeholder={
-                  objectiveMode
-                    ? "e.g. Celebrate the Harambee Stars qualification and thank the fans."
-                    : "Write the post exactly as it should appear…"
+                    {length}/{TWEET_LIMIT}
+                  </span>
                 }
-                aria-label="Post message"
-                className="resize-y"
-              />
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium" htmlFor="post-link">
-                  Link to include (optional)
-                </label>
-                <Input
-                  id="post-link"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://footballkenya.org/…"
-                />
-              </div>
-
-              <div className="space-y-2 border-t border-border pt-3">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading || media.length >= 4}
-                  className="inline-flex items-center gap-2 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-50"
-                >
-                  {uploading ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="size-4" />
-                  )}
-                  Add media (optional)
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept="image/*,image/gif,video/*"
-                  multiple
-                  onChange={(e) => handleFiles(e.target.files)}
-                />
-                {media.length > 0 && (
-                  <ul className="flex flex-wrap gap-3">
-                    {media.map((m) => (
-                      <li
-                        key={m.url}
-                        className="relative w-24 overflow-hidden rounded-xl border border-border bg-muted"
-                      >
-                        {m.kind === "video" ? (
-                          <video
-                            src={m.url}
-                            className="h-16 w-full object-cover"
-                            muted
-                            playsInline
-                          />
-                        ) : (
-                          <img src={m.url} alt={m.name} className="h-16 w-full object-cover" />
-                        )}
-                        <button
-                          type="button"
-                          className="absolute right-1 top-1 rounded-full bg-background/90 p-1"
-                          onClick={() => setMedia((p) => p.filter((x) => x.url !== m.url))}
-                          aria-label={`Remove ${m.name}`}
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <p className="text-[11px] text-muted-foreground">
-                  Every selected persona posts with this media attached.
-                </p>
-              </div>
-            </Step>
-
-            <Step index={3} title="Personas" description="Choose who will post.">
-              <PersonaPicker
-                id="post"
-                selection={personas}
-                loading={accountsQuery.isLoading}
-                label="How many personas should post?"
-              />
-            </Step>
-
-            <Step index={4} title="Voice" description="The tone personas adopt and how strongly.">
-              <div className="grid gap-4 sm:grid-cols-2">
+              >
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium" htmlFor="post-tone">
-                    Tone
+                  <label className="text-xs font-medium" htmlFor="post-campaign-name">
+                    Campaign name
                   </label>
-                  <div className="relative">
-                    <Sparkles className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <select
-                      id="post-tone"
-                      value={tone}
-                      onChange={(e) => setTone(e.target.value as PublishTone)}
-                      className="h-11 w-full appearance-none rounded-md border border-input bg-background pl-9 pr-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      {TONE_OPTIONS.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  </div>
+                  <Input
+                    id="post-campaign-name"
+                    value={campaignName}
+                    onChange={(e) => setCampaignName(e.target.value.slice(0, 80))}
+                    placeholder="e.g. Harambee Stars matchday push"
+                    className="max-w-md"
+                  />
                   <p className="text-[11px] text-muted-foreground">
-                    {TONE_OPTIONS.find((t) => t.value === tone)?.hint}
+                    Used to find this run again in Campaigns and Performance.
                   </p>
                 </div>
 
+                <div className="border-t border-border pt-4">
+                  <p className="text-xs font-medium">Message mode</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Write the post, or set an objective each persona writes for themselves.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { on: false, label: "Exact message", hint: "Everyone posts this text" },
+                    { on: true, label: "Objective", hint: "Each persona writes their own version" },
+                  ].map((opt) => (
+                    <button
+                      key={String(opt.on)}
+                      type="button"
+                      aria-pressed={objectiveMode === opt.on}
+                      onClick={() => setObjectiveMode(opt.on)}
+                      className={cn(
+                        "flex-1 rounded-xl border p-3 text-left transition",
+                        objectiveMode === opt.on
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/40",
+                      )}
+                    >
+                      <p className="text-sm font-medium">{opt.label}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{opt.hint}</p>
+                    </button>
+                  ))}
+                </div>
+
+                <Textarea
+                  rows={5}
+                  value={tweetText}
+                  onChange={(e) => setTweetText(e.target.value)}
+                  placeholder={
+                    objectiveMode
+                      ? "e.g. Celebrate the Harambee Stars qualification and thank the fans."
+                      : "Write the post exactly as it should appear…"
+                  }
+                  aria-label="Post message"
+                  className="resize-y"
+                />
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium" htmlFor="post-intensity">
-                    Intensity — {INTENSITY_LABELS[intensity]}
+                  <label className="text-xs font-medium" htmlFor="post-link">
+                    Link to include (optional)
                   </label>
-                  <input
-                    id="post-intensity"
-                    type="range"
-                    min={INTENSITY_MIN}
-                    max={INTENSITY_MAX}
-                    value={intensity}
-                    onChange={(e) => setIntensity(Number(e.target.value))}
-                    className="h-11 w-full accent-[hsl(var(--primary))]"
+                  <Input
+                    id="post-link"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://footballkenya.org/…"
                   />
                 </div>
-              </div>
 
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={
-                  !tweetText.trim() || personas.selected.length === 0 || previewMutation.isPending
-                }
-                onClick={() => previewMutation.mutate()}
-              >
-                {previewMutation.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Wand2 className="size-4" />
-                )}
-                Preview persona versions
-              </Button>
-
-              {variations.length > 0 && (
-                <ul className="space-y-2">
-                  {variations.map((v) => {
-                    const editing = editingId === v.accountId;
-                    const over = textLength(v.tweetText) > TWEET_LIMIT;
-                    return (
-                      <li key={v.accountId} className="rounded-xl border border-border p-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="min-w-0 truncate text-xs font-semibold">
-                            @{v.handle}
-                            {v.personaName ? ` · ${v.personaName}` : ""}
-                          </p>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2 text-xs"
-                            onClick={() => setEditingId(editing ? null : v.accountId)}
-                          >
-                            {editing ? "Done" : "Edit"}
-                          </Button>
-                        </div>
-                        {editing ? (
-                          <>
-                            <Textarea
-                              rows={3}
-                              value={v.tweetText}
-                              onChange={(e) =>
-                                setVariationText(
-                                  {
-                                    id: v.accountId,
-                                    handle: v.handle,
-                                    displayName: v.personaName,
-                                    personaId: v.personaId,
-                                  },
-                                  e.target.value,
-                                )
-                              }
-                              className="mt-2 text-sm"
-                              aria-label={`Post for @${v.handle}`}
+                <div className="space-y-2 border-t border-border pt-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading || media.length >= 4}
+                    className="inline-flex items-center gap-2 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                  >
+                    {uploading ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <ImagePlus className="size-4" />
+                    )}
+                    Add media (optional)
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/*,image/gif,video/*"
+                    multiple
+                    onChange={(e) => handleFiles(e.target.files)}
+                  />
+                  {media.length > 0 && (
+                    <ul className="flex flex-wrap gap-3">
+                      {media.map((m) => (
+                        <li
+                          key={m.url}
+                          className="relative w-24 overflow-hidden rounded-xl border border-border bg-muted"
+                        >
+                          {m.kind === "video" ? (
+                            <video
+                              src={m.url}
+                              className="h-16 w-full object-cover"
+                              muted
+                              playsInline
                             />
-                            <p
-                              className={cn(
-                                "mt-1 text-right text-[11px] tabular-nums",
-                                over ? "text-destructive" : "text-muted-foreground",
-                              )}
-                            >
-                              {textLength(v.tweetText)}/{TWEET_LIMIT}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="mt-1 whitespace-pre-wrap text-sm">{v.tweetText}</p>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </Step>
+                          ) : (
+                            <img src={m.url} alt={m.name} className="h-16 w-full object-cover" />
+                          )}
+                          <button
+                            type="button"
+                            className="absolute right-1 top-1 rounded-full bg-background/90 p-1"
+                            onClick={() => setMedia((p) => p.filter((x) => x.url !== m.url))}
+                            aria-label={`Remove ${m.name}`}
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="text-[11px] text-muted-foreground">
+                    Every selected persona posts with this media attached.
+                  </p>
+                </div>
+              </Step>
+            </div>
 
-            <Step index={5} title="Timing" description="Post together, or spread across a window.">
-              <TimingFields id="post" timing={timing} showDelay={false} />
-            </Step>
+            <div id="post-personas" className="scroll-mt-36">
+              <Step index={2} title="Personas" description="Choose who will post.">
+                <PersonaPicker
+                  id="post"
+                  selection={personas}
+                  loading={accountsQuery.isLoading}
+                  label="How many personas should post?"
+                />
+              </Step>
+            </div>
 
-            {/* Review gate: every persona post is read (and edited) before it goes out */}
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold tracking-tight">Review before posting</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {variations.length === 0
-                    ? "Preview the persona versions above, then edit any that need a change."
-                    : `${variations.length} post(s) ready to review — edit any of them above.`}
-                </p>
-              </div>
-              {variations.length === 0 ? (
+            <div id="post-voice" className="scroll-mt-36">
+              <Step index={3} title="Voice" description="The tone personas adopt and how strongly.">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium" htmlFor="post-tone">
+                      Tone
+                    </label>
+                    <div className="relative">
+                      <Sparkles className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <select
+                        id="post-tone"
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value as PublishTone)}
+                        className="h-11 w-full appearance-none rounded-md border border-input bg-background pl-9 pr-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {TONE_OPTIONS.map((t) => (
+                          <option key={t.value} value={t.value}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {TONE_OPTIONS.find((t) => t.value === tone)?.hint}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium" htmlFor="post-intensity">
+                      Intensity — {INTENSITY_LABELS[intensity]}
+                    </label>
+                    <input
+                      id="post-intensity"
+                      type="range"
+                      min={INTENSITY_MIN}
+                      max={INTENSITY_MAX}
+                      value={intensity}
+                      onChange={(e) => setIntensity(Number(e.target.value))}
+                      className="h-11 w-full accent-[hsl(var(--primary))]"
+                    />
+                  </div>
+                </div>
+
                 <Button
-                  type="button"
+                  size="sm"
                   variant="outline"
                   disabled={
                     !tweetText.trim() || personas.selected.length === 0 || previewMutation.isPending
@@ -562,40 +527,152 @@ export function PostCampaign() {
                   {previewMutation.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    <Sparkles className="size-4 text-primary" />
+                    <Wand2 className="size-4" />
                   )}
                   Preview persona versions
                 </Button>
-              ) : (
-                <label className="inline-flex items-center gap-2 text-xs font-medium">
-                  <input
-                    type="checkbox"
-                    checked={previewApproved}
-                    onChange={(e) => setPreviewApproved(e.target.checked)}
-                    className="size-4 accent-[hsl(var(--primary))]"
-                  />
-                  I've reviewed these posts
-                </label>
-              )}
+
+                {variations.length > 0 && (
+                  <ul className="space-y-2">
+                    {variations.map((v) => {
+                      const editing = editingId === v.accountId;
+                      const over = textLength(v.tweetText) > TWEET_LIMIT;
+                      return (
+                        <li key={v.accountId} className="rounded-xl border border-border p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="min-w-0 truncate text-xs font-semibold">
+                              @{v.handle}
+                              {v.personaName ? ` · ${v.personaName}` : ""}
+                            </p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => setEditingId(editing ? null : v.accountId)}
+                            >
+                              {editing ? "Done" : "Edit"}
+                            </Button>
+                          </div>
+                          {editing ? (
+                            <>
+                              <Textarea
+                                rows={3}
+                                value={v.tweetText}
+                                onChange={(e) =>
+                                  setVariationText(
+                                    {
+                                      id: v.accountId,
+                                      handle: v.handle,
+                                      displayName: v.personaName,
+                                      personaId: v.personaId,
+                                    },
+                                    e.target.value,
+                                  )
+                                }
+                                className="mt-2 text-sm"
+                                aria-label={`Post for @${v.handle}`}
+                              />
+                              <p
+                                className={cn(
+                                  "mt-1 text-right text-[11px] tabular-nums",
+                                  over ? "text-destructive" : "text-muted-foreground",
+                                )}
+                              >
+                                {textLength(v.tweetText)}/{TWEET_LIMIT}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="mt-1 whitespace-pre-wrap text-sm">{v.tweetText}</p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </Step>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-4">
-              {runButton}
-              {!canRun && (
-                <span className="text-xs text-muted-foreground">
-                  {tweetText.trim().length === 0
-                    ? "Write a message or objective."
-                    : overLimit
-                      ? `Trim to ${TWEET_LIMIT} characters.`
-                      : personas.selected.length === 0
-                        ? "Select at least one persona."
-                        : campaignName.trim().length === 0
-                          ? "Name the campaign."
-                          : variations.length === 0
-                            ? "Preview the persona versions first."
-                            : "Confirm you've reviewed these posts."}
-                </span>
-              )}
+            <div id="post-timing" className="scroll-mt-36">
+              <Step index={4} title="Timing" description="Queue now, or spread across a window.">
+                <TimingFields id="post" timing={timing} showDelay={false} />
+              </Step>
+            </div>
+
+            <div id="post-review" className="scroll-mt-36">
+              <Step
+                index={5}
+                title="Review and launch"
+                description="Read every persona version before anything is queued."
+                aside={
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {requirementsReady} of 4 ready
+                  </span>
+                }
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">Persona versions</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {variations.length === 0
+                        ? "Generate the versions, then edit anything that needs a change."
+                        : `${variations.length} post(s) are ready for final review.`}
+                    </p>
+                  </div>
+                  {variations.length === 0 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={
+                        !tweetText.trim() ||
+                        personas.selected.length === 0 ||
+                        previewMutation.isPending
+                      }
+                      onClick={() => previewMutation.mutate()}
+                    >
+                      {previewMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-4 text-primary" />
+                      )}
+                      Generate versions
+                    </Button>
+                  ) : (
+                    <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-xs font-medium">
+                      <input
+                        type="checkbox"
+                        checked={previewApproved}
+                        onChange={(e) => setPreviewApproved(e.target.checked)}
+                        className="size-4 accent-[hsl(var(--primary))]"
+                      />
+                      Reviewed and approved
+                    </label>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+                  {runButton}
+                  {!canRun ? (
+                    <span className="text-xs text-muted-foreground">
+                      {tweetText.trim().length === 0
+                        ? "Write a message or objective."
+                        : overLimit
+                          ? `Trim to ${TWEET_LIMIT} characters.`
+                          : personas.selected.length === 0
+                            ? "Select at least one persona."
+                            : campaignName.trim().length === 0
+                              ? "Name the campaign."
+                              : variations.length === 0
+                                ? "Generate the persona versions first."
+                                : "Confirm that every post has been reviewed."}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-fkf-green">
+                      Ready for an authorised launch.
+                    </span>
+                  )}
+                </div>
+              </Step>
             </div>
 
             {runMutation.isPending && <PublishProgress label="Publishing across your personas" />}
@@ -610,9 +687,20 @@ export function PostCampaign() {
             )}
           </div>
 
-          <aside className="min-w-0 space-y-4 xl:sticky xl:top-24">
+          <aside className="min-w-0 xl:sticky xl:top-32">
             <section className="rounded-2xl border border-border bg-card p-5">
-              <h2 className="text-[15px] font-semibold tracking-tight">Campaign summary</h2>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-[15px] font-semibold tracking-tight">Campaign overview</h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Check the setup and first post before launch.
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                  {requirementsReady}/4 ready
+                </span>
+              </div>
+
               <div className="mt-2 divide-y divide-border">
                 <SummaryRow
                   icon={Sparkles}
@@ -637,82 +725,85 @@ export function PostCampaign() {
                 <SummaryRow icon={Clock} label="Timing" value={timingLabel(timing)} />
                 <SummaryRow
                   icon={Shield}
-                  label="Safety"
-                  value={scheduled ? "Spread across window" : "All at once"}
+                  label="Pacing"
+                  value={timing.smartDelay ? "Automatic spacing" : "Standard spacing"}
                 />
               </div>
-            </section>
 
-            <section className="rounded-2xl border border-border bg-card p-5">
-              <h2 className="text-[15px] font-semibold tracking-tight">Live preview</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">How the first post will read</p>
-              <div className="mt-4 rounded-xl border border-border p-4">
-                {firstPersona ? (
-                  <AccountIdentity
-                    handle={firstPersona.handle}
-                    displayName={firstPersona.displayName}
-                    avatarUrl={firstPersona.avatarUrl ?? null}
-                    avatarClassName="size-9"
-                    nameClassName="truncate text-sm font-semibold"
-                  />
-                ) : (
-                  <p className="text-xs text-muted-foreground">Select a persona to preview.</p>
-                )}
-                <p className="mt-3 whitespace-pre-wrap text-sm">
-                  {firstVariation?.tweetText ||
-                    (objectiveMode
-                      ? "Preview persona versions to see the generated post."
-                      : tweetText || "Your post will appear here.")}
-                </p>
-                {media.length > 0 && (
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {media
-                      .slice(0, 4)
-                      .map((m) =>
-                        m.kind === "video" ? (
-                          <video
-                            key={m.url}
-                            src={m.url}
-                            className="h-20 w-full rounded-lg object-cover"
-                            muted
-                            playsInline
-                          />
-                        ) : (
-                          <img
-                            key={m.url}
-                            src={m.url}
-                            alt={m.name}
-                            className="h-20 w-full rounded-lg object-cover"
-                          />
-                        ),
-                      )}
-                  </div>
-                )}
+              <div className="mt-5 border-t border-border pt-5">
+                <h2 className="text-[15px] font-semibold tracking-tight">Live preview</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">How the first post will read</p>
+                <div className="mt-4 rounded-xl border border-border p-4">
+                  {firstPersona ? (
+                    <AccountIdentity
+                      handle={firstPersona.handle}
+                      displayName={firstPersona.displayName}
+                      avatarUrl={firstPersona.avatarUrl ?? null}
+                      avatarClassName="size-9"
+                      nameClassName="truncate text-sm font-semibold"
+                    />
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Select a persona to preview.</p>
+                  )}
+                  <p className="mt-3 whitespace-pre-wrap text-sm">
+                    {firstVariation?.tweetText ||
+                      (objectiveMode
+                        ? "Preview persona versions to see the generated post."
+                        : tweetText || "Your post will appear here.")}
+                  </p>
+                  {media.length > 0 && (
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      {media
+                        .slice(0, 4)
+                        .map((m) =>
+                          m.kind === "video" ? (
+                            <video
+                              key={m.url}
+                              src={m.url}
+                              className="h-20 w-full rounded-lg object-cover"
+                              muted
+                              playsInline
+                            />
+                          ) : (
+                            <img
+                              key={m.url}
+                              src={m.url}
+                              alt={m.name}
+                              className="h-20 w-full rounded-lg object-cover"
+                            />
+                          ),
+                        )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </section>
 
-            <section className="rounded-2xl border border-border bg-card p-5">
-              <h2 className="text-[15px] font-semibold tracking-tight">Recent posts</h2>
-              <ul className="mt-3 space-y-2">
-                {postRuns.slice(0, 8).map((j) => (
-                  <li key={j.id}>
-                    <button
-                      type="button"
-                      onClick={() => setCampaignId(j.id)}
-                      className="w-full rounded-xl border border-border/70 px-3 py-2 text-left text-xs transition hover:border-primary/50 hover:bg-muted/40"
-                    >
-                      <p className="truncate">{j.tweetText || j.objectiveText || "Post run"}</p>
-                      <p className="mt-1 truncate text-muted-foreground">
-                        {j.succeeded} delivered{j.failed > 0 ? ` · ${j.failed} in progress` : ""} ·{" "}
-                        {new Date(j.createdAt).toLocaleString()}
-                      </p>
-                    </button>
-                  </li>
-                ))}
-                {postRuns.length === 0 && (
-                  <li className="text-xs text-muted-foreground">No posts yet.</li>
-                )}
-              </ul>
+              <details className="mt-5 border-t border-border pt-5">
+                <summary className="cursor-pointer text-sm font-semibold">
+                  Recent posts ({postRuns.length})
+                </summary>
+                <ul className="mt-3 space-y-2">
+                  {postRuns.slice(0, 8).map((j) => (
+                    <li key={j.id}>
+                      <button
+                        type="button"
+                        onClick={() => setCampaignId(j.id)}
+                        className="w-full rounded-xl border border-border/70 px-3 py-2 text-left text-xs transition hover:border-primary/50 hover:bg-muted/40"
+                      >
+                        <p className="truncate">{j.tweetText || j.objectiveText || "Post run"}</p>
+                        <p className="mt-1 truncate text-muted-foreground">
+                          {j.succeeded} delivered
+                          {j.failed > 0 ? ` · ${j.failed} in progress` : ""} ·{" "}
+                          {new Date(j.createdAt).toLocaleString()}
+                        </p>
+                      </button>
+                    </li>
+                  ))}
+                  {postRuns.length === 0 ? (
+                    <li className="text-xs text-muted-foreground">No posts yet.</li>
+                  ) : null}
+                </ul>
+              </details>
             </section>
           </aside>
         </div>
