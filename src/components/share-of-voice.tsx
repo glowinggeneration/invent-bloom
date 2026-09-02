@@ -1,7 +1,7 @@
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { BarChart3 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccountIdentity } from "@/components/account-identity";
+import { CompactPieChart } from "@/components/smait/charts";
 
 export type ShareOfVoiceEntry = {
   handle: string;
@@ -28,9 +28,11 @@ export function ShareOfVoice({ entries }: { entries: ShareOfVoiceEntry[] }) {
   const totalReach = entries.reduce((n, e) => n + e.reach, 0);
   const maxReach = entries.length > 0 ? Math.max(...entries.map((e) => e.reach)) : 0;
 
-  const donut = entries
-    .filter((e) => e.reach > 0)
-    .map((e, i) => ({ name: e.name, value: e.reach, fill: SOV_BARS[i % SOV_BARS.length] }));
+  const donut = entries.map((entry, index) => ({
+    name: entry.name,
+    value: entry.reach,
+    color: SOV_BARS[index % SOV_BARS.length],
+  }));
 
   const leader = entries[0];
   const meaning =
@@ -53,28 +55,15 @@ export function ShareOfVoice({ entries }: { entries: ShareOfVoiceEntry[] }) {
       </Tooltip>
 
       <div className="mt-3 flex items-center gap-3">
-        <div className="h-16 w-16 shrink-0">
-          {donut.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={donut}
-                  dataKey="value"
-                  innerRadius="62%"
-                  outerRadius="100%"
-                  paddingAngle={1}
-                  stroke="none"
-                >
-                  {donut.map((d) => (
-                    <Cell key={d.name} fill={d.fill} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="size-full rounded-full border-8 border-muted" aria-hidden="true" />
-          )}
-        </div>
+        <CompactPieChart
+          data={donut}
+          height={64}
+          showLegend={false}
+          innerRadius="62%"
+          outerRadius="100%"
+          ariaLabel="Share of voice by account"
+          className="w-16 shrink-0"
+        />
         <div className="min-w-0">
           <p className="text-lg font-semibold leading-none tabular-nums">{compact(totalReach)}</p>
           <p className="text-[11px] text-muted-foreground">total reach</p>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { AccountCostSummary } from "@/components/account-cost-summary";
+import { ConnectedAccountsStatus } from "@/components/connected-accounts-status";
 import {
   CommandGrid,
   RailAction,
@@ -113,7 +114,7 @@ function LinkedAccountsPage() {
     refetchInterval: 5 * 60 * 1000,
   });
 
-  const accounts = accountsQuery.data ?? [];
+  const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
   const counts = useMemo(
     () => ({
       all: accounts.length,
@@ -169,6 +170,15 @@ function LinkedAccountsPage() {
               at={accounts[0]?.handleSyncedAt ?? accounts[0]?.lastActivityAt}
               label="Accounts"
               staleMinutes={1440}
+            />
+            <ConnectedAccountsStatus
+              total={counts.all}
+              ready={counts.ready}
+              attention={counts.attention}
+              suspended={counts.suspended}
+              isRefreshing={accountsQuery.isFetching}
+              lastSyncedAt={accounts[0]?.handleSyncedAt ?? accounts[0]?.lastActivityAt}
+              onRefresh={() => accountsQuery.refetch()}
             />
             <Button asChild variant="outline" size="sm">
               <Link to="/account-health">

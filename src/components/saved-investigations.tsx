@@ -4,6 +4,7 @@ import { BookmarkPlus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui-kit";
+import { SaveToggle } from "@/components/core/save-toggle";
 
 const STORAGE_KEY = "fkf-commsiq:saved-investigations:v1";
 
@@ -37,8 +38,8 @@ export function SavedInvestigations({ currentTopic }: { currentTopic?: string })
     if (currentTopic) setQuery(currentTopic);
   }, [currentTopic]);
 
-  const duplicate = useMemo(
-    () => saved.some((item) => item.query.toLowerCase() === query.trim().toLowerCase()),
+  const savedMatch = useMemo(
+    () => saved.find((item) => item.query.toLowerCase() === query.trim().toLowerCase()),
     [saved, query],
   );
 
@@ -49,12 +50,20 @@ export function SavedInvestigations({ currentTopic }: { currentTopic?: string })
 
   function save() {
     const cleanQuery = query.trim().slice(0, 120);
-    if (!cleanQuery || duplicate) return;
+    if (!cleanQuery || savedMatch) return;
     const cleanName = (name.trim() || cleanQuery).slice(0, 60);
     persist(
       [{ id: crypto.randomUUID(), name: cleanName, query: cleanQuery }, ...saved].slice(0, 8),
     );
     setName("");
+  }
+
+  function toggleSaved() {
+    if (savedMatch) {
+      remove(savedMatch.id);
+      return;
+    }
+    save();
   }
 
   function remove(id: string) {
@@ -94,13 +103,16 @@ export function SavedInvestigations({ currentTopic }: { currentTopic?: string })
               maxLength={120}
             />
           </div>
-          <Button type="button" onClick={save} disabled={!query.trim() || duplicate}>
-            Save
-          </Button>
+          <SaveToggle
+            saved={Boolean(savedMatch)}
+            onToggle={toggleSaved}
+            disabled={!query.trim()}
+            className="h-9"
+          />
         </div>
-        {duplicate ? (
+        {savedMatch ? (
           <p className="type-meta mt-2 text-muted-foreground">
-            That investigation is already saved.
+            This investigation is saved. Select Saved to remove it from your list.
           </p>
         ) : null}
 

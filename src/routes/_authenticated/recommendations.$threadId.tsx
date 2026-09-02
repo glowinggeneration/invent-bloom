@@ -4,8 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   ArrowLeft,
-  Check,
-  Copy,
   Download,
   FileDown,
   Loader2,
@@ -30,6 +28,7 @@ import { getThread, sendMessage } from "@/lib/smait.functions";
 import { friendlyError } from "@/lib/friendly-errors";
 import { recordRecommendationCopied } from "@/lib/first-run";
 import { LegalSafetyBadge } from "@/components/legal-safety-badge";
+import { CopyConfirmationButton } from "@/components/core/copy-confirmation-button";
 
 export const Route = createFileRoute("/_authenticated/recommendations/$threadId")({
   head: () => ({
@@ -70,7 +69,6 @@ function RecommendationCard({
   suggestion: Analysis["suggestions"][number];
 }) {
   const [value, setValue] = useState(suggestion.message);
-  const [copied, setCopied] = useState(false);
   const stats = suggestionStats(analysis, index);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -116,15 +114,9 @@ function RecommendationCard({
   ];
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      recordRecommendationCopied(`Recommendation ${LETTERS[index]}`);
-      setCopied(true);
-      toast.success(`Recommendation ${LETTERS[index]} copied to your clipboard`);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      toast.error("We couldn't copy that. Select the text and copy it manually instead.");
-    }
+    await navigator.clipboard.writeText(value);
+    recordRecommendationCopied(`Recommendation ${LETTERS[index]}`);
+    toast.success(`Recommendation ${LETTERS[index]} copied to your clipboard`);
   }
 
   return (
@@ -157,10 +149,15 @@ function RecommendationCard({
       />
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" className="gap-2 rounded-xl" onClick={copy}>
-          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-          Copy
-        </Button>
+        <CopyConfirmationButton
+          size="sm"
+          variant="secondary"
+          className="rounded-xl"
+          copy={copy}
+          onCopyError={() =>
+            toast.error("We couldn't copy that. Select the text and copy it manually instead.")
+          }
+        />
         <Button
           size="sm"
           variant="outline"

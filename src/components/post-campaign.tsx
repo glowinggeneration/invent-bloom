@@ -15,7 +15,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AccountIdentity } from "@/components/account-identity";
@@ -56,6 +56,9 @@ import {
 } from "@/lib/voice-controls";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-errors";
+import { FileUploadProgressList } from "@/components/application/file-upload/file-upload-progress";
+import { useMediaUploadQueue } from "@/components/application/file-upload/use-media-upload-queue";
+import { Slider } from "@/components/base/slider/slider";
 
 /**
  * /campaign/post — publish original posts from selected personas, either as
@@ -79,37 +82,32 @@ export function PostCampaign() {
   const [tweetText, setTweetText] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [media, setMedia] = useState<{ url: string; name: string; kind: string }[]>([]);
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  async function handleFiles(list: FileList | null) {
-    if (!list || list.length === 0) return;
-    const files = Array.from(list).slice(0, 4 - media.length);
-    setUploading(true);
-    try {
-      for (const file of files) {
-        if (file.size > 15_000_000) {
-          toast.error(`${file.name} is over 15MB. Choose a smaller file.`);
-          continue;
-        }
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(new Error("Could not read file."));
-          reader.readAsDataURL(file);
-        });
-        const uploaded = await uploadMedia({ data: { fileName: file.name, dataUrl } });
-        setMedia((prev) => [...prev, uploaded]);
-      }
-    } catch (e) {
+  const uploadFile = useCallback(
+    (fileName: string, dataUrl: string) => uploadMedia({ data: { fileName, dataUrl } }),
+    [uploadMedia],
+  );
+  const handleUploadedMedia = useCallback(
+    (uploaded: { url: string; name: string; kind: string }) =>
+      setMedia((prev) => [...prev, uploaded]),
+    [],
+  );
+  const handleUploadError = useCallback(
+    (error: Error) =>
       toast.error(
-        friendlyError(e, { action: "upload this file", preserved: "Your message is still saved." }),
-      );
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  }
+        friendlyError(error, {
+          action: "upload this file",
+          preserved: "Your message is still saved.",
+        }),
+      ),
+    [],
+  );
+  const mediaUploads = useMediaUploadQueue({
+    upload: uploadFile,
+    uploadedCount: media.length,
+    onUploaded: handleUploadedMedia,
+    onError: handleUploadError,
+  });
 
   // Started from a news story or a mention: seed the composer once.
   const search = useSearch({ strict: false }) as { text?: string; link?: string };
@@ -407,10 +405,10 @@ export function PostCampaign() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading || media.length >= 4}
+                    disabled={mediaUploads.isUploading || media.length >= 4}
                     className="inline-flex items-center gap-2 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-50"
                   >
-                    {uploading ? (
+                    {mediaUploads.isUploading ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
                       <ImagePlus className="size-4" />
@@ -423,7 +421,15 @@ export function PostCampaign() {
                     className="hidden"
                     accept="image/*,image/gif,video/*"
                     multiple
-                    onChange={(e) => handleFiles(e.target.files)}
+                    onChange={(e) => {
+                      void mediaUploads.addFiles(e.target.files);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  <FileUploadProgressList
+                    items={mediaUploads.items}
+                    onRetry={mediaUploads.retry}
+                    onRemove={mediaUploads.remove}
                   />
                   {media.length > 0 && (
                     <ul className="flex flex-wrap gap-3">
@@ -502,16 +508,16 @@ export function PostCampaign() {
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium" htmlFor="post-intensity">
-                      Intensity — {INTENSITY_LABELS[intensity]}
+                      Intensity
                     </label>
-                    <input
+                    <Slider
                       id="post-intensity"
-                      type="range"
                       min={INTENSITY_MIN}
                       max={INTENSITY_MAX}
                       value={intensity}
-                      onChange={(e) => setIntensity(Number(e.target.value))}
-                      className="h-11 w-full accent-[hsl(var(--primary))]"
+                      onValueChange={setIntensity}
+                      formatValue={(next) => INTENSITY_LABELS[next] ?? String(next)}
+                      aria-label="Message intensity"
                     />
                   </div>
                 </div>

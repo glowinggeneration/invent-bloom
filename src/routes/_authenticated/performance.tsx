@@ -12,16 +12,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   Activity,
   Download,
   Eye,
@@ -34,6 +24,7 @@ import {
   TrendingUp,
   Users,
   BookOpen,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MinimalCarousel, type MinimalCarouselCard } from "@/components/core/minimal-carousel";
@@ -77,6 +68,8 @@ import { formatCount, scopeSummary } from "@/lib/performance";
 import { performanceCsv, downloadCsv } from "@/lib/performance-csv";
 import { buildPerformanceReport, formatUsd, formatWindow } from "@/lib/performance-report";
 import { friendlyError } from "@/lib/friendly-errors";
+import { ActivityGauge, MultiSeriesAreaChart } from "@/components/smait/charts";
+import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
 
 export const Route = createFileRoute("/_authenticated/performance")({
   validateSearch: (search: Record<string, unknown>): { campaign?: string } =>
@@ -564,38 +557,73 @@ function PerformancePage() {
                     <TrendingUp className="size-4 text-primary" />
                     <SectionTitle>Performance summary</SectionTitle>
                   </div>
-                  <p className="type-body mt-3 leading-relaxed text-muted-foreground">
-                    {report?.summaryParagraph ||
-                      "Performance context will appear as activity accumulates."}
-                  </p>
-                  {report ? (
-                    <dl className="mt-5 grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-muted/50 p-3">
-                        <dt className="type-meta text-muted-foreground">Engagement rate</dt>
-                        <dd className="type-card mt-1 font-semibold">
-                          {report.headline.engagementRate}%
-                        </dd>
-                      </div>
-                      <div className="rounded-xl bg-muted/50 p-3">
-                        <dt className="type-meta text-muted-foreground">Campaigns measured</dt>
-                        <dd className="type-card mt-1 font-semibold">
-                          {report.headline.campaigns}
-                        </dd>
-                      </div>
-                      <div className="rounded-xl bg-muted/50 p-3">
-                        <dt className="type-meta text-muted-foreground">Peak reach</dt>
-                        <dd className="type-card mt-1 font-semibold">
-                          {report.peakReachDay ? formatCount(report.peakReachDay.reach) : "—"}
-                        </dd>
-                      </div>
-                      <div className="rounded-xl bg-muted/50 p-3">
-                        <dt className="type-meta text-muted-foreground">Earned media value</dt>
-                        <dd className="type-card mt-1 font-semibold">
-                          {formatUsd(report.headline.aveUsd)}
-                        </dd>
-                      </div>
-                    </dl>
-                  ) : null}
+                  <div className="mt-3 grid items-center gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+                    <div>
+                      <p className="type-body leading-relaxed text-muted-foreground">
+                        {report?.summaryParagraph ||
+                          "Performance context will appear as activity accumulates."}
+                      </p>
+                      {report ? (
+                        <dl className="mt-5 grid grid-cols-2 gap-3">
+                          <div className="rounded-xl bg-muted/50 p-3">
+                            <dt className="flex items-center gap-1.5 type-meta text-muted-foreground">
+                              Engagement rate
+                              <Tooltip
+                                title="Engagement rate"
+                                description="The share of recorded impressions that became a like, reply, repost, quote or bookmark."
+                              >
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label="About engagement rate"
+                                    className="rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  >
+                                    <HelpCircle className="size-3.5" aria-hidden="true" />
+                                  </button>
+                                </TooltipTrigger>
+                              </Tooltip>
+                            </dt>
+                            <dd className="type-card mt-1 font-semibold">
+                              {report.headline.engagementRate}%
+                            </dd>
+                          </div>
+                          <div className="rounded-xl bg-muted/50 p-3">
+                            <dt className="type-meta text-muted-foreground">Campaigns measured</dt>
+                            <dd className="type-card mt-1 font-semibold">
+                              {report.headline.campaigns}
+                            </dd>
+                          </div>
+                          <div className="rounded-xl bg-muted/50 p-3">
+                            <dt className="type-meta text-muted-foreground">Peak reach</dt>
+                            <dd className="type-card mt-1 font-semibold">
+                              {report.peakReachDay ? formatCount(report.peakReachDay.reach) : "—"}
+                            </dd>
+                          </div>
+                          <div className="rounded-xl bg-muted/50 p-3">
+                            <dt className="type-meta text-muted-foreground">Earned media value</dt>
+                            <dd className="type-card mt-1 font-semibold">
+                              {formatUsd(report.headline.aveUsd)}
+                            </dd>
+                          </div>
+                        </dl>
+                      ) : null}
+                    </div>
+                    {report ? (
+                      <ActivityGauge
+                        title={`${report.headline.engagementRate}%`}
+                        subtitle="Engagement rate"
+                        data={[
+                          {
+                            name: "Engagement rate",
+                            value: report.headline.engagementRate,
+                            color: "var(--primary)",
+                          },
+                        ]}
+                        height={220}
+                        className="mx-auto max-w-60"
+                      />
+                    ) : null}
+                  </div>
                 </Card>
 
                 <Card>
@@ -607,65 +635,21 @@ function PerformancePage() {
                         : `${data.byDay.length} days of activity`}
                     </p>
                   </div>
-                  <div className="mt-4 h-64 w-full sm:h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart
-                        data={data.byDay}
-                        margin={{ left: -12, right: 4, top: 4, bottom: 0 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                        <XAxis
-                          dataKey="date"
-                          fontSize={11}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={formatDayLabel}
-                        />
-                        <YAxis fontSize={11} tickLine={false} axisLine={false} width={42} />
-                        <Tooltip
-                          labelFormatter={(date: string) =>
-                            new Date(date).toLocaleDateString(undefined, {
-                              weekday: "short",
-                              day: "numeric",
-                              month: "short",
-                            })
-                          }
-                          contentStyle={{
-                            borderRadius: 10,
-                            border: "1px solid var(--border)",
-                            background: "var(--popover)",
-                            color: "var(--popover-foreground)",
-                            fontSize: 12,
-                          }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Area
-                          type="monotone"
-                          dataKey="impressions"
-                          name="Impressions"
-                          stroke="var(--primary)"
-                          fill="var(--primary)"
-                          fillOpacity={0.12}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="reach"
-                          name="Reach"
-                          stroke="var(--chart-2)"
-                          fill="var(--chart-2)"
-                          fillOpacity={0.08}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="engagements"
-                          name="Engagements"
-                          stroke="var(--chart-3)"
-                          fill="var(--chart-3)"
-                          fillOpacity={0.08}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <MultiSeriesAreaChart
+                    data={data.byDay.map((row) => ({ ...row }))}
+                    labelKey="date"
+                    formatLabel={formatDayLabel}
+                    series={[
+                      { dataKey: "impressions", label: "Impressions", color: "var(--primary)" },
+                      { dataKey: "reach", label: "Reach", color: "var(--chart-2)" },
+                      {
+                        dataKey: "engagements",
+                        label: "Engagements",
+                        color: "var(--chart-3)",
+                      },
+                    ]}
+                    className="mt-4"
+                  />
                 </Card>
               </div>
             ) : null}

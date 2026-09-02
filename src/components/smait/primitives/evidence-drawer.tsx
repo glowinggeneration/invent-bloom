@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { ExternalLink, FileText, Quote, X } from "lucide-react";
+import { ProgressiveBlur } from "@/components/core/progressive-blur";
 import { cn } from "@/lib/utils";
 
 export interface EvidenceCitation {
@@ -79,52 +80,61 @@ export function EvidenceDrawer({
             <X className="h-4 w-4" />
           </button>
         </header>
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {children}
-          {citations.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No citations available.</p>
-          ) : (
-            <ul className="space-y-3">
-              {citations.map((c) => (
-                <li key={c.id} className="rounded-xl border border-border bg-background/50 p-3">
-                  <div className="flex items-start gap-2">
-                    {c.tone && (
-                      <span
-                        aria-hidden
-                        className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", TONE_DOT[c.tone])}
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                        <FileText className="h-3 w-3" />
-                        {c.source ?? "Source"}
-                        {c.timestamp && (
-                          <span className="text-muted-foreground/70">· {c.timestamp}</span>
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto px-5 pb-12 pt-8">
+            {children}
+            {citations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No citations available.</p>
+            ) : (
+              <ul className="space-y-3">
+                {citations.map((c) => (
+                  <li key={c.id} className="rounded-xl border border-border bg-background/50 p-3">
+                    <div className="flex items-start gap-2">
+                      {c.tone && (
+                        <span
+                          aria-hidden
+                          className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", TONE_DOT[c.tone])}
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                          <FileText className="h-3 w-3" />
+                          {c.source ?? "Source"}
+                          {c.timestamp && (
+                            <span className="text-muted-foreground/70">· {c.timestamp}</span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-sm font-medium text-foreground">{c.title}</p>
+                        {c.quote && (
+                          <blockquote className="mt-2 flex gap-1.5 border-l-2 border-primary/40 pl-2 text-xs italic text-muted-foreground">
+                            <Quote className="h-3 w-3 shrink-0 opacity-50" />
+                            {c.quote}
+                          </blockquote>
+                        )}
+                        {c.url && (
+                          <a
+                            href={c.url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            Open source <ExternalLink className="h-3 w-3" />
+                          </a>
                         )}
                       </div>
-                      <p className="mt-1 text-sm font-medium text-foreground">{c.title}</p>
-                      {c.quote && (
-                        <blockquote className="mt-2 flex gap-1.5 border-l-2 border-primary/40 pl-2 text-xs italic text-muted-foreground">
-                          <Quote className="h-3 w-3 shrink-0 opacity-50" />
-                          {c.quote}
-                        </blockquote>
-                      )}
-                      {c.url && (
-                        <a
-                          href={c.url}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          Open source <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <ProgressiveBlur backgroundColor="var(--card)" height="2rem" blurAmount="4px" />
+          <ProgressiveBlur
+            position="bottom"
+            backgroundColor="var(--card)"
+            height="3rem"
+            blurAmount="6px"
+          />
         </div>
       </aside>
     </div>

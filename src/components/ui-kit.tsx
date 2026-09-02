@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
+import { useId } from "react";
 import type { ComponentType, HTMLAttributes, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -59,43 +60,64 @@ export function PageTabs<T extends string>({
   ariaLabel?: string;
   className?: string;
 }) {
+  const selectId = useId();
+
   return (
-    <div className={cn("-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0", className)}>
-      <div
-        role="tablist"
+    <div className={className}>
+      <label className="sr-only" htmlFor={selectId}>
+        {ariaLabel}
+      </label>
+      <select
+        id={selectId}
         aria-label={ariaLabel}
-        className="flex min-w-max items-end gap-5 border-b border-border"
+        value={value}
+        onChange={(event) => onChange(event.target.value as T)}
+        className="h-11 w-full rounded-xl border border-input bg-background px-3 type-body text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
       >
-        {items.map((item) => {
-          const active = item.value === value;
-          return (
-            <button
-              key={item.value}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onChange(item.value)}
-              className={cn(
-                "relative flex min-h-11 items-center gap-2 whitespace-nowrap border-b-2 px-0.5 py-2.5 type-meta font-semibold transition-colors",
-                active
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {item.label}
-              {typeof item.count === "number" ? (
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
-                    active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {item.count.toLocaleString()}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
+        {items.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+            {typeof item.count === "number" ? ` (${item.count.toLocaleString()})` : ""}
+          </option>
+        ))}
+      </select>
+      <div className="-mx-3 hidden overflow-x-auto px-3 sm:mx-0 sm:block sm:px-0">
+        <div
+          role="tablist"
+          aria-label={ariaLabel}
+          className="flex min-w-max items-end gap-5 border-b border-border"
+        >
+          {items.map((item) => {
+            const active = item.value === value;
+            return (
+              <button
+                key={item.value}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => onChange(item.value)}
+                className={cn(
+                  "relative flex min-h-11 items-center gap-2 whitespace-nowrap border-b-2 px-0.5 py-2.5 type-meta font-semibold transition-colors",
+                  active
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {item.label}
+                {typeof item.count === "number" ? (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                      active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {item.count.toLocaleString()}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

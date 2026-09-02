@@ -24,7 +24,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AccountIdentity } from "@/components/account-identity";
 import { ExternalIdentity } from "@/components/external-identity";
@@ -72,6 +72,9 @@ import {
   toneOption,
   type PublishTone,
 } from "@/lib/voice-controls";
+import { FileUploadProgressList } from "@/components/application/file-upload/file-upload-progress";
+import { useMediaUploadQueue } from "@/components/application/file-upload/use-media-upload-queue";
+import { Slider } from "@/components/base/slider/slider";
 
 type MediaItem = { url: string; name: string; kind: string };
 
@@ -171,8 +174,31 @@ export function ReplyCampaign() {
         ]
       : [],
   );
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadFile = useCallback(
+    (fileName: string, dataUrl: string) => uploadMedia({ data: { fileName, dataUrl } }),
+    [uploadMedia],
+  );
+  const handleUploadedMedia = useCallback(
+    (uploaded: MediaItem) => setMedia((prev) => [...prev, uploaded]),
+    [],
+  );
+  const handleUploadError = useCallback(
+    (error: Error) =>
+      toast.error(
+        friendlyError(error, {
+          action: "upload this file",
+          preserved: "Your message is still saved.",
+        }),
+      ),
+    [],
+  );
+  const mediaUploads = useMediaUploadQueue({
+    upload: uploadFile,
+    uploadedCount: media.length,
+    onUploaded: handleUploadedMedia,
+    onError: handleUploadError,
+  });
   const [likeTarget, setLikeTarget] = useState(true);
   const [tone, setTone] = useState<PublishTone>(DEFAULT_TONE);
   const [intensity, setIntensity] = useState(DEFAULT_INTENSITY);
@@ -290,36 +316,6 @@ export function ReplyCampaign() {
     setVariations([]);
     setDraftSavedAt(null);
     toast.success("Draft discarded.");
-  }
-
-  /* ---- media upload ---- */
-  async function handleFiles(list: FileList | null) {
-    if (!list || list.length === 0) return;
-    const files = Array.from(list).slice(0, 4 - media.length);
-    setUploading(true);
-    try {
-      for (const file of files) {
-        if (file.size > 15_000_000) {
-          toast.error(`${file.name} is over 15MB. Choose a smaller file.`);
-          continue;
-        }
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(new Error("Could not read file."));
-          reader.readAsDataURL(file);
-        });
-        const uploaded = await uploadMedia({ data: { fileName: file.name, dataUrl } });
-        setMedia((prev) => [...prev, uploaded]);
-      }
-    } catch (e) {
-      toast.error(
-        friendlyError(e, { action: "upload this file", preserved: "Your message is still saved." }),
-      );
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
   }
 
   /* ---- persona variations ---- */
@@ -734,10 +730,10 @@ export function ReplyCampaign() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading || media.length >= 4}
+                      disabled={mediaUploads.isUploading || media.length >= 4}
                       className="inline-flex items-center gap-2 text-muted-foreground transition hover:text-foreground disabled:opacity-50"
                     >
-                      {uploading ? (
+                      {mediaUploads.isUploading ? (
                         <Loader2 className="size-4 animate-spin" />
                       ) : (
                         <ImagePlus className="size-4" />
@@ -767,7 +763,10 @@ export function ReplyCampaign() {
                       className="hidden"
                       accept="image/*,image/gif,video/*"
                       multiple
-                      onChange={(e) => handleFiles(e.target.files)}
+                      onChange={(e) => {
+                        void mediaUploads.addFiles(e.target.files);
+                        e.currentTarget.value = "";
+                      }}
                     />
                   </div>
 
@@ -779,6 +778,12 @@ export function ReplyCampaign() {
                       aria-label="Link to append"
                     />
                   )}
+
+                  <FileUploadProgressList
+                    items={mediaUploads.items}
+                    onRetry={mediaUploads.retry}
+                    onRemove={mediaUploads.remove}
+                  />
 
                   {media.length > 0 && (
                     <ul className="flex flex-wrap gap-3">
@@ -890,16 +895,15 @@ export function ReplyCampaign() {
                         {intensityLabel(intensity)}
                       </span>
                     </div>
-                    <input
+                    <Slider
                       id="reply-intensity"
-                      type="range"
                       min={INTENSITY_MIN}
                       max={INTENSITY_MAX}
                       step={1}
                       value={intensity}
-                      onChange={(e) => setIntensity(clampIntensity(e.target.value))}
-                      className="h-2 w-full cursor-pointer accent-[hsl(var(--primary))]"
-                      aria-valuetext={intensityLabel(intensity)}
+                      onValueChange={(next) => setIntensity(clampIntensity(next))}
+                      formatValue={intensityLabel}
+                      aria-label="Reply intensity"
                     />
                     <div className="flex justify-between text-[11px] text-muted-foreground">
                       <span>Subtle</span>

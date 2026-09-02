@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import {
   ArrowUpRight,
   Download,
@@ -17,9 +18,11 @@ import { DataFreshness } from "@/components/data-freshness";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Card, PageTitle } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
+import { CopyConfirmationButton } from "@/components/core/copy-confirmation-button";
 import { downloadCommandReportPdf } from "@/lib/command-report-pdf";
 import { getOverview } from "@/lib/overview.functions";
 import { getOverviewIntelligence } from "@/lib/overview-intelligence.functions";
+import { friendlyError } from "@/lib/friendly-errors";
 
 export const Route = createFileRoute("/_authenticated/brief")({
   head: () => ({
@@ -154,10 +157,9 @@ function ExecutiveBriefPage() {
     });
   };
 
-  const share = () => {
-    if (typeof window !== "undefined") {
-      void navigator.clipboard?.writeText(window.location.href);
-    }
+  const share = async () => {
+    if (typeof window === "undefined") return;
+    await navigator.clipboard.writeText(window.location.href);
   };
 
   const generatedAt = data?.generatedAt
@@ -174,9 +176,16 @@ function ExecutiveBriefPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <DataFreshness at={data?.generatedAt} label="Brief" staleMinutes={30} />
-            <Button variant="outline" size="sm" onClick={share}>
-              <Share2 className="size-4" /> Copy share link
-            </Button>
+            <CopyConfirmationButton
+              variant="outline"
+              size="sm"
+              icon={Share2}
+              label="Copy share link"
+              copy={share}
+              onCopyError={(error) =>
+                toast.error(friendlyError(error, { action: "copy this share link" }))
+              }
+            />
             <Button variant="outline" size="sm" onClick={download} disabled={!data}>
               <Download className="size-4" /> Download PDF
             </Button>

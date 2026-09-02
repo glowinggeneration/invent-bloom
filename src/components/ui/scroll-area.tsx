@@ -1,12 +1,18 @@
 import * as React from "react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 
+import { ProgressiveBlur } from "@/components/core/progressive-blur";
 import { cn } from "@/lib/utils";
+
+type ScrollAreaProps = React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> & {
+  progressiveBlur?: boolean;
+  blurBackgroundColor?: string;
+};
 
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
->(({ className, children, ...props }, ref) => (
+  ScrollAreaProps
+>(({ className, children, progressiveBlur = true, blurBackgroundColor, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
     ref={ref}
     className={cn("relative overflow-hidden", className)}
@@ -15,6 +21,21 @@ const ScrollArea = React.forwardRef<
     <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
       {children}
     </ScrollAreaPrimitive.Viewport>
+    {progressiveBlur ? (
+      <>
+        <ProgressiveBlur
+          {...(blurBackgroundColor === undefined ? {} : { backgroundColor: blurBackgroundColor })}
+          height="1.75rem"
+          blurAmount="4px"
+        />
+        <ProgressiveBlur
+          position="bottom"
+          {...(blurBackgroundColor === undefined ? {} : { backgroundColor: blurBackgroundColor })}
+          height="2.25rem"
+          blurAmount="5px"
+        />
+      </>
+    ) : null}
     <ScrollBar />
     <ScrollAreaPrimitive.Corner />
   </ScrollAreaPrimitive.Root>

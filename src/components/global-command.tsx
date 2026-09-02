@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ProgressiveBlur } from "@/components/core/progressive-blur";
 import { useProfile } from "@/hooks/use-profile";
 import { isAdminEmail } from "@/lib/access";
 
@@ -243,7 +244,9 @@ export function GlobalCommandPalette() {
   function run(command: (typeof commands)[number]) {
     setOpen(false);
     setQuery("");
-    navigate({ to: command.to as any, search: command.search as any });
+    navigate({ to: command.to, search: command.search } as unknown as Parameters<
+      typeof navigate
+    >[0]);
   }
 
   return (
@@ -292,36 +295,40 @@ export function GlobalCommandPalette() {
               />
             </div>
           </div>
-          <div className="max-h-[55vh] overflow-y-auto p-2">
-            {commands.length ? (
-              <div className="grid gap-1">
-                {commands.map((command) => {
-                  const Icon = command.icon;
-                  return (
-                    <button
-                      key={command.label}
-                      type="button"
-                      onClick={() => run(command)}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
-                        <Icon className="size-4 text-muted-foreground" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block type-body font-semibold">{command.label}</span>
-                        <span className="block truncate type-meta text-muted-foreground">
-                          {command.description}
+          <div className="relative min-h-0 overflow-hidden">
+            <div className="max-h-[55vh] overflow-y-auto px-2 pb-8 pt-5">
+              {commands.length ? (
+                <div className="grid gap-1">
+                  {commands.map((command) => {
+                    const Icon = command.icon;
+                    return (
+                      <button
+                        key={command.label}
+                        type="button"
+                        onClick={() => run(command)}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
+                          <Icon className="size-4 text-muted-foreground" />
                         </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="p-6 text-center type-meta text-muted-foreground">
-                No matching page or action.
-              </p>
-            )}
+                        <span className="min-w-0">
+                          <span className="block type-body font-semibold">{command.label}</span>
+                          <span className="block truncate type-meta text-muted-foreground">
+                            {command.description}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="p-6 text-center type-meta text-muted-foreground">
+                  No matching page or action.
+                </p>
+              )}
+            </div>
+            <ProgressiveBlur height="1.5rem" blurAmount="4px" />
+            <ProgressiveBlur position="bottom" height="2rem" blurAmount="5px" />
           </div>
         </DialogContent>
       </Dialog>

@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   FileUp,
-  Loader2,
   RefreshCw,
   ShieldCheck,
   Trash2,
@@ -15,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { AccountCostSummary } from "@/components/account-cost-summary";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import { FilterableDataTable } from "@/components/core/filterable-data-table";
 import { friendlyError } from "@/lib/friendly-errors";
 import { DataFreshness } from "@/components/data-freshness";
@@ -390,7 +390,7 @@ function AdminAccountsPage() {
               disabled={sync.isPending}
             >
               {sync.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
+                <LoadingIndicator size="sm" label="Syncing X status" />
               ) : (
                 <RefreshCw className="size-4" />
               )}{" "}
@@ -398,7 +398,7 @@ function AdminAccountsPage() {
             </Button>
             <Button size="sm" onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
               {upload.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
+                <LoadingIndicator size="sm" label="Importing accounts" />
               ) : (
                 <Upload className="size-4" />
               )}{" "}
@@ -558,10 +558,11 @@ function AdminAccountsPage() {
 
       <div className="mt-4">
         {accountsQuery.isLoading ? (
-          <div className="grid gap-3">
-            {[0, 1, 2].map((item) => (
-              <div key={item} className="h-24 animate-pulse rounded-xl bg-muted" />
-            ))}
+          <div className="grid min-h-40 place-items-center rounded-xl border border-dashed border-border bg-card">
+            <div className="flex items-center gap-3 type-meta text-muted-foreground">
+              <LoadingIndicator label="Loading connected accounts" />
+              Loading connected accounts…
+            </div>
           </div>
         ) : !accounts.length ? (
           <EmptyState
