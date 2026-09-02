@@ -1,6 +1,6 @@
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { Activity, CalendarDays, MessageSquare } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { CompactPieChart } from "@/components/smait/charts";
 
 export type ConversationSource = {
   name: string;
@@ -31,9 +31,11 @@ export function ConversationSources({
 }) {
   const total = sources.reduce((acc, s) => acc + s.value, 0);
 
-  const donut = sources
-    .map((s, i) => ({ name: s.name, value: s.value, fill: SOURCE_BARS[i % SOURCE_BARS.length] }))
-    .filter((d) => d.value > 0);
+  const donut = sources.map((source, index) => ({
+    name: source.name,
+    value: source.value,
+    color: SOURCE_BARS[index % SOURCE_BARS.length],
+  }));
 
   const leader = [...sources].sort((a, b) => b.value - a.value)[0];
   const meaning =
@@ -59,28 +61,15 @@ export function ConversationSources({
         </Tooltip>
 
         <div className="mt-3 flex items-center gap-3">
-          <div className="h-16 w-16 shrink-0">
-            {donut.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={donut}
-                    dataKey="value"
-                    innerRadius="62%"
-                    outerRadius="100%"
-                    paddingAngle={1}
-                    stroke="none"
-                  >
-                    {donut.map((d) => (
-                      <Cell key={d.name} fill={d.fill} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="size-full rounded-full border-8 border-muted" aria-hidden="true" />
-            )}
-          </div>
+          <CompactPieChart
+            data={donut}
+            height={64}
+            showLegend={false}
+            innerRadius="62%"
+            outerRadius="100%"
+            ariaLabel="Conversation sources"
+            className="w-16 shrink-0"
+          />
           <div className="min-w-0">
             <p className="text-lg font-semibold leading-none tabular-nums">{total}</p>
             <p className="text-[11px] text-muted-foreground">items published</p>

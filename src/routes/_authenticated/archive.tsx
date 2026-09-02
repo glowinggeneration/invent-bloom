@@ -9,6 +9,7 @@ import {
   Loader2,
   Lock,
   MessageSquareText,
+  Pin,
   PlusCircle,
   Search,
   ShieldAlert,
@@ -29,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { deleteThread, listThreads } from "@/lib/smait.functions";
+import { deleteThread, listThreads, updateThread } from "@/lib/smait.functions";
 import { useCachedQuery } from "@/lib/offline-cache";
 import { OfflineNotice } from "@/components/offline-notice";
 import { EmptyState, PageTitle, StatCard } from "@/components/ui-kit";
@@ -42,6 +43,7 @@ import {
   RailStatList,
 } from "@/components/command-layout";
 import { friendlyError } from "@/lib/friendly-errors";
+import { ButtonUtility } from "@/components/base/buttons/button-utility";
 
 type ArchiveSearch = {
   q: string;
@@ -99,6 +101,7 @@ function ArchivePage() {
   const queryClient = useQueryClient();
   const fetchThreads = useServerFn(listThreads);
   const removeThread = useServerFn(deleteThread);
+  const patchThread = useServerFn(updateThread);
   const { q: query, persona, reaction, date: dateRange, sort } = Route.useSearch();
   const navigate = useNavigate({ from: "/archive" });
   const patch = (next: Partial<ArchiveSearch>) =>
@@ -123,7 +126,19 @@ function ArchivePage() {
     onError: (error: Error) => toast.error(friendlyError(error, { action: "delete this test" })),
   });
 
-  const list = threads ?? [];
+  const pin = useMutation({
+    mutationFn: (input: { threadId: string; pinned: boolean }) => patchThread({ data: input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["threads"] }),
+    onError: (error: Error) =>
+      toast.error(
+        friendlyError(error, {
+          action: "update this pinned test",
+          preserved: "The test is still available in your archive.",
+        }),
+      ),
+  });
+
+  const list = useMemo(() => threads ?? [], [threads]);
   const scored = list.filter((t) => typeof t.confidence === "number");
   const average = scored.length
     ? Math.round(scored.reduce((sum, t) => sum + (t.confidence ?? 0), 0) / scored.length)
@@ -148,6 +163,8 @@ function ArchivePage() {
         .slice(0, 5),
     [list],
   );
+
+  const pinnedThreads = useMemo(() => list.filter((thread) => thread.pinned).slice(0, 5), [list]);
 
   const personaOptions = useMemo(() => {
     const set = new Set<string>();
@@ -189,6 +206,7 @@ function ArchivePage() {
       if (sort === "oldest")
         return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
       if (sort === "confidence") return (b.confidence ?? -1) - (a.confidence ?? -1);
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     });
   }, [list, query, persona, reaction, dateRange, sort]);
@@ -359,6 +377,22 @@ function ArchivePage() {
         </div>
       </RailCard>
 
+      {pinnedThreads.length > 0 ? (
+        <RailCard title="Pinned tests" icon={Pin}>
+          <div className="grid gap-2">
+            {pinnedThreads.map((thread) => (
+              <RailAction
+                key={thread.id}
+                to={`/chat/${thread.id}`}
+                icon={Pin}
+                title={thread.title}
+                description={new Date(thread.updatedAt).toLocaleDateString("en-KE")}
+              />
+            ))}
+          </div>
+        </RailCard>
+      ) : null}
+
       <RailCard title="Recently viewed" icon={History}>
         {recentlyViewed.length === 0 ? (
           <p className="type-meta text-muted-foreground">Nothing tested yet.</p>
@@ -505,15 +539,25 @@ function ArchivePage() {
                           Open
                         </Link>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Delete ${thread.title}`}
+                      <ButtonUtility
+                        color="ghost"
+                        size="sm"
+                        icon={Pin}
+                        tooltip={thread.pinned ? `Unpin ${thread.title}` : `Pin ${thread.title}`}
+                        tooltipDescription="Keep important tests at the top of the archive."
+                        className={thread.pinned ? "text-primary" : "text-muted-foreground"}
+                        disabled={pin.isPending && pin.variables?.threadId === thread.id}
+                        onClick={() => pin.mutate({ threadId: thread.id, pinned: !thread.pinned })}
+                      />
+                      <ButtonUtility
+                        color="ghost"
+                        size="sm"
+                        icon={Trash2}
+                        tooltip={`Delete ${thread.title}`}
+                        tooltipDescription="Permanently remove this saved test from the archive."
                         className="text-muted-foreground"
                         onClick={() => remove.mutate(thread.id)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                      />
                     </div>
                   </li>
                 ))}

@@ -12,6 +12,7 @@ import {
   Repeat2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProgressiveBlur } from "@/components/core/progressive-blur";
 import {
   Dialog,
   DialogContent,
@@ -201,119 +202,132 @@ export function CampaignDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[55vh] overflow-y-auto px-5 py-4">
-          {query.isLoading && (
-            <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-            </div>
-          )}
-          {query.isError && (
-            <p className="py-6 text-sm text-muted-foreground">
-              This campaign is still syncing. Try again in a moment.
-            </p>
-          )}
-          {campaign && (
-            <>
-              {campaign.targetTweetUrl && <TargetTweet url={campaign.targetTweetUrl} />}
+        <div className="relative min-h-0 overflow-hidden">
+          <div className="max-h-[55vh] overflow-y-auto px-5 pb-10 pt-7">
+            {query.isLoading && (
+              <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+              </div>
+            )}
+            {query.isError && (
+              <p className="py-6 text-sm text-muted-foreground">
+                This campaign is still syncing. Try again in a moment.
+              </p>
+            )}
+            {campaign && (
+              <>
+                {campaign.targetTweetUrl && <TargetTweet url={campaign.targetTweetUrl} />}
 
-              {campaign.objectiveMode && (
-                <p className="mt-3 rounded-xl border border-border px-3 py-2 text-sm">
-                  <span className="text-xs text-muted-foreground">Objective brief</span>
-                  <br />
-                  {campaign.objectiveText || campaign.tweetText || campaign.commentText || "-"}
-                </p>
-              )}
+                {campaign.objectiveMode && (
+                  <p className="mt-3 rounded-xl border border-border px-3 py-2 text-sm">
+                    <span className="text-xs text-muted-foreground">Objective brief</span>
+                    <br />
+                    {campaign.objectiveText || campaign.tweetText || campaign.commentText || "-"}
+                  </p>
+                )}
 
-              {(() => {
-                const written = campaign.actions.filter(
-                  (a) => a.actionType === "comment" || a.actionType === "tweet",
-                );
-                const engagement = campaign.actions.filter(
-                  (a) => a.actionType !== "comment" && a.actionType !== "tweet",
-                );
-                const threaded = Boolean(campaign.targetTweetUrl);
-                return (
-                  <>
-                    <p className="mt-4 text-xs font-medium text-muted-foreground">
-                      {threaded
-                        ? `Persona replies (${written.length})`
-                        : `Persona posts (${written.length})`}
-                    </p>
-                    <ul className="mt-2 space-y-2">
-                      {written.map((a) => (
-                        <ActionCard key={a.id} action={a} threaded={threaded} />
-                      ))}
-                      {written.length === 0 && (
-                        <li className="py-2 text-xs text-muted-foreground">Nothing here yet.</li>
-                      )}
-                    </ul>
+                {(() => {
+                  const written = campaign.actions.filter(
+                    (a) => a.actionType === "comment" || a.actionType === "tweet",
+                  );
+                  const engagement = campaign.actions.filter(
+                    (a) => a.actionType !== "comment" && a.actionType !== "tweet",
+                  );
+                  const threaded = Boolean(campaign.targetTweetUrl);
+                  return (
+                    <>
+                      <p className="mt-4 text-xs font-medium text-muted-foreground">
+                        {threaded
+                          ? `Persona replies (${written.length})`
+                          : `Persona posts (${written.length})`}
+                      </p>
+                      <ul className="mt-2 space-y-2">
+                        {written.map((a) => (
+                          <ActionCard key={a.id} action={a} threaded={threaded} />
+                        ))}
+                        {written.length === 0 && (
+                          <li className="py-2 text-xs text-muted-foreground">Nothing here yet.</li>
+                        )}
+                      </ul>
 
-                    {engagement.length > 0 && (
-                      <details className="mt-4 rounded-xl border border-border/70 px-3 py-2">
-                        <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
-                          Engagement actions ({engagement.length})
-                        </summary>
-                        <ul className="mt-2 space-y-1.5">
-                          {engagement.map((a) => (
-                            <li
-                              key={a.id}
-                              className="flex flex-wrap items-center justify-between gap-2 text-xs"
-                            >
-                              <AccountIdentity
-                                handle={a.handle}
-                                avatarClassName="size-5"
-                                nameClassName="truncate text-xs font-medium"
-                              />
-                              <span className="text-muted-foreground">
-                                {a.actionType} ·{" "}
-                                <span className={STATUS_TONE[a.status] ?? ""}>
-                                  {statusLabel(a.status)}
+                      {engagement.length > 0 && (
+                        <details className="mt-4 rounded-xl border border-border/70 px-3 py-2">
+                          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+                            Engagement actions ({engagement.length})
+                          </summary>
+                          <ul className="mt-2 space-y-1.5">
+                            {engagement.map((a) => (
+                              <li
+                                key={a.id}
+                                className="flex flex-wrap items-center justify-between gap-2 text-xs"
+                              >
+                                <AccountIdentity
+                                  handle={a.handle}
+                                  avatarClassName="size-5"
+                                  nameClassName="truncate text-xs font-medium"
+                                />
+                                <span className="text-muted-foreground">
+                                  {a.actionType} ·{" "}
+                                  <span className={STATUS_TONE[a.status] ?? ""}>
+                                    {statusLabel(a.status)}
+                                  </span>
                                 </span>
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </details>
-                    )}
-                  </>
-                );
-              })()}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                    </>
+                  );
+                })()}
 
-              <div className="mt-4 flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Engagement actions selected:</span>
-                {(["like", "retweet", "bookmark", "follow"] as (keyof EngagementActionsSelection)[])
-                  .filter((k) => campaign.engagementActions[k])
-                  .map((k) => (
-                    <span
-                      key={k}
-                      className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
-                    >
-                      {ENGAGEMENT_ACTION_LABELS[k]}
-                    </span>
-                  ))}
-                {!Object.values(campaign.engagementActions).some(Boolean) && (
-                  <span className="text-xs text-muted-foreground">None - posting only</span>
-                )}
-              </div>
+                <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    Engagement actions selected:
+                  </span>
+                  {(
+                    [
+                      "like",
+                      "retweet",
+                      "bookmark",
+                      "follow",
+                    ] as (keyof EngagementActionsSelection)[]
+                  )
+                    .filter((k) => campaign.engagementActions[k])
+                    .map((k) => (
+                      <span
+                        key={k}
+                        className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                      >
+                        {ENGAGEMENT_ACTION_LABELS[k]}
+                      </span>
+                    ))}
+                  {!Object.values(campaign.engagementActions).some(Boolean) && (
+                    <span className="text-xs text-muted-foreground">None - posting only</span>
+                  )}
+                </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Applied to:</span>
-                {(["author", "peer", "watchlist"] as const)
-                  .filter((k) => campaign.engagementTargets?.[k])
-                  .map((k) => (
-                    <span
-                      key={k}
-                      className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
-                    >
-                      {ENGAGEMENT_TARGET_LABELS[k]}
-                    </span>
-                  ))}
-                {!Object.values(campaign.engagementTargets ?? {}).some(Boolean) && (
-                  <span className="text-xs text-muted-foreground">No targets</span>
-                )}
-              </div>
-            </>
-          )}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Applied to:</span>
+                  {(["author", "peer", "watchlist"] as const)
+                    .filter((k) => campaign.engagementTargets?.[k])
+                    .map((k) => (
+                      <span
+                        key={k}
+                        className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                      >
+                        {ENGAGEMENT_TARGET_LABELS[k]}
+                      </span>
+                    ))}
+                  {!Object.values(campaign.engagementTargets ?? {}).some(Boolean) && (
+                    <span className="text-xs text-muted-foreground">No targets</span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <ProgressiveBlur height="1.75rem" blurAmount="4px" />
+          <ProgressiveBlur position="bottom" height="2.5rem" blurAmount="5px" />
         </div>
 
         <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-3">

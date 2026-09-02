@@ -8,6 +8,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { ProgressiveBlur } from "@/components/core/progressive-blur";
 
 type Props = {
   open: boolean;
@@ -101,8 +102,12 @@ export function DetailsDrawer({
           {actions ? <div className="mt-3">{actions}</div> : null}
         </SheetHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
-          {children}
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto overscroll-contain px-4 pb-[max(3.5rem,env(safe-area-inset-bottom))] pt-8 sm:px-6">
+            {children}
+          </div>
+          <ProgressiveBlur height="2rem" blurAmount="4px" />
+          <ProgressiveBlur position="bottom" height="3rem" blurAmount="6px" />
         </div>
       </SheetContent>
     </Sheet>
@@ -131,15 +136,23 @@ export function DetailsPanel({ open, onOpenChange, title, description, actions, 
 
   if (wide) {
     return (
-      <aside className="sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto rounded-2xl border border-border/60 bg-card p-4 text-[13px] [&_.card-surface]:border-border/60 [&_h3]:text-sm">
-        <header className="mb-3">
-          <h2 className="text-sm font-semibold">{title}</h2>
-          {description ? (
-            <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{description}</p>
-          ) : null}
-          {actions ? <div className="mt-3">{actions}</div> : null}
-        </header>
-        {children}
+      <aside className="sticky top-6 max-h-[calc(100dvh-3rem)] overflow-hidden rounded-2xl border border-border/60 bg-card text-[13px] [&_.card-surface]:border-border/60 [&_h3]:text-sm">
+        <div className="max-h-[calc(100dvh-3rem)] overflow-y-auto p-4 pb-10">
+          <header className="mb-3">
+            <h2 className="text-sm font-semibold">{title}</h2>
+            {description ? (
+              <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{description}</p>
+            ) : null}
+            {actions ? <div className="mt-3">{actions}</div> : null}
+          </header>
+          {children}
+        </div>
+        <ProgressiveBlur
+          position="bottom"
+          backgroundColor="var(--card)"
+          height="2.5rem"
+          blurAmount="5px"
+        />
       </aside>
     );
   }

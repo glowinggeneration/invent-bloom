@@ -25,6 +25,7 @@ import { ACTION_KIND_LABELS, STATUS_LABELS, type CampaignStatus } from "@/lib/ca
 import { formatCount } from "@/lib/performance";
 import { downloadCsv } from "@/lib/performance-csv";
 import { friendlyError } from "@/lib/friendly-errors";
+import { CopyConfirmationButton } from "@/components/core/copy-confirmation-button";
 
 const STATUS_CLASS: Record<CampaignStatus, string> = {
   running: "bg-emerald-500/10 text-emerald-600",
@@ -141,12 +142,8 @@ export function CampaignReport({ campaignKey }: { campaignKey: string }) {
 
   const share = async () => {
     const url = `${window.location.origin}/performance?campaign=${encodeURIComponent(c.key)}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Report link copied.");
-    } catch (err) {
-      toast.error(friendlyError(err, { action: "copy this link" }));
-    }
+    await navigator.clipboard.writeText(url);
+    toast.success("Report link copied.");
   };
 
   return (
@@ -172,9 +169,13 @@ export function CampaignReport({ campaignKey }: { campaignKey: string }) {
           <Button variant="outline" size="sm" onClick={exportCsv}>
             <Download className="size-4" /> Export report
           </Button>
-          <Button size="sm" onClick={share}>
-            <Share2 className="size-4" /> Share report
-          </Button>
+          <CopyConfirmationButton
+            size="sm"
+            icon={Share2}
+            label="Share report"
+            copy={share}
+            onCopyError={(error) => toast.error(friendlyError(error, { action: "copy this link" }))}
+          />
         </div>
       </div>
 

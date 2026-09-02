@@ -1,9 +1,22 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Building2, CircleHelp, LogOut, Moon, ShieldCheck, Sun } from "lucide-react";
+import {
+  BadgeCheck,
+  Building2,
+  CircleHelp,
+  CreditCard,
+  FileDown,
+  LogOut,
+  Megaphone,
+  Moon,
+  ShieldCheck,
+  Sparkles,
+  Sun,
+} from "lucide-react";
 
+import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { AnimatedBackground } from "@/components/core/animated-background";
 import { TransitionPanel } from "@/components/core/transition-panel";
 import { ContactSupportButton } from "@/components/contact-support";
@@ -13,7 +26,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { friendlyError } from "@/lib/friendly-errors";
-import { initialsOf } from "@/lib/initials";
 import { resetFirstRun } from "@/lib/first-run";
 import { recordTipReset, setTipEnabled, useTipPrefs } from "@/lib/tip-prefs";
 import { useProfile } from "@/hooks/use-profile";
@@ -22,7 +34,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { updateProfileName } from "@/lib/smait.functions";
 import { cn } from "@/lib/utils";
 
+type SectionId = "profile" | "preferences" | "plan" | "security";
+type ProfileSearch = { section?: SectionId };
+
 export const Route = createFileRoute("/_authenticated/profile")({
+  validateSearch: (search: Record<string, unknown>): ProfileSearch => {
+    const section = search["section"];
+    return section === "profile" ||
+      section === "preferences" ||
+      section === "plan" ||
+      section === "security"
+      ? { section }
+      : {};
+  },
   head: () => ({
     meta: [
       { title: "Profile & settings - CommsIQ" },
@@ -32,16 +56,17 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
 
-type SectionId = "profile" | "preferences" | "security";
 const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "profile", label: "Profile" },
   { id: "preferences", label: "Preferences" },
+  { id: "plan", label: "Plan" },
   { id: "security", label: "Security" },
 ];
 
 type ActionState = "idle" | "loading" | "success" | "error";
 
 function ProfilePage() {
+  const { section } = Route.useSearch();
   const { data: profile, isLoading } = useProfile();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -54,6 +79,12 @@ function ProfilePage() {
   const [saveState, setSaveState] = useState<ActionState>("idle");
   const [saveError, setSaveError] = useState("");
   const [resetState, setResetState] = useState<ActionState>("idle");
+
+  useEffect(() => {
+    if (!section) return;
+    const index = SECTIONS.findIndex((item) => item.id === section);
+    if (index >= 0) setActiveIndex(index);
+  }, [section]);
 
   // Only follow the server value when it actually changes underneath us
   // (initial load, or a workspace switch) — never clobber an unsaved edit
@@ -146,27 +177,44 @@ function ProfilePage() {
           <ProfileSkeleton />
         ) : (
           <>
-            <section
-              className="my-7 flex flex-wrap items-center gap-4"
-              aria-label="Account identity"
-            >
-              <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-fkf-green type-card font-semibold text-navy-foreground">
-                {initialsOf(profile?.fullName)}
-              </span>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate type-card font-semibold">{profile?.fullName ?? "…"}</h2>
+            <section className="my-7" aria-label="Account identity">
+              <AvatarLabelGroup
+                size="lg"
+                title={profile?.fullName ?? "Account"}
+                {...(profile?.email === undefined ? {} : { subtitle: profile.email })}
+                trailing={
                   <span className="rounded-full bg-primary/10 px-2 py-1 type-meta font-semibold text-primary">
                     {relationshipLabel}
                   </span>
-                </div>
-                <p className="mt-0.5 truncate type-meta text-muted-foreground">{profile?.email}</p>
-                <p className="mt-1 type-meta text-muted-foreground/80">{workspaceName} workspace</p>
-              </div>
+                }
+              />
+              <p className="ml-[4.75rem] mt-1 type-meta text-muted-foreground/80">
+                {workspaceName} workspace
+              </p>
             </section>
 
+            <label htmlFor="profile-settings-section" className="sr-only">
+              Profile settings section
+            </label>
+            <select
+              id="profile-settings-section"
+              aria-label="Profile settings"
+              value={SECTIONS[activeIndex]?.id ?? SECTIONS[0]!.id}
+              onChange={(event) => {
+                const index = SECTIONS.findIndex((item) => item.id === event.target.value);
+                if (index >= 0) setActiveIndex(index);
+              }}
+              className="h-11 w-full rounded-xl border border-input bg-background px-3 type-body text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+            >
+              {SECTIONS.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.label}
+                </option>
+              ))}
+            </select>
+
             <div
-              className="grid grid-cols-3 gap-1 rounded-2xl bg-muted p-1"
+              className="hidden grid-cols-4 gap-1 rounded-2xl bg-muted p-1 sm:grid"
               role="tablist"
               aria-label="Profile settings"
             >
@@ -379,6 +427,69 @@ function ProfilePage() {
               </section>
 
               <section
+                id="plan-panel"
+                role="tabpanel"
+                aria-labelledby="plan-tab"
+                className="mt-3 rounded-[18px] border border-border bg-card p-5 shadow-sm sm:p-7"
+              >
+                <PanelHeader
+                  title="Plan & usage"
+                  description="Your workspace plan determines the tools and capacity available to this account."
+                />
+
+                <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+                  <article className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="type-meta font-semibold uppercase tracking-[0.08em] text-primary">
+                          Current plan
+                        </p>
+                        <h3 className="mt-1 type-card font-semibold">Workspace</h3>
+                        <p className="mt-1 type-meta text-muted-foreground">
+                          Managed centrally for the {workspaceName} workspace.
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 type-meta font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        <BadgeCheck className="size-3.5" aria-hidden="true" /> Active
+                      </span>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      <PlanCapability
+                        icon={<Sparkles className="size-4" />}
+                        title="Intelligence"
+                        description="Listening and response tools"
+                      />
+                      <PlanCapability
+                        icon={<Megaphone className="size-4" />}
+                        title="Campaigns"
+                        description="Guided execution workflows"
+                      />
+                      <PlanCapability
+                        icon={<FileDown className="size-4" />}
+                        title="Reporting"
+                        description="Reports and exports"
+                      />
+                    </div>
+                  </article>
+
+                  <article className="rounded-2xl border border-border p-5">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <h3 className="type-body font-medium">Plan management</h3>
+                    </div>
+                    <p className="mt-3 type-meta leading-relaxed text-muted-foreground">
+                      Billing, seats and plan changes are controlled by the workspace administrator.
+                    </p>
+                    <ContactSupportButton
+                      context="Plan and billing support"
+                      className="mt-5 min-h-11 w-full rounded-xl"
+                    />
+                  </article>
+                </div>
+              </section>
+
+              <section
                 id="security-panel"
                 role="tabpanel"
                 aria-labelledby="security-tab"
@@ -454,6 +565,29 @@ function PanelHeader({ title, description }: { title: string; description: strin
     <div className="border-b border-border pb-5">
       <h2 className="type-card font-semibold">{title}</h2>
       <p className="mt-1 type-body text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+function PlanCapability({
+  icon,
+  title,
+  description,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-background p-3">
+      <span
+        className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary"
+        aria-hidden
+      >
+        {icon}
+      </span>
+      <p className="mt-3 type-meta font-semibold text-foreground">{title}</p>
+      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{description}</p>
     </div>
   );
 }

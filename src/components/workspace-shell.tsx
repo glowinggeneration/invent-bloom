@@ -11,6 +11,7 @@ import {
   CalendarClock,
   ChevronDown,
   ClipboardCheck,
+  CreditCard,
   Eye,
   FileCheck2,
   FileText,
@@ -29,6 +30,7 @@ import {
 } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 
+import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { AboutPopover } from "@/components/core/about-popover";
 import { OfficialPostAlert } from "@/components/official-post-alert";
 import { IdleSessionGuard } from "@/components/idle-session-guard";
@@ -41,10 +43,14 @@ import { Button } from "@/components/ui/button";
 import { GlobalCommandPalette } from "@/components/global-command";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -582,30 +588,85 @@ export function WorkspaceShell({
                     type="button"
                     aria-label="Open profile menu"
                     aria-haspopup="menu"
-                    className="ml-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-fkf-green type-meta font-semibold text-navy-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="ml-0.5 flex h-10 shrink-0 items-center gap-2 rounded-xl px-1.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:pr-2.5"
                   >
-                    {initialsOf(profile?.fullName)}
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-fkf-green type-meta font-semibold text-navy-foreground">
+                      {initialsOf(profile?.fullName)}
+                    </span>
+                    <span className="hidden max-w-28 truncate type-meta font-semibold sm:block">
+                      {profile?.fullName || (isAdmin ? "Admin" : "Profile")}
+                    </span>
+                    <ChevronDown
+                      className="hidden size-3.5 shrink-0 text-muted-foreground sm:block"
+                      aria-hidden="true"
+                    />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="truncate">
-                    {profile?.fullName || (isAdmin ? "Admin" : "Profile")}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to={profilePath}>
-                      <Settings className="size-4" aria-hidden="true" />
-                      {isAdmin ? "Admin profile" : "Profile"}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleSignOut}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <LogOut className="size-4" aria-hidden="true" />
-                    Log out
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-72 p-0">
+                  <div className="border-b border-border px-4 py-3">
+                    <AvatarLabelGroup
+                      size="md"
+                      title={profile?.fullName || (isAdmin ? "Admin" : "Profile")}
+                      {...(profile?.email === undefined ? {} : { subtitle: profile.email })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-3">
+                    <div>
+                      <p className="type-meta font-semibold text-foreground">Workspace plan</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">Managed centrally</p>
+                    </div>
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      Active
+                    </span>
+                  </div>
+                  <div className="p-1.5">
+                    <DropdownMenuLabel>Account</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                      <Link to={profilePath}>
+                        <Settings className="size-4" aria-hidden="true" />
+                        {isAdmin ? "Admin profile" : "Profile & settings"}
+                      </Link>
+                    </DropdownMenuItem>
+                    {!isAdmin ? (
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile" search={{ section: "plan" }}>
+                          <CreditCard className="size-4" aria-hidden="true" />
+                          Plan & usage
+                        </Link>
+                      </DropdownMenuItem>
+                    ) : null}
+                    <DropdownMenuCheckboxItem
+                      checked={theme === "dark"}
+                      onCheckedChange={(checked) => {
+                        if (checked !== (theme === "dark")) toggle();
+                      }}
+                    >
+                      <Moon className="mr-2 size-4" aria-hidden="true" />
+                      Dark mode
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <HelpCircle className="size-4" aria-hidden="true" />
+                        Support
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-48">
+                        <DropdownMenuItem asChild>
+                          <Link to="/help">Help Centre</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/help">Contact support</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleSignOut}
+                      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                    >
+                      <LogOut className="size-4" aria-hidden="true" />
+                      Log out
+                    </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

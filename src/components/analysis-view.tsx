@@ -1,22 +1,6 @@
-import { Check, ChevronDown, Copy, Download, TriangleAlert } from "lucide-react";
+import { ChevronDown, Download, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +21,9 @@ import {
 } from "@/lib/chart-help";
 import { recordRecommendationCopied } from "@/lib/first-run";
 import { friendlyError } from "@/lib/friendly-errors";
+import { RatingStars } from "@/components/foundations/rating-stars";
+import { CompactPieChart, ComparisonRadarChart } from "@/components/smait/charts";
+import { CopyConfirmationButton } from "@/components/core/copy-confirmation-button";
 
 function Panel({
   title,
@@ -116,34 +103,27 @@ function ConfidenceRing({ value }: { value: number }) {
 
 function SuggestionCard({ suggestion }: { suggestion: Analysis["suggestions"][number] }) {
   const [value, setValue] = useState(suggestion.message);
-  const [copied, setCopied] = useState(false);
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      recordRecommendationCopied(suggestion.title || "a recommendation");
-      setCopied(true);
-      toast.success(`Copied “${suggestion.title}” to your clipboard`);
-      setTimeout(() => setCopied(false), 1600);
-    } catch (err) {
-      toast.error(friendlyError(err, { action: "copy this message" }));
-    }
+    await navigator.clipboard.writeText(value);
+    recordRecommendationCopied(suggestion.title || "a recommendation");
+    toast.success(`Copied “${suggestion.title}” to your clipboard`);
   }
 
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-2">
         <h4 className="min-w-0 type-card">{suggestion.title}</h4>
-        <Button
+        <CopyConfirmationButton
           variant="ghost"
           size="sm"
           aria-label={`Copy recommendation: ${suggestion.title}`}
           className="min-h-11 shrink-0 gap-2 rounded-xl"
-          onClick={copy}
-        >
-          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-          Copy
-        </Button>
+          copy={copy}
+          onCopyError={(error) =>
+            toast.error(friendlyError(error, { action: "copy this message" }))
+          }
+        />
       </div>
       <Textarea
         value={value}
@@ -378,39 +358,24 @@ export function AnalysisView({
           help="How the 100-persona panel splits between supporting, ignoring and pushing back on this message. Hover a slice for what each reaction means."
           footer={noteFooter("sentiment", "panel sentiment")}
         >
-          <ResponsiveContainer width="100%" height={180}>
-            <PieChart>
-              <Pie
-                data={sentimentData}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={40}
-                outerRadius={68}
-                paddingAngle={2}
-                className="cursor-pointer"
-                onClick={(entry: { key?: string; name?: string }) =>
-                  entry?.key && drillSentiment(entry.key, entry.name ?? entry.key)
-                }
-              >
-                {sentimentData.map((entry) => (
-                  <Cell key={entry.key} fill={SENTIMENT_COLOR[entry.key]} />
-                ))}
-              </Pie>
-              <Tooltip
-                content={
-                  <ChartTooltip help={SENTIMENT_HELP} suffix="%" valueLabel="of the panel" />
-                }
-              />
-              <Legend
-                iconType="circle"
-                wrapperStyle={{ fontSize: 12 }}
-                onClick={(entry: { value?: string }) => {
-                  const match = sentimentData.find((s) => s.name === entry?.value);
-                  if (match) drillSentiment(match.key, match.name);
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <CompactPieChart
+            data={sentimentData.map((entry) => ({
+              name: entry.name,
+              value: entry.value,
+              color: SENTIMENT_COLOR[entry.key],
+            }))}
+            height={180}
+            innerRadius={40}
+            outerRadius={68}
+            ariaLabel="Panel sentiment"
+            tooltipContent={
+              <ChartTooltip help={SENTIMENT_HELP} suffix="%" valueLabel="of the panel" />
+            }
+            onSliceClick={(name) => {
+              const match = sentimentData.find((entry) => entry.name === name);
+              if (match) drillSentiment(match.key, match.name);
+            }}
+          />
           <ChartDataTable
             caption="Panel sentiment: share of the 100-persona panel by reaction"
             valueLabel="Share of panel"
@@ -449,29 +414,15 @@ export function AnalysisView({
             help="Each spoke is scored 0-100. Hover a point to see what that dimension measures and where the message is weakest."
             footer={noteFooter("quality", "message quality")}
           >
-            <ResponsiveContainer width="100%" height={230}>
-              <RadarChart
-                data={metricData}
-                outerRadius="72%"
-                className="cursor-pointer"
-                onClick={(state: { activeLabel?: string }) =>
-                  state?.activeLabel && drillMetric(state.activeLabel)
-                }
-              >
-                <PolarGrid stroke="var(--border)" />
-                <PolarAngleAxis
-                  dataKey="metric"
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                />
-                <Radar
-                  dataKey="value"
-                  stroke="var(--primary)"
-                  fill="var(--primary)"
-                  fillOpacity={0.25}
-                />
-                <Tooltip content={<ChartTooltip help={METRIC_HELP} valueLabel="/ 100" />} />
-              </RadarChart>
-            </ResponsiveContainer>
+            <ComparisonRadarChart
+              data={metricData}
+              labelKey="metric"
+              series={[{ dataKey: "value", label: "Message score", color: "var(--primary)" }]}
+              height={230}
+              ariaLabel="Message quality scores"
+              tooltipContent={<ChartTooltip help={METRIC_HELP} valueLabel="/ 100" />}
+              onLabelSelect={drillMetric}
+            />
             <ChartDataTable
               caption="Message quality scores by dimension"
               valueLabel="Score / 100"
@@ -590,7 +541,15 @@ export function AnalysisView({
                     Likely action: {r.likelyAction}
                   </p>
                 </div>
-                <span className="shrink-0 type-card font-semibold text-foreground">{r.score}</span>
+                <div className="shrink-0 text-right">
+                  <span className="block type-card font-semibold text-foreground">{r.score}</span>
+                  <RatingStars
+                    rating={r.score / 20}
+                    size="xs"
+                    className="mt-1"
+                    label={`${r.name} scored ${r.score} out of 100`}
+                  />
+                </div>
               </li>
             ))}
           </ul>
