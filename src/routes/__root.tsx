@@ -85,6 +85,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Test messages against personas with AI analysis, visualize reactions, and get personalized recommendations.",
       },
       { name: "author", content: "Lovable" },
+      { name: "robots", content: "index, follow" },
       { property: "og:title", content: "SMAIT - Test messages on 100 Kenyan personas" },
       {
         property: "og:description",
@@ -102,13 +103,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c7494452-918f-4cef-a9d5-19f1e4a46b18/id-preview-0fa03377--9109f686-339e-417e-8f02-4cc5ee32daae.lovable.app-1785882893977.png",
+        content: "https://smait.lovable.app/smait-logo.png",
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c7494452-918f-4cef-a9d5-19f1e4a46b18/id-preview-0fa03377--9109f686-339e-417e-8f02-4cc5ee32daae.lovable.app-1785882893977.png",
+        content: "https://smait.lovable.app/smait-logo.png",
       },
     ],
     links: [
@@ -117,6 +116,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "canonical", href: "https://smait.lovable.app/" },
     ],
   }),
   shellComponent: RootShell,

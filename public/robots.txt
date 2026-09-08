@@ -1,14 +1,43 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Allow: /auth
+
+Disallow: /account-health
+Disallow: /admin/
+Disallow: /always-on
+Disallow: /archive
+Disallow: /brief
+Disallow: /campaign-manager
+Disallow: /campaign-proof
+Disallow: /campaign/
+Disallow: /campaigns
+Disallow: /changelog
+Disallow: /chat/
+Disallow: /compare
+Disallow: /crisis
+Disallow: /dashboard
+Disallow: /decisions
+Disallow: /governance
+Disallow: /help
+Disallow: /linked-accounts
+Disallow: /mentions
+Disallow: /new
+Disallow: /notifications
+Disallow: /overview
+Disallow: /performance
+Disallow: /personas
+Disallow: /preflight
+Disallow: /profile
+Disallow: /publish
+Disallow: /recommendations/
+Disallow: /reports
+Disallow: /setup
+Disallow: /shared
+Disallow: /testing
+Disallow: /watchlist
+Disallow: /api/
+Disallow: /.well-known/oauth-protected-resource
+Disallow: /.mcp/
+Disallow: /mcp
+
+Sitemap: https://smait.lovable.app/sitemap.xml

@@ -25,6 +25,7 @@ export const Route = createFileRoute("/auth")({
         content: "SMAIT message-testing workspace.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://smait.lovable.app/auth" }],
   }),
   validateSearch: (s: Record<string, unknown>): { next?: string } => {
     const raw = s["next"];
@@ -33,6 +34,17 @@ export const Route = createFileRoute("/auth")({
     return safe ? { next: safe } : {};
   },
   component: AuthPage,
+});
+
+const SOFTWARE_APPLICATION_JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "SMAIT",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "Test messages against personas with AI analysis, visualize reactions, and get personalized recommendations.",
+  url: "https://smait.lovable.app/auth",
 });
 
 function AuthPage() {
@@ -80,6 +92,10 @@ function AuthPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: SOFTWARE_APPLICATION_JSON_LD }}
+      />
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl">
         <div className="flex flex-col items-center text-center">
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-10 w-auto" />

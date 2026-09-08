@@ -20,8 +20,17 @@ export const Route = createFileRoute("/")({
           "Test messages against personas with AI analysis, visualize reactions, and get personalized recommendations.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://smait.lovable.app/" }],
   }),
   component: Index,
+});
+
+const ORGANIZATION_JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "SMAIT",
+  url: "https://smait.lovable.app/",
+  logo: "https://smait.lovable.app/smait-logo.png",
 });
 
 function Index() {
@@ -35,6 +44,10 @@ function Index() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: ORGANIZATION_JSON_LD }}
+      />
       <div className="text-center">
         <img src="/smait-logo.svg" alt="SMAIT logo" className="mx-auto h-12 w-auto" />
         <h1 className="type-section mt-4">SMAIT</h1>
