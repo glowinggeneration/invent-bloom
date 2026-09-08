@@ -1,0 +1,25 @@
+-- Multi-tenant SaaS conversion, Phase 2c: managed-reports storage leak.
+--
+-- Research found a real cross-tenant leak candidate: the managed-reports
+-- bucket's storage.objects SELECT policy is keyed only on bucket_id, with
+-- no join back to managed_reports.workspace_id (Storage RLS is a separate
+-- authorization layer from table RLS - fixing the table's policy in Phase
+-- 2b does not touch this). Any authenticated user, from any future tenant,
+-- could read any file in the bucket directly via the Storage API given its
+-- path, regardless of which workspace's report it belongs to.
+--
+-- Every read in this app already goes through
+-- managed-reports.functions.ts's getManagedReportLink(), which issues a
+-- short-lived signed URL after checking the caller can see that report row
+-- (now workspace-scoped via Phase 2b's RLS policy) - nothing in the app
+-- relies on this blanket policy. Dropping it removes the leak surface
+-- entirely rather than trying to make bucket-level RLS workspace-aware,
+-- matching the same server-issued-signed-URL pattern the message-uploads
+-- bucket already uses for chat/publish images.
+--
+-- New managed-report uploads happen out-of-band today (no in-app upload
+-- function exists yet - this table/bucket is filled manually), so
+-- workspace-prefixed storage paths for new uploads is a separate concern
+-- for whenever an in-app upload flow is built, not addressed here.
+
+DROP POLICY IF EXISTS "Signed-in users read managed report files" ON storage.objects;

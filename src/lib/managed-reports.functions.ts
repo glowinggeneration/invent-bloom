@@ -10,6 +10,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
 import { logAuditEventAsCaller } from "./platform/audit-log.server";
+import { resolveWorkspaceId } from "./workspace.server";
 import type { ManagedReport, ManagedReportStatus } from "./managed-reports";
 
 const BUCKET = "managed-reports";
@@ -109,15 +110,17 @@ export const updateManagedReport = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     assertAdmin(context);
+    const workspaceId = await resolveWorkspaceId(context);
     const { id, ...patch } = data;
     const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
     if (Object.keys(clean).length === 0) return { ok: true };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as any)
       .from("managed_reports")
       .update(clean as any)
-      .eq("id", id);
+      .eq("id", id)
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     await logAuditEventAsCaller(context.supabase, {
       action: "config.change",
@@ -133,15 +136,21 @@ export const deleteManagedReport = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().min(1) }).parse(input))
   .handler(async ({ data, context }) => {
     assertAdmin(context);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
+    const { data: row } = await (supabaseAdmin as any)
       .from("managed_reports")
       .select("storage_path")
       .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (row?.storage_path)
       await supabaseAdmin.storage.from(BUCKET).remove([String(row.storage_path)]);
-    const { error } = await supabaseAdmin.from("managed_reports").delete().eq("id", data.id);
+    const { error } = await (supabaseAdmin as any)
+      .from("managed_reports")
+      .delete()
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     await logAuditEventAsCaller(context.supabase, {
       action: "data.delete",

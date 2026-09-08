@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
 import { logAuditEventAsCaller } from "./platform/audit-log.server";
-import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
+import { resolveWorkspaceId } from "./workspace.server";
 
 export type CampaignReadiness = {
   generatedAt: string;
@@ -53,20 +53,23 @@ function adminClient() {
 
 export const getCampaignReadiness = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<CampaignReadiness> => {
+  .handler(async ({ context }): Promise<CampaignReadiness> => {
     const db = await adminClient();
+    const workspaceId = await resolveWorkspaceId(context);
     const [{ data: accounts }, { count: pending }, { data: state }] = await Promise.all([
-      db.from("x_accounts").select("id, is_active, suspended, auth_token"),
+      db
+        .from("x_accounts")
+        .select("id, is_active, suspended, auth_token")
+        .eq("workspace_id", workspaceId),
       db
         .from("scheduled_actions")
         .select("id", { count: "exact", head: true })
-        .eq("status", "pending"),
-      // TODO(Phase 3): thread the caller's real workspaceId here instead of
-      // the LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
+        .eq("status", "pending")
+        .eq("workspace_id", workspaceId),
       db
         .from("workspace_execution_state")
         .select("paused, reason, paused_at")
-        .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
+        .eq("workspace_id", workspaceId)
         .maybeSingle(),
     ]);
     const list = (accounts ?? []) as any[];
@@ -98,6 +101,7 @@ export const pauseAllCampaignExecution = createServerFn({ method: "POST" })
     async ({ data, context }): Promise<{ pausedActions: number; listeningRules: number }> => {
       assertAdmin(context as any);
       const db = await adminClient();
+      const workspaceId = await resolveWorkspaceId(context);
       const now = new Date().toISOString();
       const [{ data: actions, error: actionError }, { data: rules, error: ruleError }] =
         await Promise.all([
@@ -105,19 +109,19 @@ export const pauseAllCampaignExecution = createServerFn({ method: "POST" })
             .from("scheduled_actions")
             .update({ status: "paused" })
             .eq("status", "pending")
+            .eq("workspace_id", workspaceId)
             .select("id"),
           db
             .from("listening_campaigns")
             .update({ is_active: false })
             .eq("is_active", true)
+            .eq("workspace_id", workspaceId)
             .select("id"),
         ]);
       if (actionError) throw new Error(actionError.message);
       if (ruleError) throw new Error(ruleError.message);
-      // TODO(Phase 3): use the caller's real workspaceId here instead of
-      // the LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
       const { error: stateError } = await db.from("workspace_execution_state").upsert({
-        workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
+        workspace_id: workspaceId,
         paused: true,
         reason: data.reason || "Emergency pause",
         paused_by: context.userId,
@@ -144,10 +148,9 @@ export const clearWorkspacePause = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<{ cleared: true }> => {
     assertAdmin(context as any);
     const db = await adminClient();
-    // TODO(Phase 3): use the caller's real workspaceId here instead of the
-    // LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
+    const workspaceId = await resolveWorkspaceId(context);
     const { error } = await db.from("workspace_execution_state").upsert({
-      workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
+      workspace_id: workspaceId,
       paused: false,
       reason: "",
       paused_by: null,
@@ -204,11 +207,13 @@ function mapWatch(r: any): WatchlistItem {
 
 export const listMonitoringWatchlist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<WatchlistItem[]> => {
+  .handler(async ({ context }): Promise<WatchlistItem[]> => {
     const db = await adminClient();
+    const workspaceId = await resolveWorkspaceId(context);
     const { data, error } = await db
       .from("monitoring_watchlist")
       .select("*")
+      .eq("workspace_id", workspaceId)
       .order("priority")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -221,6 +226,7 @@ export const saveMonitoringWatch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<WatchlistItem> => {
     assertAdmin(context as any);
     const db = await adminClient();
+    const workspaceId = await resolveWorkspaceId(context);
     const row = {
       kind: data.kind,
       label: data.label,
@@ -231,10 +237,17 @@ export const saveMonitoringWatch = createServerFn({ method: "POST" })
       alert_enabled: data.alertEnabled,
       is_active: data.isActive,
       updated_at: new Date().toISOString(),
+      workspace_id: workspaceId,
       ...(data.id ? {} : { created_by: context.userId }),
     };
     const query = data.id
-      ? db.from("monitoring_watchlist").update(row).eq("id", data.id).select("*").single()
+      ? db
+          .from("monitoring_watchlist")
+          .update(row)
+          .eq("id", data.id)
+          .eq("workspace_id", workspaceId)
+          .select("*")
+          .single()
       : db.from("monitoring_watchlist").insert(row).select("*").single();
     const { data: saved, error } = await query;
     if (error) throw new Error(error.message);
@@ -253,7 +266,12 @@ export const deleteMonitoringWatch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ deleted: true }> => {
     assertAdmin(context as any);
     const db = await adminClient();
-    const { error } = await db.from("monitoring_watchlist").delete().eq("id", data.id);
+    const workspaceId = await resolveWorkspaceId(context);
+    const { error } = await db
+      .from("monitoring_watchlist")
+      .delete()
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     await logAuditEventAsCaller(context.supabase, {
       action: "data.delete",
@@ -291,11 +309,13 @@ function mapDecision(r: any): DecisionLogItem {
 
 export const listDecisionLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<DecisionLogItem[]> => {
+  .handler(async ({ context }): Promise<DecisionLogItem[]> => {
     const db = await adminClient();
+    const workspaceId = await resolveWorkspaceId(context);
     const { data, error } = await db
       .from("decision_log")
       .select("*")
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(250);
     if (error) throw new Error(error.message);
@@ -308,6 +328,7 @@ export const saveDecisionLogItem = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<DecisionLogItem> => {
     assertAdmin(context as any);
     const db = await adminClient();
+    const workspaceId = await resolveWorkspaceId(context);
     const row = {
       insight: data.insight,
       decision: data.decision,
@@ -317,10 +338,17 @@ export const saveDecisionLogItem = createServerFn({ method: "POST" })
       source_url: data.sourceUrl || null,
       due_at: data.dueAt || null,
       updated_at: new Date().toISOString(),
+      workspace_id: workspaceId,
       ...(data.id ? {} : { created_by: context.userId }),
     };
     const query = data.id
-      ? db.from("decision_log").update(row).eq("id", data.id).select("*").single()
+      ? db
+          .from("decision_log")
+          .update(row)
+          .eq("id", data.id)
+          .eq("workspace_id", workspaceId)
+          .select("*")
+          .single()
       : db.from("decision_log").insert(row).select("*").single();
     const { data: saved, error } = await query;
     if (error) throw new Error(error.message);
