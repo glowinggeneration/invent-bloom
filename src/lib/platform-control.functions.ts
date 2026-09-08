@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
 import { logAuditEventAsCaller } from "./platform/audit-log.server";
+import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
 
 export type CampaignReadiness = {
   generatedAt: string;
@@ -60,10 +61,12 @@ export const getCampaignReadiness = createServerFn({ method: "POST" })
         .from("scheduled_actions")
         .select("id", { count: "exact", head: true })
         .eq("status", "pending"),
+      // TODO(Phase 3): thread the caller's real workspaceId here instead of
+      // the LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
       db
         .from("workspace_execution_state")
         .select("paused, reason, paused_at")
-        .eq("singleton", true)
+        .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
         .maybeSingle(),
     ]);
     const list = (accounts ?? []) as any[];
@@ -111,8 +114,10 @@ export const pauseAllCampaignExecution = createServerFn({ method: "POST" })
         ]);
       if (actionError) throw new Error(actionError.message);
       if (ruleError) throw new Error(ruleError.message);
+      // TODO(Phase 3): use the caller's real workspaceId here instead of
+      // the LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
       const { error: stateError } = await db.from("workspace_execution_state").upsert({
-        singleton: true,
+        workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
         paused: true,
         reason: data.reason || "Emergency pause",
         paused_by: context.userId,
@@ -139,8 +144,10 @@ export const clearWorkspacePause = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<{ cleared: true }> => {
     assertAdmin(context as any);
     const db = await adminClient();
+    // TODO(Phase 3): use the caller's real workspaceId here instead of the
+    // LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
     const { error } = await db.from("workspace_execution_state").upsert({
-      singleton: true,
+      workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
       paused: false,
       reason: "",
       paused_by: null,

@@ -15,6 +15,23 @@
 
 export type WorkspaceContext = { userId: string; supabase: any };
 
+/**
+ * TEMPORARY, pre-Phase-3 placeholder: the single workspace Phase 1's
+ * backfill migration created for the current single-tenant deployment.
+ * Used only by call sites that haven't yet been threaded a real per-request
+ * workspaceId - specifically entity-config.server.ts's getWorkspaceSettings()
+ * and workspace_execution_state's read/write sites, whose full workspaceId
+ * threading is real, separate work (they reach through several layers of
+ * helper modules) scoped for right before self-serve signup ships, not
+ * bundled into the singleton-column-removal migration that forced this
+ * stopgap. Behaviorally identical to today's singleton behavior since only
+ * this one workspace exists - but it MUST be replaced with real
+ * resolveWorkspaceId()-based threading before Phase 3 ships, or every
+ * future tenant would silently read/write Workspace 1's config instead of
+ * their own.
+ */
+export const LEGACY_SINGLE_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+
 export async function resolveWorkspaceId(context: WorkspaceContext): Promise<string> {
   const { data, error } = await context.supabase
     .from("workspace_members")

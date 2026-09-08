@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { EMPTY_SOCIALS, cleanHandle, type SetupStatus } from "./onboarding";
+import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
 
 const socialsSchema = z.object({
   facebook: z.string().trim().max(120).default(""),
@@ -101,6 +102,8 @@ export const saveSetup = createServerFn({ method: "POST" })
     // Organisation identity and key figures are workspace-wide, not per-user -
     // every team member's setup writes into the same shared row, same as the
     // shared mention_keywords/monitoring_watchlist writes below.
+    // TODO(Phase 3): thread the caller's real workspaceId here instead of
+    // the LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
     const { error: settingsError } = await db
       .from("workspace_settings")
       .update({
@@ -109,7 +112,7 @@ export const saveSetup = createServerFn({ method: "POST" })
         key_figures: data.keyFigures,
         updated_by: context.userId,
       })
-      .eq("singleton", true);
+      .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID);
     if (settingsError) throw new Error(settingsError.message);
 
     // Monitoring keywords — the listening pipeline reads this list every run.

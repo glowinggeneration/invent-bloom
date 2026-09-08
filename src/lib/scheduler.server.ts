@@ -23,6 +23,7 @@ import {
   isRateLimitOrCapacityError,
   planCompliantSchedule,
 } from "./x-compliance.server";
+import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
 
 type Admin = SupabaseClient<any, any, any>;
 
@@ -279,10 +280,14 @@ export async function runDueScheduledActions(input: {
   const { admin, userId } = input;
   const limit = input.limit ?? 40;
 
+  // TODO(Phase 3): this is a background drain, not a single request's
+  // context - once multiple workspaces exist, it needs to check every
+  // workspace's pause state (or be invoked once per workspace), not just
+  // the LEGACY_SINGLE_WORKSPACE_ID stopgap. See workspace.server.ts.
   const { data: workspaceState } = await admin
     .from("workspace_execution_state")
     .select("paused")
-    .eq("singleton", true)
+    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
     .maybeSingle();
   if (workspaceState?.paused) return { picked: 0, succeeded: 0, failed: 0, retried: 0 };
 

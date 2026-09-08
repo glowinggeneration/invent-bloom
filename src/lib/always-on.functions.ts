@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
 import { logAuditEventAsCaller } from "./platform/audit-log.server";
+import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
 import type { AlwaysOnPlanView, AlwaysOnPostView } from "./always-on-view";
 import type { AlwaysOnFeed } from "./always-on-feed";
 
@@ -193,10 +194,12 @@ export const publishDueAlwaysOnPosts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ published: number; failed: number }> => {
     assertAdmin(context as any);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // TODO(Phase 3): thread the caller's real workspaceId here instead of
+    // the LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
     const { data: executionState, error: stateError } = await (supabaseAdmin as any)
       .from("workspace_execution_state")
       .select("paused, reason")
-      .eq("singleton", true)
+      .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
       .maybeSingle();
     if (stateError) throw new Error(stateError.message);
     if (executionState?.paused) {
