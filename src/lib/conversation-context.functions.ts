@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { containsChineseScript } from "./content-language";
-import { matchesMentionTopic } from "./mention-intelligence";
+import { matchesMentionTopic, NARRATIVE_TOPICS } from "./mention-intelligence";
 
 export type ConversationOrigin = {
   label: string;
@@ -37,14 +37,7 @@ type ContextRow = {
   engagements: number;
 };
 
-const TOPICS = [
-  { id: "leadership", label: "Leadership & governance", query: "leadership" },
-  { id: "national-teams", label: "National teams & performance", query: "harambee" },
-  { id: "grassroots", label: "Grassroots & youth development", query: "grassroots" },
-  { id: "league", label: "League, clubs & competitions", query: "league" },
-  { id: "facilities", label: "Facilities & football investment", query: "stadium" },
-  { id: "integrity", label: "Integrity, disputes & accountability", query: "integrity" },
-] as const;
+const TOPICS = NARRATIVE_TOPICS;
 
 function earliest(rows: ContextRow[]): ConversationOrigin | null {
   const row = [...rows]

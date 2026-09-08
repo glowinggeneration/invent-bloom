@@ -1,15 +1,55 @@
 export type MentionImportance = "Critical" | "High impact" | "Relevant" | "Low signal";
 export type SourceAuthority = "High" | "Medium" | "Standard";
 
-const TOPIC_PATTERNS: Record<string, RegExp> = {
-  leadership: /leadership|governance|election|office|chairman|chairperson|director|board/i,
-  harambee: /harambee|starlets|stars|national team|qualif|afcon|match|fixture|coach/i,
-  grassroots: /grassroots|youth|academy|school|u15|u17|talent|development|coach education/i,
-  league: /league|club|premier|nsl|competition|cup|referee|officiat/i,
-  stadium: /stadium|facility|facilities|investment|infrastructure|pitch|training ground/i,
-  integrity:
-    /court|tribunal|corrupt|fraud|scandal|dispute|ban|suspend|protest|accountab|integrity/i,
-};
+/**
+ * Single source of truth for the narrative topic taxonomy - shared by the
+ * Overview narrative breakdown, the Mentions topic filter and the
+ * Conversation Context panel. Previously hand-copied across those three
+ * modules, which had already drifted once (three separately-worded
+ * "leadership" patterns).
+ */
+export const NARRATIVE_TOPICS = [
+  {
+    id: "leadership",
+    label: "Leadership & governance",
+    query: "leadership",
+    re: /leadership|governance|election|office|chairman|chairperson|director|board/i,
+  },
+  {
+    id: "national-teams",
+    label: "National teams & performance",
+    query: "harambee",
+    re: /harambee|starlets|stars|national team|qualif|afcon|match|fixture|coach/i,
+  },
+  {
+    id: "grassroots",
+    label: "Grassroots & youth development",
+    query: "grassroots",
+    re: /grassroots|youth|academy|school|u15|u17|talent|development|coach education/i,
+  },
+  {
+    id: "league",
+    label: "League, clubs & competitions",
+    query: "league",
+    re: /league|club|premier|nsl|competition|cup|referee|officiat/i,
+  },
+  {
+    id: "facilities",
+    label: "Facilities & football investment",
+    query: "stadium",
+    re: /stadium|facility|facilities|investment|infrastructure|pitch|training ground/i,
+  },
+  {
+    id: "integrity",
+    label: "Integrity, disputes & accountability",
+    query: "integrity",
+    re: /court|tribunal|corrupt|fraud|scandal|dispute|ban|suspend|protest|accountab|integrity/i,
+  },
+] as const;
+
+const TOPIC_PATTERNS: Record<string, RegExp> = Object.fromEntries(
+  NARRATIVE_TOPICS.map((topic) => [topic.query, topic.re]),
+);
 
 /** Match an Overview narrative drill-down against the text already collected. */
 export function matchesMentionTopic(text: string, topic?: string | null): boolean {

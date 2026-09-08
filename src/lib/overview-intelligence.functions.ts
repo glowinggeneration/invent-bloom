@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { NARRATIVE_TOPICS } from "./mention-intelligence";
 
 export type NarrativeOrigin = {
   label: string;
@@ -80,44 +81,7 @@ type MentionRow = {
   url: string | null;
 };
 
-const TOPICS: { id: string; label: string; query: string; re: RegExp }[] = [
-  {
-    id: "leadership",
-    label: "Leadership & governance",
-    query: "leadership",
-    re: /leadership|governance|election|office|chairman|chairperson|director|board/i,
-  },
-  {
-    id: "national-teams",
-    label: "National teams & performance",
-    query: "harambee",
-    re: /harambee|starlets|stars|national team|qualif|afcon|match|fixture|coach/i,
-  },
-  {
-    id: "grassroots",
-    label: "Grassroots & youth development",
-    query: "grassroots",
-    re: /grassroots|youth|academy|school|u15|u17|talent|development|coach education/i,
-  },
-  {
-    id: "league",
-    label: "League, clubs & competitions",
-    query: "league",
-    re: /league|club|premier|nsl|competition|cup|referee|officiat/i,
-  },
-  {
-    id: "facilities",
-    label: "Facilities & football investment",
-    query: "stadium",
-    re: /stadium|facility|facilities|investment|infrastructure|pitch|training ground/i,
-  },
-  {
-    id: "integrity",
-    label: "Integrity, disputes & accountability",
-    query: "integrity",
-    re: /court|tribunal|corrupt|fraud|scandal|dispute|ban|suspend|protest|accountab|integrity/i,
-  },
-];
+const TOPICS = NARRATIVE_TOPICS;
 
 function pctChange(current: number, previous: number): number {
   if (previous <= 0) return current > 0 ? 100 : 0;
