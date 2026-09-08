@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Activity, Bell, Database, Gauge, ShieldCheck, UsersRound, Wrench } from "lucide-react";
 
+import { AdminMfaCard } from "@/components/admin-mfa";
 import { AdminUsersPanel } from "@/components/admin-users";
 import { ApifyIntegrationCard } from "@/components/apify-integration";
 import { WorkspaceShell } from "@/components/workspace-shell";
@@ -76,6 +77,8 @@ function AdminProfilePage() {
         </div>
 
         <aside className="space-y-4">
+          <AdminMfaCard />
+
           <Card>
             <h2 className="flex items-center gap-2 type-card font-semibold">
               <Wrench className="size-4 text-primary" /> Administration
