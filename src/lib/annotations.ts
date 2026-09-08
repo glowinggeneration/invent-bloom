@@ -10,7 +10,8 @@ export type Annotation = {
   createdAt: string;
 };
 
-const KEY_PREFIX = "commsiq:annotations:";
+const KEY_PREFIX = "smait:annotations:";
+const LEGACY_KEY_PREFIX = "commsiq:annotations:";
 const listeners = new Set<() => void>();
 const cache = new Map<string, Annotation[]>();
 
@@ -18,12 +19,18 @@ function storageKey(analysisId: string) {
   return `${KEY_PREFIX}${analysisId}`;
 }
 
+function legacyStorageKey(analysisId: string) {
+  return `${LEGACY_KEY_PREFIX}${analysisId}`;
+}
+
 function read(analysisId: string): Annotation[] {
   if (cache.has(analysisId)) return cache.get(analysisId)!;
   let value: Annotation[] = [];
   if (typeof window !== "undefined") {
     try {
-      const raw = window.localStorage.getItem(storageKey(analysisId));
+      const raw =
+        window.localStorage.getItem(storageKey(analysisId)) ??
+        window.localStorage.getItem(legacyStorageKey(analysisId));
       if (raw) value = JSON.parse(raw) as Annotation[];
     } catch {
       value = [];

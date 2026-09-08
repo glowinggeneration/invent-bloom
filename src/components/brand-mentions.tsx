@@ -48,7 +48,6 @@ import {
 } from "@/lib/brand-mentions.functions";
 
 import { translate as translateText, TRANSLATION_FALLBACK_MESSAGE } from "@/lib/translation";
-import { BRAND_PROFILE_HANDLES } from "@/lib/brand-profiles";
 import { listNews, type ScoredNewsArticle } from "@/lib/news.functions";
 import { SOCIAL_PROVIDERS, isSocialProvider } from "@/lib/news";
 import { listSocialMentions, type SocialMention } from "@/lib/apify-mentions.functions";
@@ -457,7 +456,9 @@ export function BrandMentions({
           <div>
             <SectionTitle>Mentions</SectionTitle>
             <p className="type-meta mt-1 text-muted-foreground">
-              Posts mentioning {BRAND_PROFILE_HANDLES.map((h) => `@${h}`).join(" and ")}.
+              {data?.brandHandles?.length
+                ? `Posts mentioning ${data.brandHandles.map((h) => `@${h}`).join(" and ")}.`
+                : "No brand handle configured yet — add one in setup to see tagged posts here."}
             </p>
           </div>
           <div className="flex items-center gap-2">

@@ -17,5 +17,7 @@ export type Profile = {
   id: string;
   email: string;
   fullName: string;
-  org: "fkf" | "external";
+  org: "team" | "external";
+  /** The configured organisation name, or "Team" when unconfigured. */
+  workspaceName: string;
 };

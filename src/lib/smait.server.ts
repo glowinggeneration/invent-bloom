@@ -20,11 +20,52 @@ function describe(p: Persona, state?: PersonaStateRow): string {
   return `- ${p.id} | ${p.name}, ${p.age}, ${p.role}, ${p.location}. Segment: ${p.segment}. Vibe: ${p.vibe}. Decision style: ${p.decisionStyle}. Platforms: ${p.platforms.join(", ")}.${traits ? ` Traits: ${traits}.` : ""} ${p.profile}${state ? ` Adaptive ${adaptiveBrief(state)}.` : ""}`;
 }
 
+/**
+ * Records what happened with each gateway call (provider/model/tokens/
+ * latency/outcome) to ai_events, per Master Rules §9.8. Never records
+ * prompt or response content - only shape and cost signals. Best-effort:
+ * a logging failure never breaks the actual AI call it's describing.
+ */
+async function recordGatewayEvent(meta: {
+  userId: string | null;
+  feature: string;
+  startedAt: number;
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  outcome: "success" | "failure";
+  failureReason?: string;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { recordAiEvent } = await import("./platform/ai-observability.server");
+    const response: { content: string; provider: string; model: string } & Partial<{
+      inputTokens: number;
+      outputTokens: number;
+    }> = { content: "", provider: "lovable-gateway", model: MODEL };
+    if (typeof meta.usage?.prompt_tokens === "number")
+      response.inputTokens = meta.usage.prompt_tokens;
+    if (typeof meta.usage?.completion_tokens === "number")
+      response.outputTokens = meta.usage.completion_tokens;
+    await recordAiEvent(supabaseAdmin as any, {
+      userId: meta.userId,
+      feature: meta.feature,
+      startedAt: meta.startedAt,
+      outcome:
+        meta.outcome === "success"
+          ? { ok: true, attempts: 1, fallbackUsed: false, response }
+          : { ok: false, attempts: 1, error: meta.failureReason ?? "unknown error" },
+    });
+  } catch (err) {
+    console.error("[AI] observability logging failed", err);
+  }
+}
+
 async function callGateway(
   apiKey: string,
   system: string,
   content: GatewayMessageContent[],
+  meta: { userId: string | null; feature: string },
 ): Promise<Record<string, unknown>> {
+  const startedAt = Date.now();
   const response = await fetch(GATEWAY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
@@ -39,32 +80,66 @@ async function callGateway(
   });
 
   if (response.status === 429) {
+    void recordGatewayEvent({
+      ...meta,
+      startedAt,
+      outcome: "failure",
+      failureReason: "rate_limited",
+    });
     throw new Error("Too many requests right now - please try again in a moment.");
   }
   if (response.status === 402) {
+    void recordGatewayEvent({
+      ...meta,
+      startedAt,
+      outcome: "failure",
+      failureReason: "credits_exhausted",
+    });
     throw new Error("AI credits are exhausted. Please top up to keep testing messages.");
   }
   if (!response.ok) {
     const body = await response.text();
     console.error(`[AI] gateway error ${response.status}: ${body}`);
+    void recordGatewayEvent({
+      ...meta,
+      startedAt,
+      outcome: "failure",
+      failureReason: `http_${response.status}`,
+    });
     throw new Error("The analysis service failed. Please try again.");
   }
 
-  const payload = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+  const payload = (await response.json()) as {
+    choices?: { message?: { content?: string } }[];
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
   const raw = payload.choices?.[0]?.message?.content ?? "";
   const cleaned = raw
     .replace(/^```(?:json)?/i, "")
     .replace(/```$/, "")
     .trim();
   try {
-    return JSON.parse(cleaned) as Record<string, unknown>;
+    const parsed = JSON.parse(cleaned) as Record<string, unknown>;
+    void recordGatewayEvent({
+      ...meta,
+      startedAt,
+      outcome: "success",
+      ...(payload.usage ? { usage: payload.usage } : {}),
+    });
+    return parsed;
   } catch {
     console.error("[AI] unparseable response", raw.slice(0, 500));
+    void recordGatewayEvent({
+      ...meta,
+      startedAt,
+      outcome: "failure",
+      failureReason: "unparseable_response",
+    });
     throw new Error("The analysis came back malformed. Please try again.");
   }
 }
 
-const PANEL_SYSTEM = `You are the persona-panel engine for CommsIQ, a Kenyan message-testing platform.
+const PANEL_SYSTEM = `You are the persona-panel engine for SMAIT, a Kenyan message-testing platform.
 
 You are given a slice of a 100-persona synthetic panel, research-calibrated on Big Five traits,
 Hofstede cultural dimensions for Kenya, and Nairobi digital-behaviour research.
@@ -83,7 +158,7 @@ Return STRICT JSON only:
 "reaction": "one sentence in that persona's own voice", "likelyAction": "3-5 words e.g. Shares it, Scrolls past, Asks price",
 "strategy": "the response strategy that persona would take" } ] }`;
 
-const SYNTHESIS_SYSTEM = `You are the head strategist for CommsIQ.
+const SYNTHESIS_SYSTEM = `You are the head strategist for SMAIT.
 
 You receive a message under test and a statistical digest of how a 100-persona Kenyan panel reacted.
 Write the verdict and rewrites. Be specific, commercial and Kenyan-literate.
@@ -110,6 +185,7 @@ export async function runAnalysis(input: {
   imageDataUrl?: string | null;
   attachments?: { name: string; excerpt: string }[];
   history?: { role: "user" | "assistant"; content: string }[];
+  userId?: string | null;
 }): Promise<Analysis> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured for this project.");
@@ -146,7 +222,10 @@ export async function runAnalysis(input: {
       if (input.imageDataUrl) {
         content.push({ type: "image_url", image_url: { url: input.imageDataUrl } });
       }
-      const parsed = await callGateway(apiKey, PANEL_SYSTEM, content);
+      const parsed = await callGateway(apiKey, PANEL_SYSTEM, content, {
+        userId: input.userId ?? null,
+        feature: "smait.persona_panel",
+      });
       const list = Array.isArray(parsed["reactions"]) ? parsed["reactions"] : [];
       return list as Partial<PersonaReaction>[];
     }),
@@ -194,9 +273,12 @@ export async function runAnalysis(input: {
       .join("\n")}`,
   ].join("\n\n");
 
-  const synthesis = await callGateway(apiKey, SYNTHESIS_SYSTEM, [
-    { type: "text", text: `${messageBlock}\n\nPanel digest:\n${digest}` },
-  ]);
+  const synthesis = await callGateway(
+    apiKey,
+    SYNTHESIS_SYSTEM,
+    [{ type: "text", text: `${messageBlock}\n\nPanel digest:\n${digest}` }],
+    { userId: input.userId ?? null, feature: "smait.synthesis" },
+  );
 
   const metrics = (synthesis["metrics"] ?? {}) as Record<string, unknown>;
   const rawClass = (synthesis["classification"] ?? {}) as Record<string, unknown>;

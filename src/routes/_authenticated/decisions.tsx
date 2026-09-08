@@ -51,7 +51,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/decisions")({
   head: () => ({
     meta: [
-      { title: "Decision Log - CommsIQ" },
+      { title: "Decision Log - SMAIT" },
       {
         name: "description",
         content:

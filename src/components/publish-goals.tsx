@@ -24,7 +24,7 @@ type Goal = {
   title: string;
   description: string;
   icon: LucideIcon;
-  /** FKF brand: federation red, pitch green, black. */
+  /** SMAIT brand accent tone. */
   tone: "red" | "green" | "black";
   /** URL segment under /campaign. */
   action: string;
@@ -77,7 +77,7 @@ export const PUBLISH_GOALS: Goal[] = [
 
 const TONES: Record<Goal["tone"], string> = {
   red: "bg-primary/10 text-primary",
-  green: "bg-fkf-green/10 text-fkf-green",
+  green: "bg-positive/10 text-positive",
   black: "bg-foreground/10 text-foreground",
 };
 

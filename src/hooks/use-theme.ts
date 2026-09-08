@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { readWithLegacyKey } from "@/lib/legacy-storage";
 
 type Theme = "light" | "dark";
 
-const KEY = "fkf-commsiq-theme";
+const KEY = "smait-theme";
+const LEGACY_KEY = "fkf-commsiq-theme";
 
 function apply(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
@@ -12,7 +14,7 @@ export function useTheme() {
   const [theme, setThemeState] = useState<Theme>("light");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(KEY);
+    const stored = readWithLegacyKey(KEY, LEGACY_KEY);
     const next: Theme = stored === "dark" ? "dark" : "light";
     setThemeState(next);
     apply(next);

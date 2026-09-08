@@ -76,7 +76,7 @@ function fallbackName(ctx: CampaignNameContext): CampaignName {
   if (!source) {
     const who = (ctx.handles ?? []).slice(0, 2).join(", ");
     return {
-      name: who ? titleCase(`${who} outreach`) : "Kenyan Football Activity",
+      name: who ? titleCase(`${who} outreach`) : "General Outreach",
       summary: "",
     };
   }
@@ -100,13 +100,15 @@ function contextBlock(ctx: CampaignNameContext) {
     .slice(0, 4000);
 }
 
-const SYSTEM = [
-  "You name social media campaigns for Football Kenya Federation communications staff.",
-  "Given campaign context, return a title of 2 to 6 words describing the SUBJECT or OBJECTIVE,",
-  "never the mechanism. Never output generic names like Campaign, New Campaign, Reply Campaign,",
-  "Engagement Campaign or Social Campaign. Also return a one-line summary of at most 90 characters.",
-  'Return strict JSON only: {"name":string,"summary":string}',
-].join(" ");
+function buildSystemPrompt(subject: string): string {
+  return [
+    `You name social media campaigns for ${subject} communications staff.`,
+    "Given campaign context, return a title of 2 to 6 words describing the SUBJECT or OBJECTIVE,",
+    "never the mechanism. Never output generic names like Campaign, New Campaign, Reply Campaign,",
+    "Engagement Campaign or Social Campaign. Also return a one-line summary of at most 90 characters.",
+    'Return strict JSON only: {"name":string,"summary":string}',
+  ].join(" ");
+}
 
 /** Names a single campaign. Never throws. */
 export async function generateCampaignName(ctx: CampaignNameContext): Promise<CampaignName> {
@@ -114,13 +116,15 @@ export async function generateCampaignName(ctx: CampaignNameContext): Promise<Ca
   const fallback = fallbackName(ctx);
   if (!apiKey) return fallback;
   try {
+    const { describeSubject, getWorkspaceSettings } = await import("./entity-config.server");
+    const subject = describeSubject(await getWorkspaceSettings());
     const res = await fetch(GATEWAY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: "system", content: SYSTEM },
+          { role: "system", content: buildSystemPrompt(subject) },
           { role: "user", content: contextBlock(ctx) },
         ],
         response_format: { type: "json_object" },

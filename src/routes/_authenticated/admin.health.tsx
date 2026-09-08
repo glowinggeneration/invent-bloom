@@ -22,7 +22,7 @@ import { getOperationsHealth, type HealthState } from "@/lib/operations-health.f
 export const Route = createFileRoute("/_authenticated/admin/health")({
   head: () => ({
     meta: [
-      { title: "System Health - CommsIQ" },
+      { title: "System Health - SMAIT" },
       {
         name: "description",
         content:
@@ -75,7 +75,7 @@ function SystemHealthPage() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `fkf-commsiq-system-health-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `smait-system-health-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   }

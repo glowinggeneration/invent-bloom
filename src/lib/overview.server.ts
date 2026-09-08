@@ -24,7 +24,13 @@ import {
   type TrendingTopic,
   windowHours,
 } from "./overview";
-import { CORE_QUERIES, classifyEntities } from "./apify-sources";
+import { CORE_QUERIES, classifyEntities } from "./apify-relevance.server";
+import {
+  classifyEntityMention,
+  describeSubject,
+  getWorkspaceSettings,
+  type WorkspaceSettings,
+} from "./entity-config.server";
 
 type Item = {
   at: number | null;
@@ -43,12 +49,9 @@ type Item = {
   thumbnailUrl: string | null;
   topics: string[];
   hashtags: string[];
-  federation: boolean;
-  president: boolean;
+  org: boolean;
+  keyFigure: boolean;
 };
-
-const PRESIDENT = /hussein|husseinmoha|\bmohammed\b|president/i;
-const FEDERATION = /\bfkf\b|football[_ ]?kenya|federation|harambee|fkfpl/i;
 
 function hashtagsIn(text: string): string[] {
   return [...new Set((text.match(/#[A-Za-z][A-Za-z0-9_]{2,30}/g) ?? []).map((h) => h))];
@@ -64,7 +67,11 @@ function num(value: unknown): number {
 }
 
 /** Everything collected since `fromISO`, from both stores, in one shape. */
-async function loadItems(admin: any, fromISO: string): Promise<Item[]> {
+async function loadItems(
+  admin: any,
+  fromISO: string,
+  settings: WorkspaceSettings,
+): Promise<Item[]> {
   const [x, social] = await Promise.all([
     admin
       .from("x_mentions")
@@ -103,10 +110,11 @@ async function loadItems(admin: any, fromISO: string): Promise<Item[]> {
       title: text.slice(0, 140),
       url: String(r["url"] ?? ""),
       thumbnailUrl: null,
-      topics: classifyEntities(text),
+      topics: classifyEntities(settings, text),
       hashtags: hashtagsIn(text),
-      federation: Boolean(r["mentions_federation"]) || FEDERATION.test(text),
-      president: Boolean(r["mentions_president"]) || PRESIDENT.test(text),
+      org: Boolean(r["mentions_federation"]) || classifyEntityMention(settings, text).org,
+      keyFigure:
+        Boolean(r["mentions_president"]) || classifyEntityMention(settings, text).keyFigure,
     });
   }
 
@@ -127,10 +135,12 @@ async function loadItems(admin: any, fromISO: string): Promise<Item[]> {
       title: String(r["title"] ?? text.slice(0, 140)),
       url: String(r["url"] ?? ""),
       thumbnailUrl: r["thumbnail_url"] ?? null,
-      topics: (r["entities"] ?? []).length ? (r["entities"] as string[]) : classifyEntities(text),
+      topics: (r["entities"] ?? []).length
+        ? (r["entities"] as string[])
+        : classifyEntities(settings, text),
       hashtags: hashtagsIn(text),
-      federation: FEDERATION.test(text),
-      president: PRESIDENT.test(text),
+      org: classifyEntityMention(settings, text).org,
+      keyFigure: classifyEntityMention(settings, text).keyFigure,
     });
   }
 
@@ -311,7 +321,8 @@ export async function buildOverview(
   const from = to - hours * 3600 * 1000;
   const prevFrom = from - hours * 3600 * 1000;
 
-  const all = await loadItems(admin, new Date(prevFrom).toISOString());
+  const settings = await getWorkspaceSettings();
+  const all = await loadItems(admin, new Date(prevFrom).toISOString(), settings);
   const current = all.filter((i) => i.at! >= from);
   const previous = all.filter((i) => i.at! < from);
 
@@ -404,8 +415,12 @@ export async function buildOverview(
       total: delta(current.length, previous.length),
     },
     entities: {
-      federation: countSplit(current.filter((i) => i.federation && !i.president)),
-      president: countSplit(current.filter((i) => i.president)),
+      org: countSplit(current.filter((i) => i.org && !i.keyFigure)),
+      keyFigure: countSplit(current.filter((i) => i.keyFigure)),
+    },
+    entityLabels: {
+      org: settings.orgName.trim() || "Organisation",
+      keyFigure: settings.keyFigures[0]?.trim() || null,
     },
     platforms,
     momentum,
@@ -430,9 +445,9 @@ type LiveTopic = {
 };
 
 /**
- * Live X reading: how much conversation each core federation query is
+ * Live X reading: how much conversation each core configured query is
  * carrying right now. Volumes come back from the search itself, never from a
- * model.
+ * model. Empty (no results) until the workspace has configured queries.
  */
 async function liveXTopics(): Promise<{ query: string; posts: number; sample: string[] }[]> {
   const { searchTweets } = await import("./twitterapi.server");
@@ -459,6 +474,7 @@ async function writeIntel(input: {
   topics: LiveTopic[];
   live: { query: string; posts: number; sample: string[] }[];
   facts: string[];
+  subject: string;
 }): Promise<Pick<OverviewIntel, "trending" | "joinable" | "insights" | "recommendations"> | null> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return null;
@@ -473,13 +489,13 @@ async function writeIntel(input: {
           {
             role: "system",
             content: [
-              "You are the communications analyst for Football Kenya Federation (FKF) and its president Hussein Mohammed.",
+              `You are the communications analyst for ${input.subject}.`,
               "You are given real measured topic volumes, sentiment splits and momentum, plus samples of live posts on X.",
               "Never invent or restate numbers, percentages or counts in your text — the interface shows them. Write only the human reading.",
-              "Only keep topics with a real strategic connection to FKF, the president, Kenyan football, national teams, grassroots, referees, stadiums, supporters, CAF or FIFA. Drop unrelated viral chatter.",
+              "Only keep topics with a real strategic connection to the monitored subject. Drop unrelated viral chatter.",
               "Every sentence must be short, specific and traceable to the data given. No generic marketing statements.",
-              "For each trending topic: why (one sentence on what is driving it), relevance (one sentence on why it matters to FKF), opportunity (one sentence suggested angle).",
-              "joinable: conversations FKF can enter naturally, each with one sentence on why FKF should join.",
+              "For each trending topic: why (one sentence on what is driving it), relevance (one sentence on why it matters), opportunity (one sentence suggested angle).",
+              "joinable: conversations that can be entered naturally, each with one sentence on why.",
               "insights: 3 to 5 short observations drawn from the measured data.",
               "recommendations: 2 to 5 items, category one of AMPLIFY, RESPOND, JOIN, WATCH, PUBLISH, each with a short headline and a one-sentence recommended action.",
               'Return strict JSON: {"trending":[{"topic":string,"why":string,"relevance":string,"opportunity":string}],"joinable":[{"topic":string,"why":string}],"insights":[string],"recommendations":[{"category":string,"headline":string,"action":string}]}',
@@ -577,7 +593,8 @@ export async function getIntel(force = false): Promise<OverviewIntel> {
   const hours = 48;
   const to = Date.now();
   const from = to - hours * 3600 * 1000;
-  const all = await loadItems(admin, new Date(from - hours * 3600 * 1000).toISOString());
+  const settings = await getWorkspaceSettings();
+  const all = await loadItems(admin, new Date(from - hours * 3600 * 1000).toISOString(), settings);
   const current = all.filter((i) => i.at! >= from);
   const previous = all.filter((i) => i.at! < from);
 
@@ -606,7 +623,10 @@ export async function getIntel(force = false): Promise<OverviewIntel> {
     `platforms: ${[...new Set(current.map((i) => i.platform))].join(", ") || "none"}`,
   ];
 
-  const written = topics.length > 0 ? await writeIntel({ topics, live, facts }) : null;
+  const written =
+    topics.length > 0
+      ? await writeIntel({ topics, live, facts, subject: describeSubject(settings) })
+      : null;
 
   const payload: OverviewIntel = {
     generatedAt: new Date().toISOString(),

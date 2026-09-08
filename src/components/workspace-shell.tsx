@@ -195,23 +195,23 @@ function AppSidebar() {
       <SidebarHeader className={cn("border-b border-sidebar-border p-3", isCompactRail && "px-3")}>
         <Link
           to="/overview"
-          aria-label="Persona_Voices, go to overview"
+          aria-label="SMAIT, go to overview"
           className={cn("flex items-center gap-3", isCompactRail && "justify-center")}
         >
           {isCompactRail ? (
             <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-sidebar-primary text-sm font-semibold text-sidebar-primary-foreground">
-              P
+              S
             </span>
           ) : (
             <>
               <img
                 src="/smait-logo.svg"
-                alt="Persona_Voices logo"
+                alt="SMAIT logo"
                 className="h-7 w-auto shrink-0 object-contain"
               />
               <span className="min-w-0">
                 <span className="block truncate type-card font-semibold">
-                  <span className="text-primary">CommsIQ</span>
+                  <span className="text-primary">SMAIT</span>
                 </span>
                 <span className="block truncate text-[11px] text-muted-foreground">
                   Communications workspace
@@ -300,8 +300,8 @@ function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border">
         <div className="flex items-center justify-between gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
-          <span className="type-meta text-muted-foreground">CommsIQ</span>
-          <AboutPopover title="CommsIQ" />
+          <span className="type-meta text-muted-foreground">SMAIT</span>
+          <AboutPopover title="SMAIT" />
         </div>
         <SidebarMenu className={cn(isCompactRail && "items-center gap-1")}>
           <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
@@ -326,7 +326,7 @@ function AppSidebar() {
             >
               <Link to={profilePath} aria-current={pathname === profilePath ? "page" : undefined}>
                 {isCompactRail ? (
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-fkf-green text-[10px] font-semibold text-navy-foreground">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-positive text-[10px] font-semibold text-navy-foreground">
                     {initialsOf(profile?.fullName)}
                   </span>
                 ) : (
@@ -546,7 +546,7 @@ export function WorkspaceShell({
             className="sticky top-0 z-20 flex h-[68px] items-center gap-2 border-b border-border/80 bg-background px-3 sm:gap-3 sm:px-4 lg:px-5"
           >
             <SidebarTrigger className="size-10" />
-            <p className="min-w-0 flex-1 truncate type-card font-semibold">{title ?? "CommsIQ"}</p>
+            <p className="min-w-0 flex-1 truncate type-card font-semibold">{title ?? "SMAIT"}</p>
             <div
               className="flex items-center gap-1 sm:gap-1.5"
               role="toolbar"
@@ -590,7 +590,7 @@ export function WorkspaceShell({
                     aria-haspopup="menu"
                     className="ml-0.5 flex h-10 shrink-0 items-center gap-2 rounded-xl px-1.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:pr-2.5"
                   >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-fkf-green type-meta font-semibold text-navy-foreground">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-positive type-meta font-semibold text-navy-foreground">
                       {initialsOf(profile?.fullName)}
                     </span>
                     <span className="hidden max-w-28 truncate type-meta font-semibold sm:block">
@@ -674,7 +674,7 @@ export function WorkspaceShell({
           <main
             id="main-content"
             tabIndex={-1}
-            aria-label={title ?? "CommsIQ"}
+            aria-label={title ?? "SMAIT"}
             className={cn(
               "reveal mx-auto w-full flex-1 px-4 pb-24 pt-5 sm:px-5 sm:pb-12 lg:px-6",
               wide ? "max-w-[1480px]" : "max-w-6xl",

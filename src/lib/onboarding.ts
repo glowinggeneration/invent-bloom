@@ -8,6 +8,8 @@ export type SetupStatus = {
   phone: string;
   brandName: string;
   brandHandle: string;
+  /** Named individuals to track alongside the organisation (leadership, spokespeople). */
+  keyFigures: string[];
   keywords: string[];
   socials: SetupSocials;
 };
@@ -27,10 +29,10 @@ export const EMPTY_SOCIALS: SetupSocials = {
 };
 
 export const SOCIAL_FIELDS: { key: keyof SetupSocials; label: string; placeholder: string }[] = [
-  { key: "facebook", label: "Facebook page", placeholder: "FootballKenyaFederation" },
-  { key: "instagram", label: "Instagram", placeholder: "football_kenya_federation" },
-  { key: "tiktok", label: "TikTok", placeholder: "footballkenya" },
-  { key: "youtube", label: "YouTube", placeholder: "@FootballKenyaFederation" },
+  { key: "facebook", label: "Facebook page", placeholder: "YourOrganisation" },
+  { key: "instagram", label: "Instagram", placeholder: "your_organisation" },
+  { key: "tiktok", label: "TikTok", placeholder: "yourorganisation" },
+  { key: "youtube", label: "YouTube", placeholder: "@YourOrganisation" },
 ];
 
 /** Clean a handle for storage: strip @, URLs and spaces. */

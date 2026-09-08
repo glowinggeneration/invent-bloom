@@ -30,19 +30,18 @@ export const Route = createFileRoute("/_authenticated/help")({
   }),
   head: () => ({
     meta: [
-      { title: "Help Centre - CommsIQ" },
+      { title: "Help Centre - SMAIT" },
       {
         name: "description",
         content:
-          "Search for an answer or browse Overview, Mentions, Response Studio, Campaigns and Reports guidance in CommsIQ.",
+          "Search for an answer or browse Overview, Mentions, Response Studio, Campaigns and Reports guidance in SMAIT.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Help Centre - CommsIQ" },
+      { property: "og:title", content: "Help Centre - SMAIT" },
       {
         property: "og:description",
-        content:
-          "Find a direct answer for monitoring, testing, campaigns and reporting in CommsIQ.",
+        content: "Find a direct answer for monitoring, testing, campaigns and reporting in SMAIT.",
       },
     ],
   }),
@@ -114,12 +113,12 @@ const HELP_ARTICLES: HelpArticle[] = [
     id: "getting-started",
     category: null,
     title: "Getting started",
-    summary: "CommsIQ is organised around one working loop, from monitoring through measurement.",
+    summary: "SMAIT is organised around one working loop, from monitoring through measurement.",
     keywords: ["getting started", "workflow", "navigation", "loop", "start"],
     blocks: [
       {
         body: [
-          "CommsIQ is organised around one working loop: monitor the public conversation, understand what matters, decide what to do, test the message, run the campaign, then measure the result.",
+          "SMAIT is organised around one working loop: monitor the public conversation, understand what matters, decide what to do, test the message, run the campaign, then measure the result.",
         ],
       },
       {
@@ -189,7 +188,7 @@ const HELP_ARTICLES: HelpArticle[] = [
       {
         title: "Generate PDF Report",
         body: [
-          "Use Generate PDF Report to create an executive snapshot from the current Overview data. The report includes FKF branding, Powered by Persona_Voices, the selected reporting period, key metrics and the charts available to the report generator.",
+          "Use Generate PDF Report to create an executive snapshot from the current Overview data. The report includes your organisation's branding, Powered by SMAIT, the selected reporting period, key metrics and the charts available to the report generator.",
           "The PDF is generated from data already loaded by the platform. No separate reporting service is required.",
         ],
       },
@@ -282,7 +281,7 @@ const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         body: [
-          "Sentiment describes how a post or article reads in relation to FKF, its teams or leadership. It is not simply a count of positive and negative words.",
+          "Sentiment describes how a post or article reads in relation to the monitored organisation, its teams or leadership. It is not simply a count of positive and negative words.",
         ],
       },
       {
@@ -519,7 +518,7 @@ const HELP_ARTICLES: HelpArticle[] = [
     blocks: [
       {
         body: [
-          "Reports keeps a dated record of monitoring and campaign activity and separates system-generated records from prepared Persona_Voices reports.",
+          "Reports keeps a dated record of monitoring and campaign activity and separates system-generated records from prepared SMAIT reports.",
         ],
       },
       {
@@ -540,13 +539,12 @@ const HELP_ARTICLES: HelpArticle[] = [
     id: "managed-reports",
     category: "reporting",
     title: "Managed Reports",
-    summary:
-      "Reports prepared and shared by the Persona_Voices team rather than generated automatically.",
+    summary: "Reports prepared and shared by the SMAIT team rather than generated automatically.",
     keywords: ["managed reports", "prepared reports", "publish", "download"],
     blocks: [
       {
         body: [
-          "Managed Reports contains reports prepared and shared by the Persona_Voices team rather than automatically generated system records.",
+          "Managed Reports contains reports prepared and shared by the SMAIT team rather than automatically generated system records.",
         ],
       },
       {

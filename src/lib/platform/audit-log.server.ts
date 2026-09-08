@@ -81,7 +81,12 @@ export async function logAuditEvent(
  * have `context.supabase` from `requireSupabaseAuth`.
  */
 export async function logAuditEventAsCaller(
-  userSupabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: unknown }> },
+  // Loosely typed like logAuditEvent()'s `admin` param above: Supabase's
+  // generated client narrows `rpc()`'s function-name parameter to a
+  // literal union, which TypeScript won't structurally match against a
+  // plain `(fn: string, ...) => ...` interface (contravariance). Callers
+  // pass the real generated client here, not an untyped object.
+  userSupabase: any,
   input: Omit<AuditEventInput, "actorId" | "ip">,
 ): Promise<void> {
   const { error } = await userSupabase.rpc("log_audit_event", {

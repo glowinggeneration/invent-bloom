@@ -200,7 +200,7 @@ const PATTERNS: Pattern[] = [
     replacement: "the official contact channel",
   },
   {
-    re: /\b[\w.+-]+@(?!footballkenya\.org)[\w-]+\.[\w.]{2,}\b/g,
+    re: /\b[\w.+-]+@[\w-]+\.[\w.]{2,}\b/g,
     category: "privacy",
     level: 2,
     reason: "Publishes a personal email address.",

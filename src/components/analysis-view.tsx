@@ -278,7 +278,7 @@ export function AnalysisView({
 
   function downloadReport() {
     const lines = [
-      "CommsIQ - Message test report",
+      "SMAIT - Message test report",
       "",
       `Confidence: ${analysis.confidence}%`,
       `Sentiment: ${analysis.sentiment.positive}% positive / ${analysis.sentiment.neutral}% neutral / ${analysis.sentiment.negative}% negative`,
@@ -306,7 +306,7 @@ export function AnalysisView({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "fkf-commsiq-report.txt";
+    link.download = "smait-report.txt";
     link.click();
     URL.revokeObjectURL(url);
   }

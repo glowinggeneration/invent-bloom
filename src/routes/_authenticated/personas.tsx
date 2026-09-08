@@ -44,18 +44,18 @@ import {
 export const Route = createFileRoute("/_authenticated/personas")({
   head: () => ({
     meta: [
-      { title: "Personas - CommsIQ" },
+      { title: "Personas - SMAIT" },
       {
         name: "description",
         content:
-          "Browse the 100 research-grounded urban Kenyan personas that review every message tested in CommsIQ.",
+          "Browse the 100 research-grounded urban Kenyan personas that review every message tested in SMAIT.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Personas - CommsIQ" },
+      { property: "og:title", content: "Personas - SMAIT" },
       {
         property: "og:description",
-        content: "The 100 urban Kenyan personas behind every CommsIQ analysis.",
+        content: "The 100 urban Kenyan personas behind every SMAIT analysis.",
       },
     ],
   }),
@@ -616,7 +616,7 @@ function PersonaDetails({
           <p className="mt-5 type-meta text-muted-foreground/70">
             Art by{" "}
             <a
-              href={`${image.photographerUrl}?utm_source=fkf_commsiq&utm_medium=referral`}
+              href={`${image.photographerUrl}?utm_source=smait&utm_medium=referral`}
               target="_blank"
               rel="noreferrer"
               className="underline underline-offset-2"

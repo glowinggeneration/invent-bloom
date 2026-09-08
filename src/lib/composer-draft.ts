@@ -6,7 +6,7 @@ export type ComposerDraft = {
 };
 
 /** Shared key for the message-testing composer draft. */
-export const TESTING_DRAFT_KEY = "fkf.testing.draft";
+export const TESTING_DRAFT_KEY = "smait.testing.draft";
 
 /** Rough cap so a huge image data URL never blows the storage quota. */
 const MAX_BYTES = 4_000_000;

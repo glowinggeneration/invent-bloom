@@ -1,14 +1,14 @@
-# Lovable Build Prompt: SMAIT CommsIQ
+# Lovable Build Prompt: SMAIT
 
 Paste the prompt below into Lovable after importing the accompanying codebase ZIP.
 
 ---
 
-Continue this existing SMAIT CommsIQ repository. Treat the imported code as the source of truth. Do not scaffold a replacement app, flatten it into a client-only demo, or recreate screens from screenshots. Preserve existing working behavior and extend it in small, testable changes.
+Continue this existing SMAIT repository. Treat the imported code as the source of truth. Do not scaffold a replacement app, flatten it into a client-only demo, or recreate screens from screenshots. Preserve existing working behavior and extend it in small, testable changes.
 
 ## Product and users
 
-SMAIT CommsIQ is Football Kenya Federation's authenticated communications-intelligence and campaign-operations workspace. Its operating loop is:
+SMAIT is an authenticated communications-intelligence and campaign-operations workspace. Its operating loop is:
 
 **Monitor -> Understand -> Decide -> Test -> Run -> Measure**
 
@@ -156,11 +156,8 @@ For every requested change:
 Run from the project root:
 
 ```sh
-npm install
-npm run test
-npm run build
-npm run typecheck
-npm run lint
+bun install
+bun run validate
 ```
 
 The imported project may document inherited lint debt in the exception register. Do not add new lint failures. Format and lint every changed file even when the historical whole-project baseline is not yet clean.

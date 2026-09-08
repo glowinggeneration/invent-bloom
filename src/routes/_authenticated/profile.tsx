@@ -49,8 +49,8 @@ export const Route = createFileRoute("/_authenticated/profile")({
   },
   head: () => ({
     meta: [
-      { title: "Profile & settings - CommsIQ" },
-      { name: "description", content: "Manage how you appear and work across Persona_Voices." },
+      { title: "Profile & settings - SMAIT" },
+      { name: "description", content: "Manage how you appear and work across SMAIT." },
     ],
   }),
   component: ProfilePage,
@@ -160,8 +160,9 @@ function ProfilePage() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const relationshipLabel = profile?.org === "fkf" ? "FKF workspace" : "External collaborator";
-  const workspaceName = profile?.org === "fkf" ? "Football Kenya Federation" : "External";
+  const relationshipLabel =
+    profile?.org === "team" ? `${profile.workspaceName} workspace` : "External collaborator";
+  const workspaceName = profile?.org === "team" ? (profile?.workspaceName ?? "Team") : "External";
 
   return (
     <WorkspaceShell title="Profile & settings">

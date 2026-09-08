@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
     meta: [
-      { title: "Notifications - CommsIQ" },
+      { title: "Notifications - SMAIT" },
       {
         name: "description",
         content:
@@ -233,8 +233,8 @@ function NotificationsPage() {
               <span>
                 <span className="type-body block font-semibold">Fresh official-post alerts</span>
                 <span className="type-meta mt-1 block text-muted-foreground">
-                  Show the timed popup and inbox alert when FKF or the President publishes a fresh
-                  official post.
+                  Show the timed popup and inbox alert when a tracked official account publishes a
+                  fresh official post.
                 </span>
               </span>
             </label>

@@ -2,6 +2,8 @@
  * Persisted queue of tweet links every persona should engage with.
  * Survives refresh so a long run can be resumed.
  */
+import { readWithLegacyKey } from "@/lib/legacy-storage";
+
 export type QueuedLink = {
   url: string;
   status: "pending" | "running" | "done" | "failed";
@@ -10,7 +12,8 @@ export type QueuedLink = {
   error?: string;
 };
 
-const KEY = "fkf.publish.like-queue.v1";
+const KEY = "smait.publish.like-queue.v1";
+const LEGACY_KEY = "fkf.publish.like-queue.v1";
 
 export function parseLinks(raw: string): string[] {
   return [
@@ -26,7 +29,7 @@ export function parseLinks(raw: string): string[] {
 export function loadLikeQueue(): QueuedLink[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = readWithLegacyKey(KEY, LEGACY_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as QueuedLink[];
     if (!Array.isArray(parsed)) return [];

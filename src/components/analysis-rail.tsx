@@ -13,7 +13,7 @@ import {
 } from "@/lib/insights";
 
 function toneColor(score: number) {
-  if (score >= 75) return "var(--fkf-green)";
+  if (score >= 75) return "var(--positive)";
   if (score >= 55) return "var(--neutral)";
   return "var(--primary)";
 }
@@ -86,7 +86,7 @@ export function AnalysisRail({
             className="mt-3 min-h-32 resize-y rounded-xl type-body"
           />
           <div className="mt-3 flex items-center justify-between gap-2">
-            <span className="rounded-full bg-fkf-green/10 px-2 py-1 type-meta font-semibold text-fkf-green">
+            <span className="rounded-full bg-positive/10 px-2 py-1 type-meta font-semibold text-positive">
               {bestStats.confidence}% confidence
             </span>
             <Link
@@ -116,7 +116,7 @@ export function AnalysisRail({
       {!hideContext && (
         <RailCard title="Communication confidence">
           <div className="flex items-baseline gap-3">
-            <span className="text-2xl font-semibold text-fkf-green">{analysis.confidence}%</span>
+            <span className="text-2xl font-semibold text-positive">{analysis.confidence}%</span>
             <span className="type-meta font-medium text-muted-foreground">
               {confidenceLabel(analysis.confidence)}
             </span>
@@ -128,7 +128,7 @@ export function AnalysisRail({
                 className="h-2 flex-1 rounded-full"
                 style={{
                   background:
-                    i < Math.round(analysis.confidence / 10) ? "var(--fkf-green)" : "var(--muted)",
+                    i < Math.round(analysis.confidence / 10) ? "var(--positive)" : "var(--muted)",
                 }}
               />
             ))}
@@ -167,7 +167,7 @@ export function AnalysisRail({
             ))}
             {analysis.sentiment.positive >= 50 && (
               <li className="flex items-start gap-2 type-meta text-muted-foreground">
-                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-fkf-green" />
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-positive" />
                 Positive public sentiment expected
               </li>
             )}

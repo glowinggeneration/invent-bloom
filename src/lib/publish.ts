@@ -192,6 +192,9 @@ export const accountInputSchema = z.object({
 const rawPublishInputSchema = z.object({
   mode: z.enum(PUBLISH_MODES),
   name: z.string().trim().max(80).default(""),
+  /** Client-generated once per submit attempt; resent unchanged on retry so a
+   * duplicate submission returns the original result instead of posting twice. */
+  idempotencyKey: z.string().trim().max(100).default(""),
   accountIds: z.array(z.string().uuid()).min(1).max(100),
   tweetText: z.string().trim().max(1000).default(""),
   commentText: z.string().trim().max(1000).default(""),

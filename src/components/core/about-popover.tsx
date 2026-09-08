@@ -13,7 +13,7 @@ export type AboutPopoverProps = {
 };
 
 export function AboutPopover({
-  title = "Persona_Voices",
+  title = "SMAIT",
   description = "Communications intelligence for tracking mentions, sentiment and campaign performance across platforms.",
   ctaLabel = "View changelog",
   ctaHref = "/changelog",

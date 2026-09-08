@@ -36,7 +36,7 @@ function recommendation(intel?: OverviewIntelligence): NextMove {
       title: `Address the conversation about ${risk.title}`,
       reason: `${risk.detail} Negative share is now ${intel?.currentNegativeShare ?? 0}% of monitored mentions.`,
       message:
-        `Football Kenya Federation is aware of the questions being raised about ${risk.title.toLowerCase()}. ` +
+        `We are aware of the questions being raised about ${risk.title.toLowerCase()}. ` +
         "We are addressing them directly, and we will keep supporters updated with clear and accurate information.",
     };
   }
@@ -48,7 +48,7 @@ function recommendation(intel?: OverviewIntelligence): NextMove {
       reason: `${opportunity.detail} This is the clearest positive momentum in the monitored conversation right now.`,
       message:
         `The response to ${opportunity.title.toLowerCase()} shows what Kenyan football can build on. ` +
-        "Football Kenya Federation will keep investing in the work that brings players, clubs and supporters closer to the game.",
+        "We will keep investing in the work that brings players, clubs and supporters closer to the game.",
     };
   }
 
@@ -57,7 +57,7 @@ function recommendation(intel?: OverviewIntelligence): NextMove {
       kind: "Respond",
       title: `Prepare a position on ${risk.title}`,
       reason: `${risk.detail} It is not yet dominant, but it is the most likely conversation to escalate.`,
-      message: `Football Kenya Federation is following the discussion around ${risk.title.toLowerCase()} closely and will share a clear update as soon as the facts are confirmed.`,
+      message: `We are following the discussion around ${risk.title.toLowerCase()} closely and will share a clear update as soon as the facts are confirmed.`,
     };
   }
 
@@ -66,7 +66,7 @@ function recommendation(intel?: OverviewIntelligence): NextMove {
       kind: "Join",
       title: `Join the conversation on ${lead.label}`,
       reason: `${lead.label} is the leading narrative with ${lead.mentions} mentions and is currently ${lead.velocity.toLowerCase()}.`,
-      message: `Football Kenya Federation is part of the conversation on ${lead.label.toLowerCase()}, and remains focused on the decisions and progress that matter most to supporters.`,
+      message: `We are part of the conversation on ${lead.label.toLowerCase()}, and remains focused on the decisions and progress that matter most to supporters.`,
     };
   }
 
@@ -138,7 +138,7 @@ async function generateOverviewPdf(
   pdf.heading("What to do next");
   pdf.callout(rec.title, `${rec.reason}\n\nSuggested message: ${rec.message}`, "green");
 
-  pdf.save(`FKF-Brand-Health-${new Date().toISOString().slice(0, 10)}.pdf`);
+  pdf.save(`SMAIT-Brand-Health-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 export function OverviewNextMove({

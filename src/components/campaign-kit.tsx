@@ -251,7 +251,7 @@ export function CampaignRunningDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CheckCircle2 className="size-5 text-fkf-green" aria-hidden="true" />
+            <CheckCircle2 className="size-5 text-positive" aria-hidden="true" />
             Campaign running
           </DialogTitle>
           <DialogDescription>

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 const WHATSAPP_NUMBER = "27746254639";
 const SUPPORT_MESSAGE =
-  "Hi Thabo, I need help with the CommsIQ platform. I am currently having an issue with:";
+  "Hi Thabo, I need help with the SMAIT platform. I am currently having an issue with:";
 
 export function contactSupportUrl(context?: string) {
   const text = context?.trim() ? `${SUPPORT_MESSAGE} ${context.trim()}` : SUPPORT_MESSAGE;

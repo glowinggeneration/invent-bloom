@@ -75,7 +75,7 @@ export function ReportCsvMenu({ reportId }: { reportId: string }) {
   );
 }
 
-/** Builds the branded FKF PDF for a stored report, straight from the list. */
+/** Builds the branded SMAIT PDF for a stored report, straight from the list. */
 export function ReportPdfButton({ reportId, className }: { reportId: string; className?: string }) {
   const load = useServerFn(getReport);
   const [busy, setBusy] = useState(false);

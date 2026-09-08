@@ -143,11 +143,11 @@ export function FirstRunChecklist({
 
   if (complete) {
     return (
-      <section className="rounded-2xl border border-fkf-green/40 bg-card p-4">
+      <section className="rounded-2xl border border-positive/40 bg-card p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
-              <Check className="size-4 text-fkf-green" /> You're all set
+              <Check className="size-4 text-positive" /> You're all set
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               All {total} message testing steps done. You can restart the walkthrough anytime.
@@ -211,7 +211,7 @@ export function FirstRunChecklist({
         aria-label="First analysis progress"
       >
         <div
-          className="h-full rounded-full bg-fkf-green transition-[width] duration-500"
+          className="h-full rounded-full bg-positive transition-[width] duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -229,7 +229,7 @@ export function FirstRunChecklist({
                 className={cn(
                   "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
                   complete
-                    ? "border-fkf-green bg-fkf-green text-white"
+                    ? "border-positive bg-positive text-white"
                     : failed
                       ? "border-destructive bg-destructive/10 text-destructive"
                       : running
@@ -260,7 +260,7 @@ export function FirstRunChecklist({
                       status.tone === "error"
                         ? "text-destructive"
                         : status.tone === "success"
-                          ? "text-fkf-green"
+                          ? "text-positive"
                           : status.tone === "running"
                             ? "text-primary"
                             : "text-muted-foreground",

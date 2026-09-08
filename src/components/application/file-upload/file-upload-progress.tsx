@@ -33,7 +33,7 @@ export function FileUploadProgressList({
               {item.status === "failed" ? (
                 <AlertCircle className="size-4 text-destructive" aria-hidden="true" />
               ) : item.status === "complete" ? (
-                <CheckCircle2 className="size-4 text-fkf-green" aria-hidden="true" />
+                <CheckCircle2 className="size-4 text-positive" aria-hidden="true" />
               ) : (
                 <File className="size-4" aria-hidden="true" />
               )}

@@ -2,8 +2,9 @@
  * Branded PDF kit.
  *
  * Every export in the platform (report builder, crisis brief, campaign proof,
- * overview) draws through this so the documents look like one family: FKF
- * colours, the federation crest, real charts and a consistent footer.
+ * overview) draws through this so the documents look like one family: SMAIT
+ * colours, the workspace's configured brand mark, real charts and a
+ * consistent footer.
  *
  * Units are millimetres on A4 portrait.
  */
@@ -79,7 +80,7 @@ export class BrandPdf {
     return this.width - this.margin * 2;
   }
 
-  /** Thin FKF colour band that tops every page. */
+  /** Thin brand colour band that tops every page. */
   private pageFurniture() {
     const { doc, width } = this;
     doc.setFillColor(...BRAND.red);
@@ -130,11 +131,11 @@ export class BrandPdf {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(...BRAND.red);
-    doc.text("FOOTBALL KENYA FEDERATION", textLeft, 15);
+    doc.text("SMAIT", textLeft, 15);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(...BRAND.muted);
-    doc.text("CommsIQ", textLeft, 20);
+    doc.text("Communications Intelligence", textLeft, 20);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(19);
@@ -569,7 +570,7 @@ export class BrandPdf {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.4);
       doc.setTextColor(...BRAND.ink);
-      doc.text("CommsIQ", margin + 4, height - 8.6);
+      doc.text("SMAIT", margin + 4, height - 8.6);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...BRAND.muted);
       doc.text(`Page ${i} of ${pages}`, width - margin, height - 8.6, { align: "right" });

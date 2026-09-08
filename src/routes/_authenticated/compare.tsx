@@ -15,7 +15,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/compare")({
   head: () => ({
     meta: [
-      { title: "Compare messages - CommsIQ" },
+      { title: "Compare messages - SMAIT" },
       {
         name: "description",
         content: "Compare two or three message variants using the existing persona testing engine.",

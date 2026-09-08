@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui-kit";
 import { SaveToggle } from "@/components/core/save-toggle";
+import { readWithLegacyKey } from "@/lib/legacy-storage";
 
-const STORAGE_KEY = "fkf-commsiq:saved-investigations:v1";
+const STORAGE_KEY = "smait:saved-investigations:v1";
+const LEGACY_STORAGE_KEY = "fkf-commsiq:saved-investigations:v1";
 
 type SavedInvestigation = {
   id: string;
@@ -17,7 +19,7 @@ type SavedInvestigation = {
 function readSaved(): SavedInvestigation[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readWithLegacyKey(STORAGE_KEY, LEGACY_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) return [];
     return parsed

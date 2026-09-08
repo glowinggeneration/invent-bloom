@@ -68,15 +68,15 @@ export const Route = createFileRoute("/_authenticated/archive")({
 
   head: () => ({
     meta: [
-      { title: "Archive - CommsIQ" },
+      { title: "Archive - SMAIT" },
       {
         name: "description",
         content:
-          "Every message you have tested in CommsIQ, with its persona analysis and recommended rewrites.",
+          "Every message you have tested in SMAIT, with its persona analysis and recommended rewrites.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Archive - CommsIQ" },
+      { property: "og:title", content: "Archive - SMAIT" },
       {
         property: "og:description",
         content: "Every message you have tested, saved with its analysis.",
@@ -88,7 +88,7 @@ export const Route = createFileRoute("/_authenticated/archive")({
 
 function confidenceClass(value: number | null) {
   if (value === null) return "bg-secondary text-muted-foreground";
-  if (value >= 75) return "bg-fkf-green/10 text-fkf-green";
+  if (value >= 75) return "bg-positive/10 text-positive";
   if (value >= 60) return "bg-neutral/15 text-foreground";
   return "bg-primary/10 text-primary";
 }
@@ -325,7 +325,7 @@ function ArchivePage() {
       <RailCard title="Thread counts" icon={Users}>
         <RailStatList>
           <RailStat label="Total tests" value={list.length} />
-          <RailStat label="Shared with FKF" value={shared} />
+          <RailStat label="Shared with team" value={shared} />
           <RailStat label="Private" value={privateCount} />
           <RailStat label="Matching filters" value={filtered.length} />
         </RailStatList>
@@ -502,7 +502,7 @@ function ArchivePage() {
                         <span className="flex items-center gap-1">
                           {thread.visibility === "workspace" ? (
                             <>
-                              <Users className="size-3" /> Shared with FKF
+                              <Users className="size-3" /> Shared with team
                             </>
                           ) : (
                             <>

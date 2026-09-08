@@ -4,8 +4,20 @@ import { dedupeByStory, isSameStory, normalizeTitle } from "./news";
 /**
  * Multi-source news dedupe. Google News and NewsData describe the same event
  * with different headlines and non-comparable links, so matching happens on the
- * headline. These cases are drawn from real collisions in the live feed.
+ * headline. These cases are drawn from real collisions in a live feed.
+ *
+ * NEWS_ENTITIES ships empty by default (no hardcoded monitored subject), so
+ * the entity-guard tests below pass their own fixture list explicitly
+ * rather than relying on that shared production default.
  */
+const TEST_ENTITIES = [
+  "harambee stars",
+  "harambee starlets",
+  "gor mahia",
+  "afc leopards",
+  "tusker",
+];
+
 describe("isSameStory", () => {
   it("matches syndicated copies carrying aggregator boilerplate", () => {
     expect(
@@ -51,6 +63,7 @@ describe("isSameStory", () => {
       isSameStory(
         "Harambee Stars name squad for AFCON qualifier against Namibia",
         "Harambee Starlets name squad for WAFCON qualifier against Namibia",
+        TEST_ENTITIES,
       ),
     ).toBe(false);
   });
@@ -60,6 +73,7 @@ describe("isSameStory", () => {
       isSameStory(
         "Tusker FC sign Ugandan striker on two-year deal",
         "AFC Leopards sign Ugandan striker on two-year deal",
+        TEST_ENTITIES,
       ),
     ).toBe(false);
   });

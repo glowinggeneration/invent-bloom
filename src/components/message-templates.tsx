@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui-kit";
+import { readWithLegacyKey } from "@/lib/legacy-storage";
 
-const STORAGE_KEY = "fkf-commsiq:message-templates:v1";
+const STORAGE_KEY = "smait:message-templates:v1";
+const LEGACY_STORAGE_KEY = "fkf-commsiq:message-templates:v1";
 
 type MessageTemplate = {
   id: string;
@@ -16,7 +18,7 @@ type MessageTemplate = {
 function readTemplates(): MessageTemplate[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readWithLegacyKey(STORAGE_KEY, LEGACY_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) return [];
     return parsed

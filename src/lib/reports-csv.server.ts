@@ -6,6 +6,7 @@
  * credential, token or cookie is ever included.
  */
 import { loadExecutions, loadMentions } from "./reports.server";
+import { getWorkspaceSettings } from "./entity-config.server";
 
 function cell(value: string | number | null | undefined): string {
   const s = value === null || value === undefined ? "" : String(value).replace(/\r?\n/g, " ");
@@ -38,7 +39,8 @@ function dateParts(iso: string | null): [string, string] {
 
 export async function mentionsCsv(periodStart: string, periodEnd: string): Promise<string> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const items = await loadMentions(supabaseAdmin as any, periodStart, periodEnd, []);
+  const settings = await getWorkspaceSettings();
+  const items = await loadMentions(supabaseAdmin as any, periodStart, periodEnd, [], settings);
   const out = [
     line([
       "Date",

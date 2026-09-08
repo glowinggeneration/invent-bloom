@@ -9,13 +9,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { containsChineseScript } from "./content-language";
 import {
   dedupeByStory,
-  isFkfRelevant,
+  isNewsRelevant,
   isSocialProvider,
   normalizeTitle,
   toProvider,
   type NewsArticle,
   type NewsSentiment,
 } from "./news";
+import {
+  buildRelevancePattern,
+  describeSubject,
+  getWorkspaceSettings,
+} from "./entity-config.server";
 
 /** An article as the feed shows it: press record plus how the story reads. */
 export type ScoredNewsArticle = NewsArticle & {
@@ -26,11 +31,12 @@ export type ScoredNewsArticle = NewsArticle & {
 
 /**
  * Reads each headline the way mentions are read: does this story help or hurt
- * the federation. Falls back to neutral when the model is unavailable, so the
- * feed never blanks on an AI failure.
+ * the monitored subject. Falls back to neutral when the model is
+ * unavailable, so the feed never blanks on an AI failure.
  */
 async function classifyArticles(
   articles: NewsArticle[],
+  subject: string,
 ): Promise<
   Map<string, { sentiment: NewsSentiment; score: number; reason: string; relevant: boolean }>
 > {
@@ -51,13 +57,13 @@ async function classifyArticles(
           {
             role: "system",
             content: [
-              "You judge how each news story reads FOR Football Kenya Federation (FKF), its teams and its leadership.",
-              "negative: scandal, corruption, court cases, bans, losses, crises, criticism, player or fan grievances.",
+              `You judge how each news story reads FOR ${subject}.`,
+              "negative: scandal, corruption, court cases, bans, losses, crises, criticism, grievances.",
               "positive: wins, qualification, investment, sponsorship, new facilities, praise, milestones.",
-              "neutral: fixtures, squad lists, plain announcements with no clear upside or damage.",
-              "Read sarcasm, irony, mocking praise and rhetorical criticism in context. Positive words used to ridicule FKF must be classified as negative, not positive.",
+              "neutral: plain announcements with no clear upside or damage.",
+              "Read sarcasm, irony, mocking praise and rhetorical criticism in context. Positive words used to ridicule the subject must be classified as negative, not positive.",
               "score: -5 (very damaging) to +5 (very good news). reason: one short plain-English sentence.",
-              "relevant: true only when the story is really about Kenyan football, the federation, its clubs, league, national teams or leadership.",
+              "relevant: true only when the story is really about the monitored subject.",
               'Return strict JSON: {"results":[{"id":string,"sentiment":"positive"|"negative"|"neutral","score":number,"reason":string,"relevant":boolean}]}',
             ].join(" "),
           },
@@ -172,20 +178,23 @@ export const listNews = createServerFn({ method: "GET" })
       // Second dedupe pass at read time: it also heals rows stored before the
       // matching rules were tightened.
       const { kept } = dedupeByStory(mapped);
-      // Keyword guard first, so obviously off-topic stories never reach the feed
-      // (or the model) even when the sweep query was loose. A story only counts
-      // when it names Kenyan football directly, or names a shared term such as
-      // AFCON alongside Kenya itself.
+      // Keyword guard first, so obviously off-topic stories never reach the
+      // feed (or the model) even when the sweep query was loose. An
+      // unconfigured workspace (no pattern) keeps everything rather than
+      // emptying the feed - see isNewsRelevant()'s doc comment.
+      const settings = await getWorkspaceSettings();
+      const pattern = buildRelevancePattern(settings);
       const relevantByKeyword = kept.filter((a) =>
-        isFkfRelevant(a.title, a.description, a.matchedQuery),
+        isNewsRelevant(pattern, a.title, a.description, a.matchedQuery),
       );
       const ordered = relevantByKeyword
         .sort((a, b) => (b.pubDate ?? "").localeCompare(a.pubDate ?? ""))
         .slice(0, data.limit);
 
-      const verdicts = await classifyArticles(ordered);
+      const subject = describeSubject(settings);
+      const verdicts = await classifyArticles(ordered, subject);
       const articles = ordered
-        // The model has the final say on whether a story is really FKF's world.
+        // The model has the final say on whether a story is really relevant.
         .filter((a) => verdicts.get(a.link)?.relevant !== false)
         .map((a): ScoredNewsArticle => {
           const v = verdicts.get(a.link);
@@ -193,7 +202,7 @@ export const listNews = createServerFn({ method: "GET" })
             ...a,
             sentiment: v?.sentiment ?? "neutral",
             sentimentScore: v?.score ?? 0,
-            sentimentReason: v?.reason ?? "No clear upside or damage for the federation.",
+            sentimentReason: v?.reason ?? `No clear upside or damage for ${subject}.`,
           };
         });
 

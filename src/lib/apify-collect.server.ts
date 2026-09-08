@@ -13,6 +13,12 @@
  */
 import { getApifyToken } from "./apify.server";
 import {
+  sourceLabel,
+  type ApifyContentType,
+  type ApifyPlatform,
+  type ApifySourceKey,
+} from "./apify-sources";
+import {
   CORE_QUERIES,
   FACEBOOK_GROUPS,
   FACEBOOK_PAGES,
@@ -21,11 +27,7 @@ import {
   INSTAGRAM_STORY_ACCOUNTS,
   SEARCH_QUERIES,
   SNAPCHAT_PROFILES,
-  sourceLabel,
-  type ApifyContentType,
-  type ApifyPlatform,
-  type ApifySourceKey,
-} from "./apify-sources";
+} from "./apify-relevance.server";
 
 /** One collected item, before relevance, sentiment and storage. */
 export type RawMention = {

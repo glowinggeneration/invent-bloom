@@ -41,7 +41,7 @@ export function buildAnalysisPdf(analysis: Analysis, title: string) {
       doc.line(M, H - 48, W - M, H - 48);
       doc.setFontSize(8);
       doc.setTextColor(...MUTED);
-      doc.text("CommsIQ - Powered by Persona_Voices", M, H - 34);
+      doc.text("Powered by SMAIT", M, H - 34);
       doc.text(`Page ${i} of ${pages}`, W - M, H - 34, { align: "right" });
     }
   }
@@ -144,7 +144,7 @@ export function buildAnalysisPdf(analysis: Analysis, title: string) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(...RED);
-  doc.text("FKF COMMSIQ", M, y + 8);
+  doc.text("SMAIT", M, y + 8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...MUTED);
   doc.text(new Date().toLocaleString(), W - M, y + 8, { align: "right" });
@@ -288,5 +288,5 @@ export function downloadAnalysisPdf(analysis: Analysis, title: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 48);
-  doc.save(`fkf-commsiq-${slug || "report"}.pdf`);
+  doc.save(`smait-${slug || "report"}.pdf`);
 }

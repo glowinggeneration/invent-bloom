@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { BRAND_PROFILE_HANDLES } from "./brand-profiles";
+import { brandHandles, describeSubject, getWorkspaceSettings } from "./entity-config.server";
 
 export type MentionSentiment = "positive" | "neutral" | "negative";
 
@@ -21,7 +21,7 @@ export type BrandMention = {
   isReply: boolean;
   /** Handle being replied to, when known. */
   replyToHandle: string;
-  /** The reply is aimed at one of the tracked federation accounts. */
+  /** The reply is aimed at one of the tracked brand accounts. */
   replyToBrand: boolean;
   /** Short plain-language reason for the sentiment label. */
   sentimentReason: string;
@@ -31,7 +31,7 @@ export type BrandMention = {
   parentText: string;
   parentAuthorHandle: string;
   parentAuthorName: string;
-  /** How the post was found: tagged the federation, or matched a watched topic. */
+  /** How the post was found: tagged the brand, or matched a watched topic. */
   source: "mention" | "keyword";
   /** The topic term that surfaced a keyword post. */
   matchedKeyword: string;
@@ -135,13 +135,13 @@ const NEGATIVE = [
 /**
  * Criticism that never uses an obviously negative word: challenges to act,
  * accusations of empty talk, and demands. These are the posts that read as
- * "neutral" to a plain lexicon but are hostile to the federation/president.
+ * "neutral" to a plain lexicon but are hostile to the brand or a key figure.
  */
 const CRITICISM_PHRASES: { pattern: RegExp; weight: number; reason: string }[] = [
   {
     pattern: /\bwalk the talk\b/i,
     weight: 2,
-    reason: "challenges the federation to act on its words",
+    reason: "challenges the brand to act on its words",
   },
   {
     pattern:
@@ -152,7 +152,7 @@ const CRITICISM_PHRASES: { pattern: RegExp; weight: number; reason: string }[] =
   {
     pattern: /\bstop (these|the|your)\b|\benough (is enough|of)\b|\bno more\b/i,
     weight: 1,
-    reason: "demands the federation stop something",
+    reason: "demands the brand stop something",
   },
   {
     pattern: /\bdemoraliz|\bdemoralis|\bfrustrat|\bneglect|\bignor(e|ed|ing)\b|\bsideline/i,
@@ -167,9 +167,9 @@ const CRITICISM_PHRASES: { pattern: RegExp; weight: number; reason: string }[] =
   },
   {
     pattern:
-      /\bwhere is (the|our)\b|\bwhy (are|is|has|have) (you|the federation|fkf)\b|\bexplain yourself\b|\banswer us\b/i,
+      /\bwhere is (the|our)\b|\bwhy (are|is|has|have) you\b|\bexplain yourself\b|\banswer us\b/i,
     weight: 1,
-    reason: "demands answers from the federation",
+    reason: "demands answers from the brand",
   },
   {
     pattern: /\bstep down\b|\bmust go\b|\bkick out\b|\bwe are tired\b|\btumechoka\b/i,
@@ -185,7 +185,7 @@ const CRITICISM_PHRASES: { pattern: RegExp; weight: number; reason: string }[] =
   {
     pattern: /\bdis+a+p+oint\w*\b|\bdissapoint\w*\b|\bdisapoint\w*\b/i,
     weight: 2,
-    reason: "calls the federation a disappointment",
+    reason: "calls the brand a disappointment",
   },
   {
     pattern: /\bmafisadi\b|\bwezi\b|\bwizi\b|\bfala\b|\bupuzi\b|\bmavi\b|\bhaki yetu\b/i,
@@ -201,7 +201,7 @@ const CRITICISM_PHRASES: { pattern: RegExp; weight: number; reason: string }[] =
   {
     pattern: /\bwhat a (joke|shame|mess)\b|\bclown(s)?\b|\bcircus\b|\bshambles\b/i,
     weight: 2,
-    reason: "mocks the federation",
+    reason: "mocks the brand",
   },
 ];
 
@@ -211,7 +211,7 @@ const PRAISE_PHRASES: { pattern: RegExp; weight: number; reason: string }[] = [
     pattern:
       /\bkeep it up\b|\bgood work\b|\bwell handled\b|\bproud of\b|\bthank you\b|\basante sana\b/i,
     weight: 2,
-    reason: "praises the federation directly",
+    reason: "praises the brand directly",
   },
   {
     pattern: /\bbig up\b|\bwell deserved\b|\bfinally\b.{0,20}\b(good|right)\b/i,
@@ -223,17 +223,17 @@ const PRAISE_PHRASES: { pattern: RegExp; weight: number; reason: string }[] = [
 /**
  * Short replies that only read as hostile once you see the post they answer:
  * "you have failed", "hapo umeboa", "never again". Applied only when the
- * parent post is known and comes from the federation or the president.
+ * parent post is known and comes from the brand or a key figure.
  */
 const CONTEXT_DEPENDENT_NEGATIVE: { pattern: RegExp; reason: string }[] = [
   {
     pattern: /\byou (have|guys|people|lot|are)\b|\bnyinyi\b|\bwewe\b/i,
-    reason: "answers the federation's own post with an accusation",
+    reason: "answers the brand's own post with an accusation",
   },
-  { pattern: /\bnever again\b|\bnot again\b|\bagain\?/i, reason: "rejects the federation's post" },
+  { pattern: /\bnever again\b|\bnot again\b|\bagain\?/i, reason: "rejects the brand's post" },
   {
     pattern: /\bumeboa\b|\bhamna\b|\bhakuna\b|\bwapi\b/i,
-    reason: "dismisses what the federation posted",
+    reason: "dismisses what the brand posted",
   },
 ];
 
@@ -293,7 +293,7 @@ function quickPolarity(text: string): number {
 
 /**
  * Lexicon plus criticism-phrase sentiment. Conversation context matters: a
- * reply aimed straight at the federation or the president carries more weight
+ * reply aimed straight at the brand or a key figure carries more weight
  * than a passing mention, and the post being replied to is read too, so short
  * replies that only read as hostile in context are not softened to neutral.
  */
@@ -351,7 +351,7 @@ function scoreSentiment(
 
   if (/[!]{2,}/.test(value) && score < 0) score -= 1;
 
-  // Read the post being replied to. A reply that answers the federation's own
+  // Read the post being replied to. A reply that answers the brand's own
   // post and pushes back at it is criticism even when the wording is mild.
   const parent = (ctx.parentText ?? "").trim();
   if (parent && score <= 0) {
@@ -364,10 +364,10 @@ function scoreSentiment(
           break;
         }
       }
-      // Pushback on an upbeat federation announcement reads as criticism.
+      // Pushback on an upbeat brand announcement reads as criticism.
       if (score === 0 && parentScore > 0 && /\bbut\b|\bhowever\b|\blakini\b|\?/.test(value)) {
         score -= 1;
-        reasons.push("pushes back on the federation's own announcement");
+        reasons.push("pushes back on the brand's own announcement");
       }
     }
     // Piling onto an already critical thread keeps the negative reading.
@@ -377,10 +377,10 @@ function scoreSentiment(
     }
   }
 
-  // A critical reply pointed at the federation or president is a direct hit.
+  // A critical reply pointed at the brand or a key figure is a direct hit.
   if (score < 0 && ctx.replyToBrand) {
     score -= 1;
-    reasons.push("posted as a direct reply to the federation");
+    reasons.push("posted as a direct reply to the brand");
   } else if (score < 0 && ctx.isReply) {
     reasons.push("posted inside a reply thread");
   }
@@ -406,7 +406,7 @@ type AiSentiment = {
   sentiment: MentionSentiment;
   score: number;
   reason: string;
-  /** False when a topic-search post turns out not to be about the federation. */
+  /** False when a topic-search post turns out not to be about the brand. */
   relevant: boolean;
 };
 
@@ -424,6 +424,7 @@ async function classifyWithAi(
     replyToBrand: boolean;
     fromKeyword?: boolean;
   }[],
+  subject: string,
 ): Promise<Map<string, AiSentiment>> {
   const out = new Map<string, AiSentiment>();
   const apiKey = process.env["LOVABLE_API_KEY"];
@@ -439,15 +440,15 @@ async function classifyWithAi(
           {
             role: "system",
             content: [
-              "You judge how each public post feels ABOUT Football Kenya Federation (FKF) and its president.",
+              `You judge how each public post feels ABOUT ${subject}.`,
               "Posts mix English, Kiswahili and Sheng. Read sarcasm, insults, rhetorical questions and complaints as negative even when single words look upbeat.",
-              "Insults aimed at the federation ('you people are fools'), complaints about broadcasting, governance, pay or opportunities are negative.",
-              "Praise, excitement or enjoyment is positive: compliments about matches, players, schools, coverage or the federation's work, congratulations, celebration emojis (🔥 ⚽ 👏 ❤️), phrases like 'beauty to watch', 'proud of you', 'well done'.",
-              "Enthusiasm counts as positive even when the federation is only tagged and not praised by name — a happy post about the football it runs is good news for the brand.",
-              "Reserve neutral for posts with no feeling at all: plain facts, fixtures, links, or straight questions.",
+              "Insults aimed at the brand ('you people are fools'), complaints about governance, pay or opportunities are negative.",
+              "Praise, excitement or enjoyment is positive: compliments about the brand's work, congratulations, celebration emojis (🔥 👏 ❤️), phrases like 'proud of you', 'well done'.",
+              "Enthusiasm counts as positive even when the brand is only tagged and not praised by name.",
+              "Reserve neutral for posts with no feeling at all: plain facts, links, or straight questions.",
 
               "score: -5 (very damaging) to +5 (very supportive). reason: one short plain-English sentence explaining the post, in the user's words, no jargon or quoted keyword lists.",
-              "relevant: true only when the post is really about Kenyan football, the federation, its teams, league or leadership. Posts found by topic search that turn out to be about something else (other countries, betting spam, unrelated news) are relevant: false.",
+              "relevant: true only when the post is really about the monitored subject. Posts found by topic search that turn out to be about something else (unrelated news, spam) are relevant: false.",
               'Return strict JSON: {"results":[{"id":string,"sentiment":"positive"|"negative"|"neutral","score":number,"reason":string,"relevant":boolean}]}',
             ].join(" "),
           },
@@ -456,7 +457,7 @@ async function classifyWithAi(
             content: JSON.stringify(
               items.map((i) => ({
                 id: i.id,
-                replying_to_federation: i.replyToBrand,
+                replying_to_brand: i.replyToBrand,
                 found_by_topic_search: Boolean(i.fromKeyword),
                 post_being_replied_to: i.parentText.slice(0, 400),
                 post: i.text.slice(0, 600),
@@ -503,9 +504,9 @@ async function classifyWithAi(
 }
 
 /**
- * Recent public posts mentioning the tracked federation accounts, so Brand
- * Health can show who is talking about them and hand the post straight to
- * Publish for a persona response.
+ * Recent public posts mentioning the workspace's configured brand accounts,
+ * so Brand Health can show who is talking about them and hand the post
+ * straight to Publish for a persona response.
  */
 export const listBrandMentions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -514,29 +515,44 @@ export const listBrandMentions = createServerFn({ method: "GET" })
     async ({
       context,
       data,
-    }): Promise<{ mentions: BrandMention[]; error: string | null; nextCursor: string | null }> => {
+    }): Promise<{
+      mentions: BrandMention[];
+      error: string | null;
+      nextCursor: string | null;
+      brandHandles: string[];
+    }> => {
       const { searchTweets, fetchTweetMetrics } = await import("./twitterapi.server");
       const { activeKeywords, keywordQuery } = await import("./mention-keywords.server");
 
+      const settings = await getWorkspaceSettings();
+      const configuredHandles = brandHandles(settings);
+
       const { data: accounts } = await context.supabase.from("x_accounts").select("handle");
       const ours = new Set(
-        [...(accounts ?? []).map((a: any) => String(a.handle ?? "")), ...BRAND_PROFILE_HANDLES].map(
+        [...(accounts ?? []).map((a: any) => String(a.handle ?? "")), ...configuredHandles].map(
           (h) => h.replace(/^@/, "").toLowerCase(),
         ),
       );
-      const brandHandles = new Set(
-        BRAND_PROFILE_HANDLES.map((h) => h.replace(/^@/, "").toLowerCase()),
+      const brandHandleSet = new Set(
+        configuredHandles.map((h) => h.replace(/^@/, "").toLowerCase()),
       );
 
-      const query = `(${BRAND_PROFILE_HANDLES.map((h) => `@${h}`).join(" OR ")}) -filter:retweets`;
-      const { tweets, error, nextCursor } = await searchTweets(
-        query,
-        100,
-        data.cursor || undefined,
-      );
+      // No brand handle configured yet: skip the handle search rather than
+      // sending Twitter a malformed "() -filter:retweets" query. The
+      // keyword-based topic listening below still runs independently.
+      let tweets: Awaited<ReturnType<typeof searchTweets>>["tweets"] = [];
+      let error: string | null = null;
+      let nextCursor: string | null = null;
+      if (configuredHandles.length > 0) {
+        const query = `(${configuredHandles.map((h) => `@${h}`).join(" OR ")}) -filter:retweets`;
+        const result = await searchTweets(query, 100, data.cursor || undefined);
+        tweets = result.tweets;
+        error = result.error;
+        nextCursor = result.nextCursor;
+      }
 
-      // Topic listening: personas also watch conversations that never tag the
-      // federation. Only on the first page, so paging stays on the handle feed.
+      // Topic listening: personas also watch conversations that never tag a
+      // brand handle. Only on the first page, so paging stays on the handle feed.
       const keywordIds = new Set<string>();
       let keywordTweets: typeof tweets = [];
       let activeTerms: string[] = [];
@@ -594,9 +610,9 @@ export const listBrandMentions = createServerFn({ method: "GET" })
           const replyToHandle = t.replyToHandle || parent?.handle || addressed[0] || "";
           const replyToBrand =
             isReply &&
-            (brandHandles.has(replyToHandle.toLowerCase()) ||
-              addressed.some((h) => brandHandles.has(h)));
-          const parentFromBrand = parent ? brandHandles.has(parent.handle.toLowerCase()) : false;
+            (brandHandleSet.has(replyToHandle.toLowerCase()) ||
+              addressed.some((h) => brandHandleSet.has(h)));
+          const parentFromBrand = parent ? brandHandleSet.has(parent.handle.toLowerCase()) : false;
           const { sentiment, score, reason, highlights } = scoreSentiment(text, {
             isReply,
             replyToBrand,
@@ -613,9 +629,9 @@ export const listBrandMentions = createServerFn({ method: "GET" })
             createdAt: t.createdAt,
             likeCount: t.likeCount,
             viewCount: t.viewCount,
-            mentions: BRAND_PROFILE_HANDLES.filter((h) =>
+            mentions: configuredHandles.filter((h) =>
               full.toLowerCase().includes(`@${h.toLowerCase()}`),
-            ) as string[],
+            ),
             sentiment,
             sentimentScore: score,
             isVerified: t.isVerified,
@@ -637,7 +653,7 @@ export const listBrandMentions = createServerFn({ method: "GET" })
         .slice(0, 100);
 
       // AI has the final say on sentiment, and screens keyword finds so only
-      // posts genuinely about the federation reach the list.
+      // posts genuinely about the brand reach the list.
       const ai = await classifyWithAi(
         mentions.map((m) => ({
           id: m.id,
@@ -646,6 +662,7 @@ export const listBrandMentions = createServerFn({ method: "GET" })
           replyToBrand: Boolean(m.replyToBrand),
           fromKeyword: m.source === "keyword",
         })),
+        describeSubject(settings),
       );
       for (const m of mentions) {
         const verdict = ai.get(m.id);
@@ -668,7 +685,12 @@ export const listBrandMentions = createServerFn({ method: "GET" })
         console.error("Storing X mentions failed", err);
       }
 
-      return { mentions: relevant, error: relevant.length ? null : error, nextCursor };
+      return {
+        mentions: relevant,
+        error: relevant.length ? null : error,
+        nextCursor,
+        brandHandles: configuredHandles,
+      };
     },
   );
 

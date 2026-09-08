@@ -47,7 +47,7 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/accounts")({
   head: () => ({
     meta: [
-      { title: "Manage Account Connections - CommsIQ" },
+      { title: "Manage Account Connections - SMAIT" },
       {
         name: "description",
         content: "Import, reconnect and maintain authorised X account sessions.",

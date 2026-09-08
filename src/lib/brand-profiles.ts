@@ -1,6 +1,3 @@
-/** Brand accounts tracked on X for the Brand Health dashboard. */
-export const BRAND_PROFILE_HANDLES = ["Football_Kenya", "husseinmoha"] as const;
-
 export type BrandProfile = {
   handle: string;
   displayName: string;

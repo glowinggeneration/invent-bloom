@@ -50,7 +50,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/preflight")({
   head: () => ({
     meta: [
-      { title: "Campaign Preflight - CommsIQ" },
+      { title: "Campaign Preflight - SMAIT" },
       {
         name: "description",
         content:

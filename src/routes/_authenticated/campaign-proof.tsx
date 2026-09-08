@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/campaign-proof")({
   }),
   head: () => ({
     meta: [
-      { title: "Campaign Proof - CommsIQ" },
+      { title: "Campaign Proof - SMAIT" },
       {
         name: "description",
         content:
@@ -116,9 +116,9 @@ function CampaignProofPage() {
   const download = () => {
     if (!selected || !proof) return;
     void downloadCommandReportPdf({
-      title: "FKF Campaign Record",
+      title: "Campaign Record",
       subtitle: `${selected.name} · ${selected.type}`,
-      filename: `FKF-Campaign-Record-${
+      filename: `Campaign-Record-${
         selected.name
           .replace(/[^a-z0-9]+/gi, "-")
           .replace(/^-|-$/g, "")

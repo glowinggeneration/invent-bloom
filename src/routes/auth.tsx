@@ -11,18 +11,18 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in - CommsIQ" },
+      { title: "Sign in - SMAIT" },
       {
         name: "description",
         content:
-          "Sign in to CommsIQ, the Football Kenya Federation workspace for testing messages against 100 Kenyan personas.",
+          "Sign in to SMAIT, the workspace for testing messages against 100 Kenyan personas.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Sign in - CommsIQ" },
+      { property: "og:title", content: "Sign in - SMAIT" },
       {
         property: "og:description",
-        content: "Football Kenya Federation message-testing workspace.",
+        content: "SMAIT message-testing workspace.",
       },
     ],
   }),
@@ -53,7 +53,9 @@ function AuthPage() {
   }, [navigate, next]);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("fkf-commsiq-email");
+    const saved =
+      window.localStorage.getItem("smait-email") ??
+      window.localStorage.getItem("fkf-commsiq-email");
     if (saved) setEmail(saved);
   }, []);
 
@@ -70,8 +72,8 @@ function AuthPage() {
       toast.error("Those sign-in details didn't match. Check them and try again.");
       return;
     }
-    if (remember) window.localStorage.setItem("fkf-commsiq-email", cleanEmail);
-    else window.localStorage.removeItem("fkf-commsiq-email");
+    if (remember) window.localStorage.setItem("smait-email", cleanEmail);
+    else window.localStorage.removeItem("smait-email");
     if (next) window.location.replace(next);
     else navigate({ to: "/setup", replace: true });
   }
@@ -82,7 +84,7 @@ function AuthPage() {
         <div className="flex flex-col items-center text-center">
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-10 w-auto" />
           <p className="type-section mt-4">
-            <span className="text-primary">CommsIQ</span>
+            <span className="text-primary">SMAIT</span>
           </p>
           <p className="type-meta mt-1 text-muted-foreground">
             Communications Intelligence Platform
@@ -101,7 +103,7 @@ function AuthPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@footballkenya.org"
+                placeholder="name@yourorganisation.org"
                 className="h-11 pl-9"
               />
             </div>
@@ -142,9 +144,9 @@ function AuthPage() {
             </label>
             <button
               type="button"
-              className="type-meta font-medium text-fkf-green hover:underline"
+              className="type-meta font-medium text-positive hover:underline"
               onClick={() =>
-                toast.info("Password resets are issued by the FKF communications administrator.")
+                toast.info("Password resets are issued by your workspace administrator.")
               }
             >
               Forgot password?

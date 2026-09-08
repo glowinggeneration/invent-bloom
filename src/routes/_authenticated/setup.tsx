@@ -17,15 +17,15 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({
     meta: [
-      { title: "Set up your profile - CommsIQ" },
+      { title: "Set up your profile - SMAIT" },
       {
         name: "description",
         content:
-          "Tell CommsIQ who you are and what to monitor so mentions, alerts and reports are relevant from day one.",
+          "Tell SMAIT who you are and what to monitor so mentions, alerts and reports are relevant from day one.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Set up your profile - CommsIQ" },
+      { property: "og:title", content: "Set up your profile - SMAIT" },
       {
         property: "og:description",
         content: "A short guided setup that tells the platform what to listen for.",
@@ -65,6 +65,8 @@ function SetupPage() {
   const [phone, setPhone] = useState("");
   const [brandName, setBrandName] = useState("");
   const [brandHandle, setBrandHandle] = useState("");
+  const [keyFigures, setKeyFigures] = useState<string[]>([]);
+  const [keyFigureDraft, setKeyFigureDraft] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordDraft, setKeywordDraft] = useState("");
   const [socials, setSocials] = useState<SetupSocials>(EMPTY_SOCIALS);
@@ -81,6 +83,7 @@ function SetupPage() {
     setPhone(status.phone);
     setBrandName(status.brandName);
     setBrandHandle(status.brandHandle);
+    setKeyFigures(status.keyFigures);
     setKeywords(status.keywords);
     setSocials(status.socials);
   }, [status, navigate, edit]);
@@ -88,7 +91,17 @@ function SetupPage() {
   const finish = useMutation({
     mutationFn: () =>
       save({
-        data: { fullName, jobTitle, team, phone, brandName, brandHandle, keywords, socials },
+        data: {
+          fullName,
+          jobTitle,
+          team,
+          phone,
+          brandName,
+          brandHandle,
+          keyFigures,
+          keywords,
+          socials,
+        },
       }),
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ["profile"] });
@@ -119,6 +132,15 @@ function SetupPage() {
       list.some((k) => k.toLowerCase() === term.toLowerCase()) ? list : [...list, term],
     );
     setKeywordDraft("");
+  }
+
+  function addKeyFigure(raw?: string) {
+    const name = (raw ?? keyFigureDraft).trim();
+    if (name.length < 2 || keyFigures.length >= 10) return;
+    setKeyFigures((list) =>
+      list.some((k) => k.toLowerCase() === name.toLowerCase()) ? list : [...list, name],
+    );
+    setKeyFigureDraft("");
   }
 
   const canContinue = useMemo(() => {
@@ -182,7 +204,7 @@ function SetupPage() {
                   <Input
                     value={brandName}
                     onChange={(e) => setBrandName(e.target.value)}
-                    placeholder="Football Kenya Federation"
+                    placeholder="Your organisation's name"
                   />
                 </Field>
                 <Field
@@ -192,9 +214,52 @@ function SetupPage() {
                   <Input
                     value={brandHandle}
                     onChange={(e) => setBrandHandle(e.target.value)}
-                    placeholder="Football_Kenya"
+                    placeholder="YourOrganisation"
                   />
                 </Field>
+                <div className="space-y-1.5">
+                  <Label>
+                    Key people to track <span className="text-muted-foreground">(optional)</span>
+                  </Label>
+                  <p className="type-meta text-muted-foreground">
+                    Leadership or spokespeople whose mentions should be tracked separately from the
+                    organisation.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={keyFigureDraft}
+                      onChange={(e) => setKeyFigureDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addKeyFigure();
+                        }
+                      }}
+                      placeholder="e.g. Jane Doe"
+                      aria-label="Add a key figure"
+                    />
+                    <Button type="button" variant="outline" onClick={() => addKeyFigure()}>
+                      <Plus className="size-4" /> Add
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {keyFigures.map((name) => (
+                      <span
+                        key={name}
+                        className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 type-meta font-medium text-primary"
+                      >
+                        {name}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${name}`}
+                          onClick={() => setKeyFigures((l) => l.filter((k) => k !== name))}
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
 
@@ -217,7 +282,7 @@ function SetupPage() {
                         addKeyword();
                       }
                     }}
-                    placeholder="e.g. Harambee Stars"
+                    placeholder="e.g. your product name"
                     aria-label="Add a monitoring term"
                   />
                   <Button type="button" variant="outline" onClick={() => addKeyword()}>

@@ -1,3 +1,5 @@
+import { readWithLegacyKey } from "@/lib/legacy-storage";
+
 export type ActiveTestStatus = "running" | "interrupted" | "done";
 
 export type ActiveTest = {
@@ -9,14 +11,15 @@ export type ActiveTest = {
   startedAt: string;
 };
 
-const KEY = "fkf.activeTest";
+const KEY = "smait.activeTest";
+const LEGACY_KEY = "fkf.activeTest";
 /** A run older than this is stale - never resume it. */
 const MAX_AGE_MS = 30 * 60 * 1000;
 
 export function readActiveTest(): ActiveTest | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = readWithLegacyKey(KEY, LEGACY_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ActiveTest>;
     if (!parsed.status || !parsed.startedAt) return null;

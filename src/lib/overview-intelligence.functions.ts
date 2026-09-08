@@ -83,9 +83,9 @@ type MentionRow = {
 const TOPICS: { id: string; label: string; query: string; re: RegExp }[] = [
   {
     id: "leadership",
-    label: "FKF leadership & governance",
+    label: "Leadership & governance",
     query: "leadership",
-    re: /president|hussein|leadership|governance|election|office|federation|fkf/i,
+    re: /leadership|governance|election|office|chairman|chairperson|director|board/i,
   },
   {
     id: "national-teams",

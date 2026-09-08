@@ -19,15 +19,15 @@ const publishSearchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/publish")({
   head: () => ({
     meta: [
-      { title: "Create campaign - CommsIQ" },
+      { title: "Create campaign - SMAIT" },
       {
         name: "description",
         content:
-          "Create a reviewed Post or Reply campaign from the connected FKF communications workspace.",
+          "Create a reviewed Post or Reply campaign from the connected communications workspace.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Create campaign - CommsIQ" },
+      { property: "og:title", content: "Create campaign - SMAIT" },
       {
         property: "og:description",
         content:

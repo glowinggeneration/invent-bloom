@@ -27,7 +27,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/brief")({
   head: () => ({
     meta: [
-      { title: "Executive Brief - CommsIQ" },
+      { title: "Executive Brief - SMAIT" },
       {
         name: "description",
         content:
@@ -105,10 +105,10 @@ function ExecutiveBriefPage() {
 
   const download = () => {
     void downloadCommandReportPdf({
-      title: "FKF Executive Communications Brief",
+      title: "Executive Communications Brief",
       subtitle:
         "A concise leadership view of the current monitored conversation and recommended communication priorities.",
-      filename: `FKF-Executive-Brief-${new Date().toISOString().slice(0, 10)}.pdf`,
+      filename: `Executive-Brief-${new Date().toISOString().slice(0, 10)}.pdf`,
       generatedAt: data?.generatedAt ?? null,
       sections: [
         {

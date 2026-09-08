@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { KeyRound, Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -9,6 +9,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -20,14 +21,21 @@ import {
 import { Card } from "@/components/ui-kit";
 import { useProfile } from "@/hooks/use-profile";
 import { isAdminEmail } from "@/lib/access";
-import { listAllUsers, setUserPassword, type AdminUser } from "@/lib/admin-users.functions";
+import {
+  listAllUsers,
+  setUserOrg,
+  setUserPassword,
+  type AdminUser,
+} from "@/lib/admin-users.functions";
 
 /** Admin-only: list every account and reset passwords. */
 export function AdminUsersPanel() {
   const { data: profile } = useProfile();
   const isAdmin = isAdminEmail(profile?.email);
+  const queryClient = useQueryClient();
   const fetchUsers = useServerFn(listAllUsers);
   const resetPassword = useServerFn(setUserPassword);
+  const updateOrg = useServerFn(setUserOrg);
 
   const [query, setQuery] = useState("");
   const [target, setTarget] = useState<AdminUser | null>(null);
@@ -58,6 +66,15 @@ export function AdminUsersPanel() {
     onError: (e: Error) => toast.error(friendlyError(e)),
   });
 
+  const toggleMembership = useMutation({
+    mutationFn: (input: { userId: string; org: "team" | "external" }) => updateOrg({ data: input }),
+    onSuccess: async () => {
+      toast.success("Membership updated.");
+      await queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+    onError: (e: Error) => toast.error(friendlyError(e)),
+  });
+
   if (!isAdmin) return null;
 
   return (
@@ -69,7 +86,7 @@ export function AdminUsersPanel() {
         <span className="type-meta text-muted-foreground">{data?.length ?? 0} accounts</span>
       </div>
       <p className="mt-1 type-meta text-muted-foreground">
-        Admin only. Reset a password for any account.
+        Admin only. Reset a password or change team-workspace membership for any account.
       </p>
 
       <Input
@@ -95,6 +112,17 @@ export function AdminUsersPanel() {
                 <p className="truncate type-body font-medium">{u.fullName || u.email}</p>
                 <p className="truncate type-meta text-muted-foreground">{u.email}</p>
               </div>
+              <label className="flex shrink-0 items-center gap-2 type-meta text-muted-foreground">
+                <Switch
+                  checked={u.org === "team"}
+                  disabled={toggleMembership.isPending}
+                  onCheckedChange={(checked) =>
+                    toggleMembership.mutate({ userId: u.id, org: checked ? "team" : "external" })
+                  }
+                  aria-label={`Team workspace membership for ${u.email}`}
+                />
+                Team
+              </label>
               <Button
                 variant="outline"
                 size="sm"

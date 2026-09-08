@@ -35,7 +35,7 @@ import { getSourceAuthority } from "@/lib/source-authority.functions";
 export const Route = createFileRoute("/_authenticated/crisis")({
   head: () => ({
     meta: [
-      { title: "Crisis Command - CommsIQ" },
+      { title: "Crisis Command - SMAIT" },
       {
         name: "description",
         content:
@@ -119,7 +119,7 @@ function CrisisCommandPage() {
     ? `Prepare a clear, factual response to this issue: ${topRisk.title}. ${topRisk.detail}`
     : narratives[0]
       ? `Prepare a clear, factual response to the ${narratives[0].label} conversation.`
-      : "Prepare a clear, factual response to the most important current FKF conversation.";
+      : "Prepare a clear, factual response to the most important current conversation.";
 
   const platformMix = useMemo(() => {
     const counts = new Map<string, number>();
@@ -134,9 +134,9 @@ function CrisisCommandPage() {
 
   const downloadIncident = () => {
     void downloadCommandReportPdf({
-      title: "FKF Crisis Intelligence Brief",
+      title: "Crisis Intelligence Brief",
       subtitle: "Current communication risks and observed amplification from monitored sources.",
-      filename: `FKF-Crisis-Brief-${new Date().toISOString().slice(0, 10)}.pdf`,
+      filename: `Crisis-Brief-${new Date().toISOString().slice(0, 10)}.pdf`,
       sections: [
         {
           heading: "Situation",

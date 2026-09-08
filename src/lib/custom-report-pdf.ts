@@ -324,10 +324,8 @@ export async function downloadCustomReportPdf(input: CustomReportInput) {
   }
 
   pdf.note(
-    "This report reflects the data available to CommsIQ at generation time. Platform-specific metrics may differ in definition and availability. Intelligence and persona-testing signals are decision support and should be reviewed against the underlying evidence before external action.",
+    "This report reflects the data available to SMAIT at generation time. Platform-specific metrics may differ in definition and availability. Intelligence and persona-testing signals are decision support and should be reviewed against the underlying evidence before external action.",
   );
 
-  pdf.save(
-    `${slugify(input.title, "fkf-commsiq-report")}-${new Date().toISOString().slice(0, 10)}.pdf`,
-  );
+  pdf.save(`${slugify(input.title, "smait-report")}-${new Date().toISOString().slice(0, 10)}.pdf`);
 }

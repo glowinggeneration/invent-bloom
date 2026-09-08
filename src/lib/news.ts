@@ -10,52 +10,35 @@
  *
  * 12 NewsData queries per sweep at ~75 minutes stays inside the free tier's
  * 200 requests/day. Google News RSS is unmetered.
+ *
+ * This file is imported by client components (mention-sources.tsx,
+ * news-card.tsx, mention-investigation.tsx, brand-mentions.tsx) for its
+ * display types/helpers, so it must never import entity-config.server.ts
+ * or any other server-only module - isNewsRelevant() below takes an
+ * already-built RegExp instead of fetching workspace_settings itself.
  */
 
-export const NEWS_QUERIES: string[] = [
-  '"Football Kenya Federation" OR FKF OR "Harambee Stars"',
-  '"AFCON 2027" OR "Pamoja 2027" OR (AFCON AND Kenya)',
-  '("Hussein Mohammed" OR "McDonald Mariga") AND FKF',
-  "FKF AND (corruption OR court OR tribunal OR crisis OR audit)",
-  '"Harambee Stars" AND (squad OR coach OR match OR qualifier)',
-  '"Harambee Starlets" OR "Kenya women football"',
-  '"FKF Premier League" OR "Kenya Premier League" OR "National Super League"',
-  '"Gor Mahia" OR "AFC Leopards" OR "Tusker FC" OR "Shabana"',
-  "Kenya AND (football OR FKF) AND (Ruto OR government OR ministry)",
-  "(Talanta OR Kasarani OR Nyayo) AND (stadium OR AFCON)",
-  'FKF AND (sponsor OR broadcast OR "media rights" OR SportPesa)',
-  "Kenya AND (grassroots OR youth OR academy) AND football",
-];
+/** Empty until the workspace configures what to search for. */
+export const NEWS_QUERIES: string[] = [];
 
 /**
  * Google News search syntax differs from NewsData: a space means AND and OR
- * must be explicit, so the anchor term is repeated per clause
- * (`FKF corruption OR FKF court`) rather than factored out. Keep that pattern
- * when editing. The trailing `when:` window is appended automatically from
- * GOOGLE_NEWS_WINDOWS, since this feed otherwise skews toward older stories.
+ * must be explicit, so an anchor term needs repeating per clause rather than
+ * factored out. Keep that pattern when editing. The trailing `when:` window
+ * is appended automatically from GOOGLE_NEWS_WINDOWS, since this feed
+ * otherwise skews toward older stories. Empty until configured.
  */
-export const GOOGLE_NEWS_QUERIES: string[] = [
-  '"Football Kenya Federation" OR FKF OR "Harambee Stars"',
-  '"AFCON 2027" OR "Pamoja 2027" Kenya',
-  '"Hussein Mohammed" FKF OR "McDonald Mariga" FKF',
-  "FKF corruption OR FKF court OR FKF tribunal OR FKF crisis",
-  '"Harambee Stars" squad OR "Harambee Stars" coach OR "Harambee Stars" qualifier',
-  '"Harambee Starlets" OR "Kenya women football"',
-  '"FKF Premier League" OR "Kenya Premier League" OR "National Super League"',
-  '"Gor Mahia" OR "AFC Leopards" OR "Tusker FC" OR "Shabana"',
-  'FKF sponsor OR FKF broadcast OR "SportPesa Premier League"',
-  "Talanta Stadium OR Kasarani OR Nyayo AFCON",
-];
+export const GOOGLE_NEWS_QUERIES: string[] = [];
 
 /**
  * Freshness window appended to each Google News query, by index. Fast-moving
- * topics (fixtures, squads, results) use a tight window; slower storylines use
- * a wider one. Anything not listed falls back to `defaultWindow`.
+ * topics use a tight window; slower storylines use a wider one. Anything not
+ * listed falls back to `defaultWindow`.
  */
 export const GOOGLE_NEWS_WINDOWS = {
   defaultWindow: "7d",
   /** Query index -> window. Indexes match GOOGLE_NEWS_QUERIES above. */
-  byIndex: { 0: "2d", 4: "2d", 6: "2d", 7: "2d" } as Record<number, string>,
+  byIndex: {} as Record<number, string>,
 };
 
 /** Kenya / English edition. Swap to hl=sw, ceid=KE:sw for a Swahili edition. */
@@ -230,33 +213,18 @@ function numberTokens(title: string): string[] {
 }
 
 /**
- * Teams and bodies the feed covers. Two headlines naming different entities are
- * different stories even when the rest of the wording matches almost exactly
- * ("Tusker sign Ugandan striker" vs "AFC Leopards sign Ugandan striker").
- * Add new clubs here as coverage widens.
+ * Named entities the feed covers. Two headlines naming different entities are
+ * different stories even when the rest of the wording matches almost exactly.
+ * Empty until the workspace configures which entities to track - dedup then
+ * falls back to token-overlap only, which under-merges less precisely but
+ * never breaks.
  */
-export const NEWS_ENTITIES: string[] = [
-  "harambee stars",
-  "harambee starlets",
-  "gor mahia",
-  "afc leopards",
-  "tusker",
-  "shabana",
-  "bandari",
-  "kariobangi sharks",
-  "rayon sport",
-  "kenya police",
-  "ulinzi stars",
-  "fkf",
-  "cecafa",
-  "caf",
-  "fifa",
-];
+export const NEWS_ENTITIES: string[] = [];
 
-function entitiesIn(title: string): string[] {
+function entitiesIn(title: string, entities: string[]): string[] {
   // Compare on stemmed words so "Rayon Sports" matches "Rayon Sport".
   const text = ` ${normalizeTitle(title).split(" ").map(stem).join(" ")} `;
-  return NEWS_ENTITIES.filter((e) => text.includes(` ${e.split(" ").map(stem).join(" ")} `));
+  return entities.filter((e) => text.includes(` ${e.split(" ").map(stem).join(" ")} `));
 }
 
 /**
@@ -301,8 +269,8 @@ const TOPIC_TERMS = new Set([
 ]);
 
 /** Words that carry event-level meaning: not filler, entity or beat vocabulary. */
-function distinctiveTokens(title: string): string[] {
-  const entityWords = new Set(entitiesIn(title).flatMap((e) => e.split(" ").map(stem)));
+function distinctiveTokens(title: string, entities: string[]): string[] {
+  const entityWords = new Set(entitiesIn(title, entities).flatMap((e) => e.split(" ").map(stem)));
   return significantTokens(title).filter((t) => !TOPIC_TERMS.has(t) && !entityWords.has(t));
 }
 
@@ -335,14 +303,14 @@ export const MIN_SHARED_DISTINCTIVE = 2;
  * tuned to under-merge: showing two near-identical headlines is a much smaller
  * failure than hiding a genuinely different story.
  */
-export function isSameStory(a: string, b: string): boolean {
+export function isSameStory(a: string, b: string, entities: string[] = NEWS_ENTITIES): boolean {
   const keyA = normalizeTitle(a);
   const keyB = normalizeTitle(b);
   if (!keyA || !keyB) return false;
   if (keyA === keyB) return true;
 
-  const entA = entitiesIn(a);
-  const entB = entitiesIn(b);
+  const entA = entitiesIn(a, entities);
+  const entB = entitiesIn(b, entities);
   if (entA.length !== entB.length || entA.some((e) => !entB.includes(e))) return false;
 
   const numA = numberTokens(a);
@@ -358,8 +326,10 @@ export function isSameStory(a: string, b: string): boolean {
   const union = new Set([...tokensA, ...tokensB]).size;
   if (shared.length / union < SAME_STORY_THRESHOLD) return false;
 
-  const distinctiveB = new Set(distinctiveTokens(b));
-  const sharedDistinctive = distinctiveTokens(a).filter((t) => distinctiveB.has(t)).length;
+  const distinctiveB = new Set(distinctiveTokens(b, entities));
+  const sharedDistinctive = distinctiveTokens(a, entities).filter((t) =>
+    distinctiveB.has(t),
+  ).length;
   return sharedDistinctive >= MIN_SHARED_DISTINCTIVE;
 }
 
@@ -367,16 +337,19 @@ export function isSameStory(a: string, b: string): boolean {
  * Collapses a list of articles to one entry per story, preferring the richest
  * record (image, then snippet) so a headline-only RSS item never displaces a
  * NewsData item covering the same event. Input order is otherwise preserved.
+ * `entities` defaults to NEWS_ENTITIES (empty until the workspace configures
+ * named entities to track); pass an explicit list to test the entity guard
+ * without depending on that shared, mutable module state.
  */
 export function dedupeByStory<
   T extends { title: string; imageUrl: string | null; description: string },
->(articles: T[]): { kept: T[]; duplicates: number } {
+>(articles: T[], entities: string[] = NEWS_ENTITIES): { kept: T[]; duplicates: number } {
   const richness = (a: T) => (a.imageUrl ? 2 : 0) + (a.description ? 1 : 0);
   const kept: T[] = [];
   let duplicates = 0;
 
   for (const article of articles) {
-    const matchIndex = kept.findIndex((k) => isSameStory(k.title, article.title));
+    const matchIndex = kept.findIndex((k) => isSameStory(k.title, article.title, entities));
     if (matchIndex === -1) {
       kept.push(article);
       continue;
@@ -400,58 +373,20 @@ export function googleNewsUrl(query: string, window: string): string {
 export type NewsSentiment = "positive" | "neutral" | "negative";
 
 /**
- * Terms that make a story genuinely about Kenyan football and the federation.
- * Both news sources return the occasional stray result (foreign leagues,
- * betting spam, unrelated politics), and the feed sits next to the federation's
- * own mentions, so anything that names none of these is dropped.
- *
- * Split in two: STRONG terms are unique to Kenyan football and stand alone.
- * SHARED terms (AFCON, CECAFA, Tusker, stadium names) also describe other
- * countries' stories, so they only count when the text also names Kenya.
+ * Whether a headline/snippet is relevant to the workspace's configured
+ * subject. `pattern` is built server-side from workspace_settings via
+ * entity-config.server.ts's buildRelevancePattern() - this file stays
+ * import-free of that server-only module since it's bundled into client
+ * components (see the module doc comment). A null pattern means the
+ * workspace has nothing configured yet: every article is treated as
+ * relevant rather than silently emptying the feed.
  */
-export const FKF_STRONG_TERMS: string[] = [
-  "fkf",
-  "football kenya",
-  "harambee stars",
-  "harambee starlets",
-  "kenyan football",
-  "kenya football",
-  "kenya premier league",
-  "fkf premier league",
-  "national super league",
-  "gor mahia",
-  "afc leopards",
-  "kariobangi sharks",
-  "ulinzi stars",
-  "hussein mohammed",
-  "mcdonald mariga",
-  "pamoja 2027",
-];
-
-/** Ambiguous terms: only relevant when the story is also about Kenya. */
-export const FKF_SHARED_TERMS: string[] = [
-  "tusker",
-  "shabana",
-  "bandari",
-  "kenya police",
-  "afcon",
-  "cecafa",
-  "talanta",
-  "kasarani",
-  "nyayo",
-];
-
-/** Words that establish the story is set in Kenya. */
-export const KENYA_TERMS: string[] = ["kenya", "kenyan", "nairobi", "mombasa", "kisumu", "eldoret"];
-
-/** Kept for callers that just want the full vocabulary. */
-export const FKF_RELEVANCE_TERMS: string[] = [...FKF_STRONG_TERMS, ...FKF_SHARED_TERMS];
-
-/** Whether a headline/snippet is about Kenyan football at all. */
-export function isFkfRelevant(...parts: (string | null | undefined)[]): boolean {
+export function isNewsRelevant(
+  pattern: RegExp | null,
+  ...parts: (string | null | undefined)[]
+): boolean {
   const text = parts.filter(Boolean).join(" ").toLowerCase();
+  if (!pattern) return true;
   if (!text.trim()) return false;
-  if (FKF_STRONG_TERMS.some((term) => text.includes(term))) return true;
-  const kenyan = KENYA_TERMS.some((term) => text.includes(term));
-  return kenyan && FKF_SHARED_TERMS.some((term) => text.includes(term));
+  return pattern.test(text);
 }

@@ -40,18 +40,18 @@ import { OVERVIEW_WINDOWS, type OverviewWindow } from "@/lib/overview";
 export const Route = createFileRoute("/_authenticated/overview")({
   head: () => ({
     meta: [
-      { title: "Overview - CommsIQ" },
+      { title: "Overview - SMAIT" },
       {
         name: "description",
         content:
-          "See how Football Kenya Federation and President Hussein Mohammed are being talked about — health, mood, trends, and what to do next.",
+          "See how your organisation and its leadership are being talked about — health, mood, trends, and what to do next.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Overview - CommsIQ" },
+      { property: "og:title", content: "Overview - SMAIT" },
       {
         property: "og:description",
-        content: "One screen for how the federation and the president are being talked about.",
+        content: "One screen for how your organisation is being talked about.",
       },
     ],
   }),

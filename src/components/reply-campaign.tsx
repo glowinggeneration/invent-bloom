@@ -447,12 +447,18 @@ export function ReplyCampaign() {
     trimmedTarget.length > 0 &&
     remaining >= 0;
 
+  // Stable across retries of the same submit attempt so a network retry or
+  // double-fire returns the original result instead of posting twice;
+  // rotated after a successful submit so the next attempt is a fresh intent.
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
+
   const publishMutation = useMutation({
     mutationFn: (opts: { now: boolean; spread?: number }) =>
       publish({
         data: {
           mode: "comment",
           name: campaignName.trim(),
+          idempotencyKey: idempotencyKeyRef.current,
           accountIds: selected,
           tweetText: "",
           commentText,
@@ -472,6 +478,7 @@ export function ReplyCampaign() {
         },
       }),
     onSuccess: (data, opts) => {
+      idempotencyKeyRef.current = crypto.randomUUID();
       setResult(data);
       setError(null);
       setStartedOpen(true);
@@ -774,7 +781,7 @@ export function ReplyCampaign() {
                     <Input
                       value={linkUrl}
                       onChange={(e) => setLinkUrl(e.target.value)}
-                      placeholder="https://footballkenya.org/…"
+                      placeholder="https://yourorganisation.org/…"
                       aria-label="Link to append"
                     />
                   )}

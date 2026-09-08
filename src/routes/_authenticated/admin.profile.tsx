@@ -13,7 +13,7 @@ import { isAdminEmail } from "@/lib/access";
 export const Route = createFileRoute("/_authenticated/admin/profile")({
   head: () => ({
     meta: [
-      { title: "Admin Profile - CommsIQ" },
+      { title: "Admin Profile - SMAIT" },
       {
         name: "description",
         content: "Administrative identity, workspace controls, users and integrations.",
@@ -38,7 +38,7 @@ function AdminProfilePage() {
   return (
     <WorkspaceShell title="Admin Profile">
       <PageTitle
-        description="Your administrator identity and the controls used to manage the CommsIQ workspace."
+        description="Your administrator identity and the controls used to manage the SMAIT workspace."
         actions={
           <Button asChild variant="outline">
             <Link to="/profile">Open my user profile</Link>
@@ -114,8 +114,8 @@ function AdminProfilePage() {
             </div>
           </Card>
 
-          <Card className="bg-fkf-green/5">
-            <h2 className="flex items-center gap-2 type-card font-semibold text-fkf-green">
+          <Card className="bg-positive/5">
+            <h2 className="flex items-center gap-2 type-card font-semibold text-positive">
               <ShieldCheck className="size-4" /> Admin responsibility
             </h2>
             <p className="mt-2 type-meta text-muted-foreground">

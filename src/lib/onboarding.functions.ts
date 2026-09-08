@@ -17,6 +17,7 @@ const setupSchema = z.object({
   phone: z.string().trim().max(40).default(""),
   brandName: z.string().trim().max(120).default(""),
   brandHandle: z.string().trim().max(60).default(""),
+  keyFigures: z.array(z.string().trim().min(2).max(80)).max(10).default([]),
   keywords: z.array(z.string().trim().min(2).max(80)).min(1).max(25),
   socials: socialsSchema.default(EMPTY_SOCIALS),
 });
@@ -27,12 +28,13 @@ export const getSetupStatus = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<SetupStatus> => {
     const { data, error } = await context.supabase
       .from("profiles")
-      .select(
-        "full_name, job_title, team, phone, brand_name, brand_handle, onboarding_completed_at, onboarding_skipped_at",
-      )
+      .select("full_name, job_title, team, phone, onboarding_completed_at, onboarding_skipped_at")
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
+
+    const { getWorkspaceSettings } = await import("./entity-config.server");
+    const settings = await getWorkspaceSettings();
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as any;
@@ -65,8 +67,9 @@ export const getSetupStatus = createServerFn({ method: "POST" })
       jobTitle: data?.job_title ?? "",
       team: data?.team ?? "",
       phone: data?.phone ?? "",
-      brandName: data?.brand_name ?? "",
-      brandHandle: data?.brand_handle ?? "",
+      brandName: settings.orgName,
+      brandHandle: settings.orgHandle,
+      keyFigures: settings.keyFigures,
       keywords: ((keywordRows ?? []) as { term: string }[]).map((r) => r.term).filter(Boolean),
       socials,
     };
@@ -86,8 +89,6 @@ export const saveSetup = createServerFn({ method: "POST" })
         job_title: data.jobTitle,
         team: data.team,
         phone: data.phone,
-        brand_name: data.brandName,
-        brand_handle: brandHandle,
         onboarding_completed_at: new Date().toISOString(),
         onboarding_skipped_at: null,
       })
@@ -96,6 +97,20 @@ export const saveSetup = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as any;
+
+    // Organisation identity and key figures are workspace-wide, not per-user -
+    // every team member's setup writes into the same shared row, same as the
+    // shared mention_keywords/monitoring_watchlist writes below.
+    const { error: settingsError } = await db
+      .from("workspace_settings")
+      .update({
+        org_name: data.brandName,
+        org_handle: brandHandle,
+        key_figures: data.keyFigures,
+        updated_by: context.userId,
+      })
+      .eq("singleton", true);
+    if (settingsError) throw new Error(settingsError.message);
 
     // Monitoring keywords — the listening pipeline reads this list every run.
     const { data: existingKeywords } = await db.from("mention_keywords").select("term");

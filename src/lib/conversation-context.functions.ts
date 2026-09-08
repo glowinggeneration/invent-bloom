@@ -38,7 +38,7 @@ type ContextRow = {
 };
 
 const TOPICS = [
-  { id: "leadership", label: "FKF leadership & governance", query: "leadership" },
+  { id: "leadership", label: "Leadership & governance", query: "leadership" },
   { id: "national-teams", label: "National teams & performance", query: "harambee" },
   { id: "grassroots", label: "Grassroots & youth development", query: "grassroots" },
   { id: "league", label: "League, clubs & competitions", query: "league" },

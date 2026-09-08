@@ -1,4 +1,4 @@
-# Ideal Customer Profile — Persona_Voices (FKF CommsIQ)
+# Ideal Customer Profile — SMAIT
 
 Per Application Build Master Rules §2. Filled in from what the product
 already demonstrates; fields marked `TBD` need an explicit answer from the
@@ -6,7 +6,7 @@ product owner before new scope is added against them.
 
 | Field | Answer |
 | --- | --- |
-| Customer segment | Sports federations and comparable public-facing organisations that need continuous media/social monitoring (current tenant: Football Kenya Federation). |
+| Customer segment | Organisations needing communications intelligence and campaign operations (tenant-configurable). |
 | Primary user | Communications team members monitoring mentions, sentiment and coverage day to day. |
 | Core problem | Fragmented, manual tracking of what's being said across X, news and social platforms about the federation and its leadership, with no single source of truth for decisions made in response. |
 | Trigger | A spike in mentions, a negative story, or a crisis moment that needs a fast, coordinated response. |

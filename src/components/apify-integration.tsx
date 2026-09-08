@@ -27,7 +27,7 @@ export function ApifyIntegrationCard() {
         <span
           className={
             status === "Connected"
-              ? "font-semibold text-fkf-green"
+              ? "font-semibold text-positive"
               : "font-semibold text-muted-foreground"
           }
         >

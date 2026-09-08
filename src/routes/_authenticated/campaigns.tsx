@@ -78,14 +78,14 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/campaigns")({
   head: () => ({
     meta: [
-      { title: "Campaigns - CommsIQ" },
+      { title: "Campaigns - SMAIT" },
       {
         name: "description",
         content: "Listening campaigns that reply in persona voice to matching conversations.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Campaigns - CommsIQ" },
+      { property: "og:title", content: "Campaigns - SMAIT" },
       {
         property: "og:description",
         content: "Keyword and hashtag listening campaigns with persona-voiced replies.",
@@ -412,7 +412,7 @@ export function CampaignsWorkspace() {
                   id="c-keywords"
                   rows={2}
                   value={form.keywords}
-                  placeholder="Harambee Stars, FKF tickets"
+                  placeholder="product launch, ticket sales"
                   onChange={(e) => setForm({ ...form, keywords: e.target.value })}
                 />
               </div>
@@ -422,7 +422,7 @@ export function CampaignsWorkspace() {
                   id="c-hashtags"
                   rows={2}
                   value={form.hashtags}
-                  placeholder="#HarambeeStars, #FKF"
+                  placeholder="#YourBrand, #Campaign2026"
                   onChange={(e) => setForm({ ...form, hashtags: e.target.value })}
                 />
               </div>

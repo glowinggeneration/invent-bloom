@@ -1,5 +1,5 @@
 /**
- * The Managed Reports library — Persona_Voices's hand-prepared deliverables.
+ * The Managed Reports library — SMAIT's hand-prepared deliverables.
  *
  * Clients read and download here; the admin can also tidy titles, change the
  * category or retire a report. New reports arrive through Lovable Chat, so

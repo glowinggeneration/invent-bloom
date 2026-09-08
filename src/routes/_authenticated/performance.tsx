@@ -76,7 +76,7 @@ export const Route = createFileRoute("/_authenticated/performance")({
     typeof search["campaign"] === "string" ? { campaign: search["campaign"] as string } : {},
   head: () => ({
     meta: [
-      { title: "Performance - CommsIQ" },
+      { title: "Performance - SMAIT" },
       {
         name: "description",
         content:
@@ -84,7 +84,7 @@ export const Route = createFileRoute("/_authenticated/performance")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Performance - CommsIQ" },
+      { property: "og:title", content: "Performance - SMAIT" },
       {
         property: "og:description",
         content:
@@ -272,7 +272,7 @@ function PerformancePage() {
     if (!data) return;
     const stamp = new Date().toISOString().slice(0, 10);
     downloadCsv(
-      `fkf-performance-${stamp}.csv`,
+      `smait-performance-${stamp}.csv`,
       performanceCsv(data, (handle) => lookupAccount(handle)?.displayName || handle),
     );
     toast.success("Performance data downloaded.");

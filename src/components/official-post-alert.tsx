@@ -22,8 +22,8 @@ import { getOfficialPosts, type OfficialPost } from "@/lib/overview.functions";
 
 const REVIEW_WINDOW_MS = 60 * 60 * 1000;
 const ALERT_FRESHNESS_MS = 90 * 60 * 1000;
-const STORAGE_KEY = "commsiq.official-post-alert.dismissed.v2";
-const LEGACY_STORAGE_KEY = "commsiq.official-post-alert.dismissed.v1";
+const STORAGE_KEY = "smait.official-post-alert.dismissed.v1";
+const LEGACY_STORAGE_KEY = "commsiq.official-post-alert.dismissed.v2";
 
 function storageKey(scope?: string | null) {
   const safe = String(scope || "default")
@@ -142,7 +142,7 @@ export function OfficialPostAlert() {
           </div>
           <DialogTitle>{post.name} has just posted</DialogTitle>
           <DialogDescription>
-            Review the opportunity while the conversation is fresh. CommsIQ will help prepare
+            Review the opportunity while the conversation is fresh. SMAIT will help prepare
             distinct, relevant amplification content; it will not automatically boost the post with
             every linked account.
           </DialogDescription>

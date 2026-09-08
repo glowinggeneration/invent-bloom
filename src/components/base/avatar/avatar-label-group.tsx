@@ -47,7 +47,7 @@ export function AvatarLabelGroup({
     <div className={cn("flex min-w-0 items-center gap-3", className)}>
       <Avatar className={cn("border border-border bg-muted shadow-sm", styles.avatar)}>
         {src ? <AvatarImage src={src} alt={alt ?? title} className="object-cover" /> : null}
-        <AvatarFallback className="bg-fkf-green font-semibold text-navy-foreground">
+        <AvatarFallback className="bg-positive font-semibold text-navy-foreground">
           {initialsOf(title)}
         </AvatarFallback>
       </Avatar>

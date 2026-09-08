@@ -11,18 +11,18 @@ import { PageTitle } from "@/components/ui-kit";
 export const Route = createFileRoute("/_authenticated/mentions")({
   head: () => ({
     meta: [
-      { title: "Mentions - CommsIQ" },
+      { title: "Mentions - SMAIT" },
       {
         name: "description",
         content:
-          "See what people are posting about the federation and the president, how it feels, and reply in one tap.",
+          "See what people are posting about your organisation and its leadership, how it feels, and reply in one tap.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Mentions - CommsIQ" },
+      { property: "og:title", content: "Mentions - SMAIT" },
       {
         property: "og:description",
-        content: "Who is talking about the federation right now, and how it reads.",
+        content: "Who is talking about your organisation right now, and how it reads.",
       },
     ],
   }),
@@ -44,7 +44,7 @@ function MentionsPage() {
   const search = Route.useSearch();
   return (
     <WorkspaceShell title="Mentions" wide>
-      <PageTitle description="Public posts about the federation and the president, scored in context.">
+      <PageTitle description="Public posts about your organisation and its leadership, scored in context.">
         Mentions
       </PageTitle>
       <BrandAccounts />

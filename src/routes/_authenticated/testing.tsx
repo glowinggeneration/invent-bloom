@@ -17,16 +17,16 @@ export const Route = createFileRoute("/_authenticated/testing")({
   },
   head: () => ({
     meta: [
-      { title: "Message testing - CommsIQ" },
+      { title: "Message testing - SMAIT" },
       {
         name: "description",
         content:
-          "Open the CommsIQ message testing workspace directly to run persona-based message tests.",
+          "Open the SMAIT message testing workspace directly to run persona-based message tests.",
       },
-      { property: "og:title", content: "Message testing - CommsIQ" },
+      { property: "og:title", content: "Message testing - SMAIT" },
       {
         property: "og:description",
-        content: "Open the CommsIQ message testing workspace directly.",
+        content: "Open the SMAIT message testing workspace directly.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

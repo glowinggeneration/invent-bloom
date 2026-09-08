@@ -15,10 +15,10 @@ export type FirstRunMeta = {
   copiedAt: string | null;
 };
 
-const KEY = "fkf.firstRun.checklist";
-const META_KEY = "fkf.firstRun.meta";
-const DISMISS_KEY = "fkf.firstRun.checklistDismissed";
-const EVENT = "fkf:first-run-change";
+const KEY = "smait.firstRun.checklist";
+const META_KEY = "smait.firstRun.meta";
+const DISMISS_KEY = "smait.firstRun.checklistDismissed";
+const EVENT = "smait:first-run-change";
 
 export const EMPTY_FIRST_RUN: FirstRunState = {
   text: false,

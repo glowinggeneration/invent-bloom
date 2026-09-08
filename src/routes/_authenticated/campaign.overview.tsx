@@ -13,7 +13,7 @@ import { listScheduledActions } from "@/lib/scheduler.functions";
 export const Route = createFileRoute("/_authenticated/campaign/overview")({
   head: () => ({
     meta: [
-      { title: "Create campaign - CommsIQ" },
+      { title: "Create campaign - SMAIT" },
       {
         name: "description",
         content:
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/campaign/overview")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Create campaign - CommsIQ" },
+      { property: "og:title", content: "Create campaign - SMAIT" },
       {
         property: "og:description",
         content: "A simple campaign home for deliberate Post and Reply workflows.",

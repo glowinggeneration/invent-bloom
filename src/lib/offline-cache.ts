@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, type QueryKey } from "@tanstack/react-query";
 
-const PREFIX = "fkf.offline.v1:";
+const PREFIX = "smait.offline.v1:";
 const MAX_ENTRIES = 40;
 
 type Entry<T> = { at: number; data: T };

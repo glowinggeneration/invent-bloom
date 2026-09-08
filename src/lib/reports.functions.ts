@@ -165,13 +165,13 @@ export const getReportCsv = createServerFn({ method: "POST" })
     const date = String(row.report_date);
 
     if (data.sheet === "mentions") {
-      return { filename: `FKF_Mentions_${date}.csv`, csv: await mentionsCsv(start, end) };
+      return { filename: `SMAIT_Mentions_${date}.csv`, csv: await mentionsCsv(start, end) };
     }
     if (data.sheet === "campaigns") {
-      return { filename: `FKF_Campaigns_${date}.csv`, csv: await campaignsCsv(start, end) };
+      return { filename: `SMAIT_Campaigns_${date}.csv`, csv: await campaignsCsv(start, end) };
     }
     return {
-      filename: `FKF_Persona_Activity_${date}.csv`,
+      filename: `SMAIT_Persona_Activity_${date}.csv`,
       csv: await personaActivityCsv(start, end),
     };
   });

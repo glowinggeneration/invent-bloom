@@ -71,7 +71,7 @@ export function SocialProfiles() {
             aria-hidden="true"
           />
           <span className="min-w-0">
-            <SectionTitle>Official FKF pages</SectionTitle>
+            <SectionTitle>Official pages</SectionTitle>
             <span className="type-meta mt-1 block text-muted-foreground">
               {open
                 ? "The federation's own pages on the other platforms we listen to."

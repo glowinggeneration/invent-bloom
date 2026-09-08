@@ -28,7 +28,13 @@ import {
   type ReportStatus,
   type ReportTopic,
 } from "./reports";
-import { classifyEntities } from "./apify-sources";
+import { classifyEntities } from "./apify-relevance.server";
+import {
+  classifyEntityMention,
+  describeSubject,
+  getWorkspaceSettings,
+  type WorkspaceSettings,
+} from "./entity-config.server";
 
 type MentionItem = {
   at: number | null;
@@ -48,12 +54,9 @@ type MentionItem = {
   engagements: number;
   matchedKeyword: string;
   collectedAt: string | null;
-  federation: boolean;
-  president: boolean;
+  org: boolean;
+  keyFigure: boolean;
 };
-
-const PRESIDENT = /hussein|husseinmoha|president/i;
-const FEDERATION = /\bfkf\b|football[_ ]?kenya|federation|harambee|fkfpl/i;
 
 /** Drops NULs and orphaned surrogate halves left behind by truncation. */
 function sanitizeText(value: string): string {
@@ -81,6 +84,7 @@ export async function loadMentions(
   fromISO: string,
   toISO: string,
   errors: string[],
+  settings: WorkspaceSettings,
 ): Promise<MentionItem[]> {
   const items: MentionItem[] = [];
 
@@ -98,8 +102,9 @@ export async function loadMentions(
     for (const r of (data ?? []) as Record<string, any>[]) {
       const text = String(r["text"] ?? "");
       const at = r["posted_at"] ? new Date(r["posted_at"]).getTime() : null;
-      const federation = Boolean(r["mentions_federation"]) || FEDERATION.test(text);
-      const president = Boolean(r["mentions_president"]) || PRESIDENT.test(text);
+      const match = classifyEntityMention(settings, text);
+      const org = Boolean(r["mentions_federation"]) || match.org;
+      const keyFigure = Boolean(r["mentions_president"]) || match.keyFigure;
       items.push({
         at: at && !Number.isNaN(at) ? at : null,
         platform: "X",
@@ -109,8 +114,8 @@ export async function loadMentions(
         title: text.slice(0, 140),
         content: text,
         url: String(r["url"] ?? ""),
-        entity: president ? "President" : federation ? "Federation" : "Kenyan football",
-        topics: classifyEntities(text),
+        entity: keyFigure ? "Key figure" : org ? "Organisation" : "General",
+        topics: classifyEntities(settings, text),
         views: num(r["view_count"]),
         likes: num(r["like_count"]),
         comments: 0,
@@ -118,8 +123,8 @@ export async function loadMentions(
         engagements: num(r["like_count"]),
         matchedKeyword: String(r["matched_keyword"] ?? ""),
         collectedAt: r["collected_at"] ?? null,
-        federation,
-        president,
+        org,
+        keyFigure,
       });
     }
   } catch (err) {
@@ -141,8 +146,7 @@ export async function loadMentions(
       const text = `${r["title"] ?? ""} ${r["content"] ?? ""}`.trim();
       const at = r["published_at"] ? new Date(r["published_at"]).getTime() : null;
       const entities: string[] = Array.isArray(r["entities"]) ? r["entities"].map(String) : [];
-      const federation = FEDERATION.test(text);
-      const president = PRESIDENT.test(text);
+      const match = classifyEntityMention(settings, text);
       const likes = num(r["likes"]);
       const comments = num(r["comments"]);
       const shares = num(r["shares"]);
@@ -155,12 +159,12 @@ export async function loadMentions(
         title: String(r["title"] ?? text.slice(0, 140)),
         content: String(r["content"] ?? ""),
         url: String(r["url"] ?? ""),
-        entity: president
-          ? "President"
-          : federation
-            ? "Federation"
-            : (entities[0] ?? "Kenyan football"),
-        topics: entities.length ? entities : classifyEntities(text),
+        entity: match.keyFigure
+          ? "Key figure"
+          : match.org
+            ? "Organisation"
+            : (entities[0] ?? "General"),
+        topics: entities.length ? entities : classifyEntities(settings, text),
         views: num(r["views"]),
         likes,
         comments,
@@ -170,8 +174,8 @@ export async function loadMentions(
           ? r["matched_keywords"].join(" | ")
           : "",
         collectedAt: r["collected_at"] ?? null,
-        federation,
-        president,
+        org: match.org,
+        keyFigure: match.keyFigure,
       });
     }
   } catch (err) {
@@ -274,8 +278,8 @@ function buildConversation(current: MentionItem[], previous: MentionItem[]): Rep
     mostDiscussed: topics[0]?.topic ?? null,
     fastestGrowing: growing?.topic ?? null,
     mostEngagedPlatform: engaged?.platform ?? null,
-    federation: countSentiment(current.filter((i) => i.federation && !i.president)),
-    president: countSentiment(current.filter((i) => i.president)),
+    org: countSentiment(current.filter((i) => i.org && !i.keyFigure)),
+    keyFigure: countSentiment(current.filter((i) => i.keyFigure)),
   };
 }
 
@@ -670,6 +674,7 @@ async function writeInsights(input: {
   metrics: ReportMetrics;
   conversation: ReportConversation;
   campaigns: Omit<ReportCampaigns, "runs">;
+  subject: string;
 }): Promise<{ insights: ReportInsight[]; recommendations: ReportRecommendation[] } | null> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return null;
@@ -683,7 +688,7 @@ async function writeInsights(input: {
           {
             role: "system",
             content: [
-              "You are the communications analyst for Football Kenya Federation (FKF) and its president Hussein Mohammed.",
+              `You are the communications analyst for ${input.subject}.`,
               "You are given the measured figures for one reporting period: mentions, sentiment, platforms, topics and campaign execution.",
               "Write exactly 3 short insights, each a single sentence, each supported by the data given. Do not invent facts.",
               "Then write 1 to 3 recommendations. category must be one of AMPLIFY, RESPOND, WATCH, JOIN, PUBLISH.",
@@ -748,14 +753,15 @@ export async function buildReport(options: {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
   const errors: string[] = [];
+  const settings = await getWorkspaceSettings();
 
   const from = new Date(options.periodStart).getTime();
   const to = new Date(options.periodEnd).getTime();
   const prevFrom = new Date(from - (to - from)).toISOString();
 
   const [current, previous, execs, accountRows] = await Promise.all([
-    loadMentions(admin, options.periodStart, options.periodEnd, errors),
-    loadMentions(admin, prevFrom, options.periodStart, []),
+    loadMentions(admin, options.periodStart, options.periodEnd, errors, settings),
+    loadMentions(admin, prevFrom, options.periodStart, [], settings),
     loadExecutions(admin, options.periodStart, options.periodEnd, errors),
     admin
       .from("x_accounts")
@@ -795,7 +801,12 @@ export async function buildReport(options: {
   const { runs, ...campaignTotals } = campaigns;
   const written =
     current.length || campaigns.total
-      ? await writeInsights({ metrics, conversation, campaigns: campaignTotals })
+      ? await writeInsights({
+          metrics,
+          conversation,
+          campaigns: campaignTotals,
+          subject: describeSubject(settings),
+        })
       : null;
   const summary = written ?? fallbackInsights(metrics, conversation, campaigns);
 
@@ -855,8 +866,8 @@ export async function generateReport(options: {
         mostDiscussed: null,
         fastestGrowing: null,
         mostEngagedPlatform: null,
-        federation: emptySentiment(),
-        president: emptySentiment(),
+        org: emptySentiment(),
+        keyFigure: emptySentiment(),
       },
       campaigns: {
         total: 0,

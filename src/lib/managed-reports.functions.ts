@@ -2,7 +2,7 @@
  * Server functions behind the Managed Reports library.
  *
  * Files live in a private bucket, so a view or download hands back a
- * short-lived signed link rather than a public URL — nothing Persona_Voices stores is
+ * short-lived signed link rather than a public URL — nothing SMAIT stores is
  * reachable until a report has been published.
  */
 import { createServerFn } from "@tanstack/react-start";
@@ -29,7 +29,7 @@ function toManagedReport(row: any): ManagedReport {
     fileType: String(row.file_type ?? ""),
     fileSize: Number(row.file_size ?? 0),
     status: (row.status ?? "published") as ManagedReportStatus,
-    uploadedBy: String(row.uploaded_by ?? "CommsIQ"),
+    uploadedBy: String(row.uploaded_by ?? "SMAIT"),
     uploadedAt: String(row.uploaded_at),
   };
 }

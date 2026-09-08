@@ -12,12 +12,13 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   negativeMentions: "critical",
 };
 
-const STORAGE_KEY = "commsiq.notifications.preferences.v3";
+const STORAGE_KEY = "smait.notifications.preferences.v1";
 const LEGACY_STORAGE_KEYS = [
+  "commsiq.notifications.preferences.v3",
   "commsiq.notifications.preferences.v2",
   "commsiq.notifications.preferences.v1",
 ] as const;
-export const NOTIFICATION_PREFERENCES_EVENT = "commsiq:notification-preferences";
+export const NOTIFICATION_PREFERENCES_EVENT = "smait:notification-preferences";
 
 function scopedKey(scope?: string | null) {
   const safe = String(scope || "default")

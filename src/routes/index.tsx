@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CommsIQ - Test messages on 100 Kenyan personas" },
+      { title: "SMAIT - Test messages on 100 Kenyan personas" },
       {
         name: "description",
         content:
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "CommsIQ - Test messages on 100 Kenyan personas" },
+      { property: "og:title", content: "SMAIT - Test messages on 100 Kenyan personas" },
       {
         property: "og:description",
         content:
@@ -37,7 +37,7 @@ function Index() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="text-center">
         <img src="/smait-logo.svg" alt="SMAIT logo" className="mx-auto h-12 w-auto" />
-        <h1 className="type-section mt-4">CommsIQ</h1>
+        <h1 className="type-section mt-4">SMAIT</h1>
       </div>
     </div>
   );

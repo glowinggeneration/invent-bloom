@@ -204,6 +204,10 @@ export function PostCampaign() {
   });
 
   const [result, setResult] = useState<PublishJobResult | null>(null);
+  // Stable across retries of the same submit attempt so a network retry or
+  // double-fire returns the original result instead of posting twice;
+  // rotated after a successful submit so the next attempt is a fresh intent.
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   const runMutation = useMutation({
     mutationFn: (opts: { now: boolean }) =>
@@ -211,6 +215,7 @@ export function PostCampaign() {
         data: {
           mode: "tweet" as const,
           name: campaignName.trim(),
+          idempotencyKey: idempotencyKeyRef.current,
           accountIds: personas.selected,
           tweetText,
           commentText: "",
@@ -229,6 +234,7 @@ export function PostCampaign() {
         },
       }),
     onSuccess: (data, opts) => {
+      idempotencyKeyRef.current = crypto.randomUUID();
       setError(null);
       setResult(data ?? null);
       setStartedOpen(true);
@@ -397,7 +403,7 @@ export function PostCampaign() {
                     id="post-link"
                     value={linkUrl}
                     onChange={(e) => setLinkUrl(e.target.value)}
-                    placeholder="https://footballkenya.org/…"
+                    placeholder="https://yourorganisation.org/…"
                   />
                 </div>
 
@@ -673,7 +679,7 @@ export function PostCampaign() {
                                 : "Confirm that every post has been reviewed."}
                     </span>
                   ) : (
-                    <span className="text-xs font-medium text-fkf-green">
+                    <span className="text-xs font-medium text-positive">
                       Ready for an authorised launch.
                     </span>
                   )}

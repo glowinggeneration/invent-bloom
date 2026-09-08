@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { readWithLegacyKey } from "@/lib/legacy-storage";
 
 export type TipId = "first-run-checklist";
 
@@ -11,8 +12,9 @@ export const TIP_DEFS: { id: TipId; title: string; description: string }[] = [
   },
 ];
 
-const KEY = "fkf.tips.prefs";
-const EVENT = "fkf:tip-prefs-change";
+const KEY = "smait.tips.prefs";
+const LEGACY_KEY = "fkf.tips.prefs";
+const EVENT = "smait:tip-prefs-change";
 
 export type TipPrefs = Record<TipId, boolean>;
 
@@ -23,7 +25,7 @@ export const DEFAULT_TIP_PREFS: TipPrefs = {
 export function readTipPrefs(): TipPrefs {
   if (typeof window === "undefined") return DEFAULT_TIP_PREFS;
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = readWithLegacyKey(KEY, LEGACY_KEY);
     if (!raw) return DEFAULT_TIP_PREFS;
     const parsed = JSON.parse(raw) as Partial<TipPrefs>;
     return { ...DEFAULT_TIP_PREFS, ...parsed };
@@ -80,14 +82,15 @@ export function replayTip(id: TipId) {
 
 export type TipResetEntry = { label: string; at: string };
 
-const HISTORY_KEY = "fkf.tips.resetHistory";
-const HISTORY_EVENT = "fkf:tip-reset-history-change";
+const HISTORY_KEY = "smait.tips.resetHistory";
+const LEGACY_HISTORY_KEY = "fkf.tips.resetHistory";
+const HISTORY_EVENT = "smait:tip-reset-history-change";
 const HISTORY_LIMIT = 10;
 
 export function readTipResetHistory(): TipResetEntry[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
+    const raw = readWithLegacyKey(HISTORY_KEY, LEGACY_HISTORY_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as TipResetEntry[];
     return Array.isArray(parsed) ? parsed.filter((e) => e && e.label && e.at) : [];

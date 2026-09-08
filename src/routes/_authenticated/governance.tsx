@@ -16,7 +16,7 @@ import { ContactSupportButton } from "@/components/contact-support";
 export const Route = createFileRoute("/_authenticated/governance")({
   head: () => ({
     meta: [
-      { title: "Governance & Data - CommsIQ" },
+      { title: "Governance & Data - SMAIT" },
       {
         name: "description",
         content:
@@ -33,8 +33,8 @@ const SECTIONS = [
     icon: ShieldCheck,
     title: "Responsible platform use",
     paragraphs: [
-      "CommsIQ is an internal communications-intelligence and campaign-operations platform. Use it to understand monitored public conversation, test proposed messaging, coordinate authorised work and measure outcomes.",
-      "Platform recommendations are decision support. A user remains responsible for deciding whether a public response, campaign or publication is appropriate, lawful and aligned with FKF policy.",
+      "SMAIT is an internal communications-intelligence and campaign-operations platform. Use it to understand monitored public conversation, test proposed messaging, coordinate authorised work and measure outcomes.",
+      "Platform recommendations are decision support. A user remains responsible for deciding whether a public response, campaign or publication is appropriate, lawful and aligned with your organisation's policy.",
     ],
     bullets: [
       "Review the underlying mention or source before acting on an automated insight.",
@@ -146,9 +146,9 @@ function GovernancePage() {
 
       <Card className="mt-6 p-5">
         <p className="type-body max-w-4xl leading-7 text-muted-foreground">
-          This page is practical internal guidance for using CommsIQ responsibly. It does not
-          replace the organisation's contracts, privacy notices, employment policies or legal
-          advice. Where those documents impose a stricter rule, follow the stricter rule.
+          This page is practical internal guidance for using SMAIT responsibly. It does not replace
+          the organisation's contracts, privacy notices, employment policies or legal advice. Where
+          those documents impose a stricter rule, follow the stricter rule.
         </p>
         <nav aria-label="Governance sections" className="mt-4 hidden flex-wrap gap-2 xl:flex">
           {SECTIONS.map((section) => (

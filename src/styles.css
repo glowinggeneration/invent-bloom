@@ -64,7 +64,6 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-navy: var(--navy);
   --color-navy-foreground: var(--navy-foreground);
-  --color-fkf-green: var(--fkf-green);
   --color-positive: var(--positive);
   --color-neutral: var(--neutral);
   --color-negative: var(--negative);
@@ -114,9 +113,9 @@
   --card-pad-lg: 1.5rem;
   --section-gap: 2rem;
 
-  /* Persona_Voices brand: engine pink + navy. FKF client identity (crest,
-   * "Football Kenya Federation" wording) is preserved separately in content -
-   * this token set is the platform's own primary/accent colour. */
+  /* SMAIT brand: engine pink + navy. The monitored organisation's own
+   * identity (crest, name) is configured separately as content - this
+   * token set is the platform's own primary/accent colour. */
   --brand-pink: oklch(0.647 0.241 13.3); /* #fe2762 - decorative/large-scale only, not text-bearing */
   --brand-navy: oklch(0.218 0.054 244); /* #001c31 */
   --background: oklch(1 0 0);
@@ -143,7 +142,6 @@
   --ring: oklch(0.58 0.241 13.3);
   --navy: oklch(0.218 0.054 244);
   --navy-foreground: oklch(0.99 0.002 20);
-  --fkf-green: oklch(0.52 0.14 156);
   --positive: oklch(0.52 0.14 156);
   --neutral: oklch(0.75 0.09 85);
   /* Negative sentiment is amber, unlinked from the CTA red. */
@@ -197,7 +195,6 @@
   --ring: oklch(0.595 0.241 13.3);
   --navy: oklch(0.21 0.009 20);
   --navy-foreground: oklch(0.97 0.002 20);
-  --fkf-green: oklch(0.62 0.14 156);
   --positive: oklch(0.62 0.14 156);
   --neutral: oklch(0.78 0.09 85);
   --negative: oklch(0.72 0.15 52);

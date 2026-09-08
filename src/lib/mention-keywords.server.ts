@@ -1,6 +1,6 @@
 /**
  * The topic list the X listening connection searches for. Handle mentions only
- * catch people who tag the federation; keywords catch the conversation that
+ * catch people who tag the brand; keywords catch the conversation that
  * happens around it. The list refreshes daily so new topics get picked up.
  *
  * The managed Monitoring Watchlist feeds relevant priority terms into this
@@ -8,14 +8,8 @@
  * collector, and platform-specific entries for other networks stay out of X.
  */
 
-export const FALLBACK_KEYWORDS = [
-  "Football Kenya Federation",
-  "FKF",
-  "Harambee Stars",
-  "FKF Premier League",
-  "Kenyan football",
-  "FKF president",
-];
+/** Used only if the DB query fails - empty until the workspace is configured. */
+export const FALLBACK_KEYWORDS: string[] = [];
 
 type WatchKeyword = {
   kind: string;
@@ -134,8 +128,11 @@ export async function refreshKeywords(): Promise<{ added: string[]; checked: num
   const apiKey = process.env["LOVABLE_API_KEY"];
   const existing = await activeKeywords(60);
   if (!apiKey) return { added: [], checked: existing.length };
+  if (!existing.length) return { added: [], checked: 0 };
 
   const { searchTweets } = await import("./twitterapi.server");
+  const { describeSubject, getWorkspaceSettings } = await import("./entity-config.server");
+  const subject = describeSubject(await getWorkspaceSettings());
   const { tweets } = await searchTweets(keywordQuery(existing.slice(0, 8)), 40);
   const sample = tweets.slice(0, 40).map((t) => t.text.slice(0, 220));
 
@@ -150,9 +147,9 @@ export async function refreshKeywords(): Promise<{ added: string[]; checked: num
           {
             role: "system",
             content: [
-              "You maintain a social listening keyword list for Football Kenya Federation (FKF) and its president.",
-              "From the sample posts, propose up to 5 NEW short search terms (2-4 words) that would surface more conversation about the federation, the national teams, the league, its leadership or current controversies.",
-              "Skip terms already on the list. Skip generic words like 'football' or 'Kenya' on their own. No hashtags-only terms, no handles.",
+              `You maintain a social listening keyword list for ${subject}.`,
+              "From the sample posts, propose up to 5 NEW short search terms (2-4 words) that would surface more relevant conversation.",
+              "Skip terms already on the list. Skip generic single words on their own. No hashtags-only terms, no handles.",
               'Return strict JSON: {"terms":[string]}',
             ].join(" "),
           },

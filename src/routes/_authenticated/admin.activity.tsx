@@ -16,7 +16,7 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/activity")({
   head: () => ({
     meta: [
-      { title: "Operational Activity - CommsIQ" },
+      { title: "Operational Activity - SMAIT" },
       {
         name: "description",
         content:
@@ -102,7 +102,7 @@ function OperationsActivityPage() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `fkf-commsiq-operational-activity-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.download = `smait-operational-activity-${new Date().toISOString().slice(0, 10)}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   }

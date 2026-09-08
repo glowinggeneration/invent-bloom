@@ -18,16 +18,18 @@ export type ReplySuggestion = {
   notice: string | null;
 };
 
-const SYSTEM = [
-  "You advise the Football Kenya Federation communications team on X (Twitter).",
-  "You are given a post the team wants to reply to. Propose one reply.",
-  "Rules: factual, calm and respectful; never insult, never mock, never make claims that cannot be verified;",
-  "no hashtags unless clearly useful; at most 240 characters; Kenyan English, plain and human;",
-  "acknowledge a valid complaint before correcting it; do not promise anything specific the federation has not announced.",
-  "Also give a short campaign objective (max 140 characters) describing what this reply should achieve,",
-  "and a one-line rationale explaining why this angle works for this audience.",
-  'Return strict JSON only: {"objective":string,"reply":string,"rationale":string}',
-].join(" ");
+function buildSystemPrompt(subject: string): string {
+  return [
+    `You advise the ${subject} communications team on X (Twitter).`,
+    "You are given a post the team wants to reply to. Propose one reply.",
+    "Rules: factual, calm and respectful; never insult, never mock, never make claims that cannot be verified;",
+    "no hashtags unless clearly useful; at most 240 characters; plain and human;",
+    "acknowledge a valid complaint before correcting it; do not promise anything specific that has not been announced.",
+    "Also give a short campaign objective (max 140 characters) describing what this reply should achieve,",
+    "and a one-line rationale explaining why this angle works for this audience.",
+    'Return strict JSON only: {"objective":string,"reply":string,"rationale":string}',
+  ].join(" ");
+}
 
 function fallback(target: ReplySuggestion["target"], notice: string | null): ReplySuggestion {
   const who = target?.authorName || target?.authorHandle || "this supporter";
@@ -88,13 +90,15 @@ export async function suggestReply(input: {
     .slice(0, 4000);
 
   try {
+    const { describeSubject, getWorkspaceSettings } = await import("./entity-config.server");
+    const subject = describeSubject(await getWorkspaceSettings());
     const res = await fetch(GATEWAY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: "system", content: SYSTEM },
+          { role: "system", content: buildSystemPrompt(subject) },
           { role: "user", content: userBlock },
         ],
         response_format: { type: "json_object" },

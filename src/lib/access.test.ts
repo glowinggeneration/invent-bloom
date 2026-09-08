@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ADMIN_EMAIL, assertAdmin, isAdminEmail } from "./access";
 
-const NON_ADMIN = "willis.otieno@footballkenya.org";
+const NON_ADMIN = "jordan.smith@example.org";
 
 describe("isAdminEmail", () => {
   it("accepts the admin account", () => {

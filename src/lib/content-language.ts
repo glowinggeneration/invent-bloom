@@ -1,7 +1,7 @@
 /**
  * Content-language guards used by monitored public feeds.
  *
- * FKF's operational listening brief excludes Chinese-script content. This
+ * The platform's listening policy excludes Chinese-script content. This
  * intentionally checks the visible text only and does not inspect handles,
  * URLs or metadata, which can legitimately contain CJK characters without the
  * actual mention being Chinese-language content.

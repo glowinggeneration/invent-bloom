@@ -47,7 +47,7 @@ import type { XAccount } from "@/lib/publish";
 export const Route = createFileRoute("/_authenticated/linked-accounts")({
   head: () => ({
     meta: [
-      { title: "Linked Accounts - CommsIQ" },
+      { title: "Linked Accounts - SMAIT" },
       {
         name: "description",
         content:

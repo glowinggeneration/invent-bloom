@@ -2,7 +2,7 @@ export type MentionImportance = "Critical" | "High impact" | "Relevant" | "Low s
 export type SourceAuthority = "High" | "Medium" | "Standard";
 
 const TOPIC_PATTERNS: Record<string, RegExp> = {
-  leadership: /president|hussein|leadership|governance|election|office|federation|\bfkf\b/i,
+  leadership: /leadership|governance|election|office|chairman|chairperson|director|board/i,
   harambee: /harambee|starlets|stars|national team|qualif|afcon|match|fixture|coach/i,
   grassroots: /grassroots|youth|academy|school|u15|u17|talent|development|coach education/i,
   league: /league|club|premier|fkfpl|nsl|competition|cup|referee|officiat/i,

@@ -13,48 +13,27 @@
 export const SOCIAL_POLL_MINUTES = 25;
 
 /** Reddit is rate-limited and rejects requests without a descriptive agent. */
-export const SOCIAL_USER_AGENT = "fkf-commsiq/1.0";
+export const SOCIAL_USER_AGENT = "smait/1.0";
 
-/** Raw Reddit search queries — URL-encoded at request time. */
-export const REDDIT_QUERIES: string[] = [
-  '"Harambee Stars" OR "Football Kenya Federation" OR FKF',
-  '"Harambee Starlets" OR "Kenya women football"',
-  '"AFCON 2027" OR "Pamoja 2027"',
-  '"Gor Mahia" OR "AFC Leopards" OR "Kenyan Premier League"',
-  "FKF AND (corruption OR crisis OR court OR elections)",
-  '"Hussein Mohammed" OR "McDonald Mariga"',
-];
+/** Raw Reddit search queries — URL-encoded at request time. Empty until configured. */
+export const REDDIT_QUERIES: string[] = [];
 
-/** Subreddits searched on their own, with a narrower query. */
-export const REDDIT_SUBREDDITS: string[] = ["Kenya", "soccer"];
-export const REDDIT_SUBREDDIT_QUERY = 'FKF OR Harambee OR "Kenyan football"';
+/** Subreddits searched on their own, with a narrower query. Empty until configured. */
+export const REDDIT_SUBREDDITS: string[] = [];
+export const REDDIT_SUBREDDIT_QUERY = "";
 
 /** Mastodon reads one single-word hashtag per feed — no spaces, no operators. */
 export const MASTODON_HOST = "mastodon.social";
-export const MASTODON_TAGS: string[] = [
-  "HarambeeStars",
-  "HarambeeStarlets",
-  "FootballKenya",
-  "KenyanFootball",
-  "KenyaFootball",
-  "FKF",
-  "AFCON2027",
-  "FKFPL",
-  "Pamoja2027",
-];
+export const MASTODON_TAGS: string[] = [];
 
 /**
  * YouTube has no keyword RSS, only per-channel feeds. Channel IDs must be read
  * off each channel's page source — never guessed — so this starts empty.
  */
-export const YOUTUBE_CHANNELS: { name: string; channelId: string }[] = [
-  { name: "Football Kenya Federation (official)", channelId: "" },
-];
+export const YOUTUBE_CHANNELS: { name: string; channelId: string }[] = [];
 
 /** Bluesky is per-account only. Handles go in as they are confirmed. */
-export const BLUESKY_HANDLES: { name: string; handle: string }[] = [
-  { name: "Football Kenya Federation", handle: "" },
-];
+export const BLUESKY_HANDLES: { name: string; handle: string }[] = [];
 
 /**
  * Meta has no free feeds. Each slot takes a URL from an external feed
@@ -64,13 +43,7 @@ export const META_FEEDS: {
   platform: "Facebook" | "Instagram";
   sourceName: string;
   feedUrl: string;
-}[] = [
-  { platform: "Facebook", sourceName: "FKF official Page", feedUrl: "" },
-  { platform: "Facebook", sourceName: "Harambee Stars Page", feedUrl: "" },
-  { platform: "Instagram", sourceName: "FKF official account", feedUrl: "" },
-  { platform: "Instagram", sourceName: "#HarambeeStars hashtag", feedUrl: "" },
-  { platform: "Instagram", sourceName: "#AFCON2027 hashtag", feedUrl: "" },
-];
+}[] = [];
 
 export function redditSearchUrl(query: string): string {
   return `https://www.reddit.com/search.rss?q=${encodeURIComponent(query)}&sort=new`;

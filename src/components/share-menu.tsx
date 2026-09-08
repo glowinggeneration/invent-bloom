@@ -71,7 +71,7 @@ export function ShareMenu({
     try {
       const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> };
       if (nav.share) {
-        await nav.share({ title: "CommsIQ", url });
+        await nav.share({ title: "SMAIT", url });
         return;
       }
       await navigator.clipboard.writeText(url);
@@ -104,7 +104,7 @@ export function ShareMenu({
           >
             <span className="flex w-full items-center gap-2 text-sm font-medium">
               {copied === target.label ? (
-                <Check className="size-3.5 text-fkf-green" />
+                <Check className="size-3.5 text-positive" />
               ) : (
                 <Link2 className="size-3.5 text-muted-foreground" />
               )}

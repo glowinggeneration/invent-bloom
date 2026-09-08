@@ -6,7 +6,7 @@ export default defineTool({
   name: "list_message_tests",
   title: "List message tests",
   description:
-    "List the signed-in user's recent message-testing sessions (threads) in CommsIQ, newest first.",
+    "List the signed-in user's recent message-testing sessions (threads) in SMAIT, newest first.",
   inputSchema: {
     limit: z
       .number()

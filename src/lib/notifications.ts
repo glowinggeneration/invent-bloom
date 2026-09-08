@@ -24,8 +24,8 @@ export type AppNotification = {
   sourceUrl?: string;
 };
 
-const READ_KEY = "commsiq.notifications.read.v2";
-const LEGACY_READ_KEY = "commsiq.notifications.read";
+const READ_KEY = "smait.notifications.read.v1";
+const LEGACY_READ_KEY = "commsiq.notifications.read.v2";
 const OFFICIAL_NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function readKey(scope?: string | null) {

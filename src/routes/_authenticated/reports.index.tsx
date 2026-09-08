@@ -49,13 +49,13 @@ import { formatReportDateShort, REPORT_FILTERS, type ReportFilter } from "@/lib/
 export const Route = createFileRoute("/_authenticated/reports/")({
   head: () => ({
     meta: [
-      { title: "Reports - CommsIQ" },
+      { title: "Reports - SMAIT" },
       {
         name: "description",
         content:
-          "The daily record of FKF conversation, campaign execution and persona activity, with downloadable CSVs.",
+          "The daily record of tracked conversation, campaign execution and persona activity, with downloadable CSVs.",
       },
-      { property: "og:title", content: "Reports - CommsIQ" },
+      { property: "og:title", content: "Reports - SMAIT" },
       {
         property: "og:description",
         content:
@@ -210,7 +210,7 @@ function ReportsPage() {
 
   return (
     <WorkspaceShell title="Reports" wide>
-      <PageTitle description="Your daily records and Persona_Voices's prepared reports, all in one place.">
+      <PageTitle description="Your daily records and SMAIT's prepared reports, all in one place.">
         Reports
       </PageTitle>
 
@@ -323,7 +323,7 @@ function ReportsPage() {
                       onClick={() => setSection("managed")}
                       icon={Archive}
                       title="Browse managed reports"
-                      description="Persona_Voices's hand-prepared deliverables"
+                      description="SMAIT's hand-prepared deliverables"
                     />
                     {isAdmin ? (
                       <RailAction

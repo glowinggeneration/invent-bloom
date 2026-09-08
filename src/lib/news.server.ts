@@ -100,7 +100,7 @@ function tagText(block: string, tag: string): string {
  */
 export async function fetchGoogleNewsQuery(query: string, window: string): Promise<NewsArticle[]> {
   const res = await fetch(googleNewsUrl(query, window), {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; CommsIQ/1.0)" },
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; SMAIT/1.0)" },
   });
   if (!res.ok) throw new Error(`Google News ${res.status}`);
 

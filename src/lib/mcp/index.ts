@@ -10,11 +10,11 @@ import listPersonas from "./tools/list-personas";
 const projectRef = import.meta.env["VITE_SUPABASE_PROJECT_ID"] ?? "project-ref-unset";
 
 export default defineMcp({
-  name: "fkf-commsiq",
-  title: "CommsIQ",
+  name: "smait",
+  title: "SMAIT",
   version: "0.1.0",
   instructions:
-    "Tools for CommsIQ, the Football Kenya Federation communications workspace. Use `list_message_tests` and `get_message_test` to read past message tests and their persona-panel verdicts, `list_campaigns` for publishing campaigns, and `list_personas` to inspect the Kenyan persona panel. All data is scoped to the signed-in user.",
+    "Tools for SMAIT, the communications-intelligence workspace. Use `list_message_tests` and `get_message_test` to read past message tests and their persona-panel verdicts, `list_campaigns` for publishing campaigns, and `list_personas` to inspect the persona panel. All data is scoped to the signed-in user.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",

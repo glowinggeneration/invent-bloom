@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/changelog")({
   head: () => ({
     meta: [
-      { title: "Changelog - CommsIQ" },
+      { title: "Changelog - SMAIT" },
       {
         name: "description",
-        content: "Internal record of material CommsIQ product improvements.",
+        content: "Internal record of material SMAIT product improvements.",
       },
     ],
   }),
@@ -44,9 +44,9 @@ const ENTRIES = [
     title: "Reporting and performance",
     icon: FileText,
     items: [
-      "Overview can generate an FKF-branded PDF snapshot with Powered by Persona_Voices attribution.",
+      "Overview can generate a branded PDF snapshot with Powered by SMAIT attribution.",
       "Performance Insights adds recent-vs-previous comparison, historical timing guidance and unusual movement flags.",
-      "Reports continue to separate automated platform records from managed Persona_Voices deliverables.",
+      "Reports continue to separate automated platform records from managed SMAIT deliverables.",
     ],
   },
   {

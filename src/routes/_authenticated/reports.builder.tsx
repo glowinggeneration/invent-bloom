@@ -22,7 +22,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 export const Route = createFileRoute("/_authenticated/reports/builder")({
   head: () => ({
     meta: [
-      { title: "Custom Report Builder - CommsIQ" },
+      { title: "Custom Report Builder - SMAIT" },
       {
         name: "description",
         content:
@@ -81,7 +81,7 @@ function CustomReportBuilderPage() {
   const fetchHealth = useServerFn(getBrandHealth);
   const fetchPerformance = useServerFn(getPerformance);
   const [window, setWindow] = useState<OverviewWindow>("7d");
-  const [title, setTitle] = useState("FKF Communications Intelligence Report");
+  const [title, setTitle] = useState("SMAIT Communications Intelligence Report");
   const [sections, setSections] = useState<CustomReportSections>({
     executive: true,
     intelligence: true,
@@ -144,7 +144,7 @@ function CustomReportBuilderPage() {
     try {
       const periodLabel = WINDOWS.find((item) => item.value === window)?.label ?? window;
       await downloadCustomReportPdf({
-        title: title.trim() || "FKF Communications Intelligence Report",
+        title: title.trim() || "SMAIT Communications Intelligence Report",
         periodLabel,
         overview: overview.data,
         intelligence: sections.intelligence ? (intel.data ?? null) : null,

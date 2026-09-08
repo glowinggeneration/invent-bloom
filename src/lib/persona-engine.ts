@@ -1,7 +1,7 @@
 import { PERSONAS, type Persona } from "./personas";
 
 /**
- * Doctrine extracted from the "FKF Persona Engine" project scope.
+ * Doctrine extracted from the SMAIT Persona Engine project scope.
  *
  * This module holds the shared rules that govern how synthetic personas
  * interpret a post and how replies are written for authorised accounts.
@@ -110,7 +110,7 @@ function bullet(items: readonly string[]): string {
 
 /** Compact doctrine block injected into generation prompts. */
 export const PERSONA_ENGINE_DOCTRINE = [
-  "PERSONA ENGINE DOCTRINE (FKF Persona Engine scope v1.0):",
+  "PERSONA ENGINE DOCTRINE (SMAIT Persona Engine scope v1.0):",
   "",
   `Voice dimensions to differentiate on: ${VOICE_DIMENSIONS.join("; ")}.`,
   `Choose a response strategy per persona before writing: ${RESPONSE_STRATEGIES.join("; ")}.`,

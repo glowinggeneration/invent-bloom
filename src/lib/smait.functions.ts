@@ -26,11 +26,14 @@ export const getProfile = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new Error("Profile not found.");
+    const { getWorkspaceSettings } = await import("./entity-config.server");
+    const settings = await getWorkspaceSettings();
     return {
       id: data.id,
       email: data.email,
       fullName: data.full_name,
-      org: data.org === "fkf" ? "fkf" : "external",
+      org: data.org === "team" ? "team" : "external",
+      workspaceName: settings.orgName.trim() || "Team",
     };
   });
 
@@ -135,7 +138,7 @@ export const listThreads = createServerFn({ method: "POST" })
       visibility: r.visibility === "workspace" ? "workspace" : "private",
       pinned: r.pinned,
       isOwner: r.user_id === context.userId,
-      ownerName: names[r.user_id] ?? "FKF colleague",
+      ownerName: names[r.user_id] ?? "a teammate",
       confidence: confidence[r.id] ?? null,
       personas: personas[r.id] ?? [],
       segments: segments[r.id] ?? [],
@@ -196,7 +199,7 @@ export const getThread = createServerFn({ method: "POST" })
           visibility: thread.visibility === "workspace" ? "workspace" : "private",
           pinned: thread.pinned,
           isOwner: thread.user_id === context.userId,
-          ownerName: names[thread.user_id] ?? "FKF colleague",
+          ownerName: names[thread.user_id] ?? "a teammate",
           confidence:
             messages
               .map((m) => m.analysis?.confidence)
@@ -256,6 +259,18 @@ export const sendMessage = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { runAnalysis, applyLegalReview } = await import("./smait.server");
     const supabase = context.supabase;
+
+    const { checkRateLimit, createSupabaseRateLimitStore, RATE_LIMIT_PRESETS } =
+      await import("./platform/rate-limit.server");
+    const rate = await checkRateLimit(createSupabaseRateLimitStore(supabaseAdmin as any), {
+      bucketKey: `ai-generate:user:${context.userId}`,
+      ...RATE_LIMIT_PRESETS.aiGenerate,
+    });
+    if (!rate.allowed) {
+      throw new Error(
+        "You're testing messages faster than we can process them. Wait a moment and try again.",
+      );
+    }
 
     let threadId = data.threadId;
     if (threadId) {
@@ -321,6 +336,7 @@ export const sendMessage = createServerFn({ method: "POST" })
         role: p.role as "user" | "assistant",
         content: p.content,
       })),
+      userId: context.userId,
     });
 
     // Legal-Risk Language Transformation Engine: rewrite risky wording in the

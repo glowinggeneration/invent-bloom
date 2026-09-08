@@ -33,7 +33,7 @@ import { CopyConfirmationButton } from "@/components/core/copy-confirmation-butt
 export const Route = createFileRoute("/_authenticated/recommendations/$threadId")({
   head: () => ({
     meta: [
-      { title: "Recommendations - CommsIQ" },
+      { title: "Recommendations - SMAIT" },
       {
         name: "description",
         content:
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/recommendations/$threadId"
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Recommendations - CommsIQ" },
+      { property: "og:title", content: "Recommendations - SMAIT" },
       {
         property: "og:description",
         content: "Three AI-recommended rewrites with projected performance against the original.",
@@ -134,7 +134,7 @@ function RecommendationCard({
           ) : null}
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-2xl font-semibold text-fkf-green">{stats.confidence}%</p>
+          <p className="text-2xl font-semibold text-positive">{stats.confidence}%</p>
           <p className="type-meta text-muted-foreground">confidence</p>
         </div>
       </div>
@@ -197,13 +197,13 @@ function RecommendationCard({
                 <span className="text-muted-foreground">{row.label}</span>
                 <span className="flex items-center gap-1 tabular-nums">
                   <span className="font-semibold">{row.value}%</span>
-                  <span className={good ? "text-fkf-green" : "text-negative"}>
+                  <span className={good ? "text-positive" : "text-negative"}>
                     {d.text} vs original
                   </span>
                 </span>
               </div>
               <div className="mt-2">
-                <Meter value={row.value} color={good ? "var(--fkf-green)" : "var(--negative)"} />
+                <Meter value={row.value} color={good ? "var(--positive)" : "var(--negative)"} />
               </div>
             </div>
           );
@@ -233,7 +233,7 @@ function RecommendationsPage() {
   function exportRecommendations() {
     if (!analysis) return;
     const lines = [
-      `CommsIQ - Recommendations for "${data?.thread.title ?? "Message test"}"`,
+      `SMAIT - Recommendations for "${data?.thread.title ?? "Message test"}"`,
       "",
       `Original confidence: ${analysis.confidence}%`,
       "",
@@ -252,7 +252,7 @@ function RecommendationsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "fkf-commsiq-recommendations.txt";
+    link.download = "smait-recommendations.txt";
     link.click();
     URL.revokeObjectURL(url);
   }

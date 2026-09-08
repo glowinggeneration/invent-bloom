@@ -260,16 +260,19 @@ export function ConversationMixCard({ data }: { data: OverviewData }) {
   );
 }
 
-/** Left rail: federation vs president focus. */
+/** Left rail: organisation vs key-figure focus. */
 export function EntityFocusCard({ data }: { data: OverviewData }) {
+  const rows = [
+    { label: data.entityLabels.org, split: data.entities.org },
+    ...(data.entityLabels.keyFigure
+      ? [{ label: data.entityLabels.keyFigure, split: data.entities.keyFigure }]
+      : []),
+  ];
   return (
     <Card className="p-4">
       <SectionTitle className="type-card">Conversation focus</SectionTitle>
       <div className="mt-3 grid gap-3">
-        {[
-          { label: "Football Kenya Federation", split: data.entities.federation },
-          { label: "Hussein Mohammed", split: data.entities.president },
-        ].map((row) => (
+        {rows.map((row) => (
           <div key={row.label}>
             <div className="flex items-baseline justify-between gap-2">
               <p className="type-meta truncate">{row.label}</p>
@@ -285,6 +288,15 @@ export function EntityFocusCard({ data }: { data: OverviewData }) {
             </p>
           </div>
         ))}
+        {!data.entityLabels.keyFigure && (
+          <p className="type-meta text-muted-foreground">
+            No key figures configured yet.{" "}
+            <a href="/setup?edit=true" className="underline underline-offset-2">
+              Add one in setup
+            </a>{" "}
+            to track them here.
+          </p>
+        )}
       </div>
     </Card>
   );

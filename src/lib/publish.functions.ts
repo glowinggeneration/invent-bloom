@@ -373,6 +373,17 @@ export const submitLoginCode = createServerFn({ method: "POST" })
     assertAdmin(context as any);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
+
+    const { checkRateLimit, createSupabaseRateLimitStore, RATE_LIMIT_PRESETS } =
+      await import("./platform/rate-limit.server");
+    const rate = await checkRateLimit(createSupabaseRateLimitStore(admin), {
+      bucketKey: `otp-verify:user:${context.userId}`,
+      ...RATE_LIMIT_PRESETS.otpVerify,
+    });
+    if (!rate.allowed) {
+      return { ok: false, error: "Too many verification attempts. Try again in a few minutes." };
+    }
+
     const { data: attempt, error: readErr } = await admin
       .from("x_login_attempts")
       .select("id, handle, email, password, proxy, persona_label")
@@ -525,333 +536,358 @@ export const runPublish = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => publishInputSchema.parse(input))
   .handler(async ({ data, context }): Promise<PublishJobResult> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const twitter = await import("./twitterapi.server");
 
-    const { data: accounts, error: accErr } = await supabaseAdmin
-      .from("x_accounts")
-      .select("id, handle, auth_token, proxy")
-      .eq("suspended", false)
-      .eq("is_active", true)
-      .in("id", data.accountIds);
-    if (accErr) throw new Error(accErr.message);
-    {
-      const { recordSkippedAccounts } = await import("./skip-audit.server");
-      await recordSkippedAccounts(
-        supabaseAdmin as any,
-        { userId: context.userId, source: "post" },
-        data.accountIds,
-      );
-    }
-    if (!accounts || accounts.length === 0) throw new Error("No matching accounts found.");
+    const operation = async (): Promise<PublishJobResult> => {
+      const twitter = await import("./twitterapi.server");
 
-    // Standing rules apply to EVERY linked account, not just the ones posting.
-    const { loadActiveAccounts, loadWatchTargets, loadPeerLatestTargets } =
-      await import("./engagement.server");
-    const allAccounts = await loadActiveAccounts(supabaseAdmin, context.userId);
-    const engagers = allAccounts.length > 0 ? allAccounts : (accounts as any[]);
-
-    const targetId = data.targetTweetUrl ? twitter.extractTweetId(data.targetTweetUrl) : null;
-    if (data.mode !== "tweet" && !targetId) {
-      throw new Error("Could not read a tweet ID from that URL.");
-    }
-
-    const { data: job, error: jobErr } = await supabaseAdmin
-      .from("publish_jobs")
-      .insert({
-        user_id: context.userId,
-        mode: data.mode,
-        tweet_text: data.tweetText,
-        comment_text: data.commentText,
-        target_tweet_url: data.targetTweetUrl || null,
-        objective_mode: data.objectiveMode,
-        objective_text: data.objectiveMode ? data.tweetText || data.commentText : "",
-        link_url: data.linkUrl || null,
-        image_urls: data.imageUrls,
-        engagement_actions: data.actions,
-        engagement_targets: data.targets,
-        status: "running",
-        ...(data.name?.trim() ? { name: data.name.trim(), name_is_custom: true } : {}),
-      })
-      .select("id")
-      .single();
-    if (jobErr || !job) throw new Error(jobErr?.message ?? "Could not create publish job.");
-
-    // Persona voices: one random persona per account, same core message.
-    const variationMap = new Map<
-      string,
-      { tweetText: string; commentText: string; personaName: string }
-    >();
-    if (data.variations.length > 0) {
-      for (const v of data.variations) {
-        variationMap.set(v.accountId, {
-          tweetText: v.tweetText,
-          commentText: v.commentText,
-          personaName: v.personaName,
-        });
+      const { data: accounts, error: accErr } = await supabaseAdmin
+        .from("x_accounts")
+        .select("id, handle, auth_token, proxy")
+        .eq("suspended", false)
+        .eq("is_active", true)
+        .in("id", data.accountIds);
+      if (accErr) throw new Error(accErr.message);
+      {
+        const { recordSkippedAccounts } = await import("./skip-audit.server");
+        await recordSkippedAccounts(
+          supabaseAdmin as any,
+          { userId: context.userId, source: "post" },
+          data.accountIds,
+        );
       }
-    } else if (data.varyByPersona) {
-      const { buildPersonaVariations } = await import("./variations.server");
-      const built = await buildPersonaVariations({
-        accounts: accounts.map((a) => ({ id: a.id, handle: a.handle })),
-        tweetText: data.tweetText,
-        commentText: data.commentText,
-        objectiveMode: data.objectiveMode,
-        tone: data.tone,
-        intensity: data.intensity,
-        briefing: data.briefing,
-      });
-      for (const v of built) {
-        variationMap.set(v.accountId, {
-          tweetText: v.tweetText,
-          commentText: v.commentText,
-          personaName: v.personaName,
-        });
+      if (!accounts || accounts.length === 0) throw new Error("No matching accounts found.");
+
+      // Standing rules apply to EVERY linked account, not just the ones posting.
+      const { loadActiveAccounts, loadWatchTargets, loadPeerLatestTargets } =
+        await import("./engagement.server");
+      const allAccounts = await loadActiveAccounts(supabaseAdmin, context.userId);
+      const engagers = allAccounts.length > 0 ? allAccounts : (accounts as any[]);
+
+      const targetId = data.targetTweetUrl ? twitter.extractTweetId(data.targetTweetUrl) : null;
+      if (data.mode !== "tweet" && !targetId) {
+        throw new Error("Could not read a tweet ID from that URL.");
       }
-    }
 
-    // Spread mode: nothing goes out now. Each persona action is queued with
-    // its own run time so the fleet never posts in one burst.
-    {
-      const { runTimesFor } = await import("./spread");
-      const { enqueueScheduledActions } = await import("./scheduler.server");
-      const { logLegalReview: logReview } = await import("./legal-risk.server");
+      const { data: job, error: jobErr } = await supabaseAdmin
+        .from("publish_jobs")
+        .insert({
+          user_id: context.userId,
+          mode: data.mode,
+          tweet_text: data.tweetText,
+          comment_text: data.commentText,
+          target_tweet_url: data.targetTweetUrl || null,
+          objective_mode: data.objectiveMode,
+          objective_text: data.objectiveMode ? data.tweetText || data.commentText : "",
+          link_url: data.linkUrl || null,
+          image_urls: data.imageUrls,
+          engagement_actions: data.actions,
+          engagement_targets: data.targets,
+          status: "running",
+          ...(data.name?.trim() ? { name: data.name.trim(), name_is_custom: true } : {}),
+        })
+        .select("id")
+        .single();
+      if (jobErr || !job) throw new Error(jobErr?.message ?? "Could not create publish job.");
 
-      type Unit = {
-        acc: (typeof accounts)[number];
-        type: "tweet" | "comment" | "like" | "retweet" | "bookmark" | "follow";
-        content: string;
-        personaName: string;
-        targetTweetId?: string | null;
-        targetHandle?: string | null;
-      };
-      const units: Unit[] = [];
-      for (const acc of accounts) {
-        const variant = variationMap.get(acc.id);
-        const personaName = variant?.personaName ?? "";
-        if (data.mode === "tweet" || data.mode === "both") {
-          units.push({
-            acc,
-            type: "tweet",
-            content: appendLink(variant?.tweetText || data.tweetText, data.linkUrl),
-            personaName,
+      // Persona voices: one random persona per account, same core message.
+      const variationMap = new Map<
+        string,
+        { tweetText: string; commentText: string; personaName: string }
+      >();
+      if (data.variations.length > 0) {
+        for (const v of data.variations) {
+          variationMap.set(v.accountId, {
+            tweetText: v.tweetText,
+            commentText: v.commentText,
+            personaName: v.personaName,
           });
         }
-        if (data.mode === "comment" || data.mode === "both") {
-          units.push({
-            acc,
-            type: "comment",
-            content: variant?.commentText || data.commentText,
-            personaName,
+      } else if (data.varyByPersona) {
+        const { buildPersonaVariations } = await import("./variations.server");
+        const built = await buildPersonaVariations({
+          accounts: accounts.map((a) => ({ id: a.id, handle: a.handle })),
+          tweetText: data.tweetText,
+          commentText: data.commentText,
+          objectiveMode: data.objectiveMode,
+          tone: data.tone,
+          intensity: data.intensity,
+          briefing: data.briefing,
+        });
+        for (const v of built) {
+          variationMap.set(v.accountId, {
+            tweetText: v.tweetText,
+            commentText: v.commentText,
+            personaName: v.personaName,
           });
-          if (data.likeTarget && data.actions.like && data.targets.author)
-            units.push({ acc, type: "like", content: "", personaName });
-        }
-        if (targetId && data.targets.author) {
-          if (data.actions.retweet) units.push({ acc, type: "retweet", content: "", personaName });
-          if (data.actions.bookmark)
-            units.push({ acc, type: "bookmark", content: "", personaName });
         }
       }
 
-      // Peer follows, watchlist engagement and peer-latest engagement are queued
-      // too, so nothing is fired inside this request and every action gets a turn.
-      if (engagers.length > 1 && data.actions.follow && data.targets.peer) {
-        for (const acc of engagers) {
-          for (const other of engagers) {
-            if (other.id === acc.id) continue;
+      // Spread mode: nothing goes out now. Each persona action is queued with
+      // its own run time so the fleet never posts in one burst.
+      {
+        const { runTimesFor } = await import("./spread");
+        const { enqueueScheduledActions } = await import("./scheduler.server");
+        const { logLegalReview: logReview } = await import("./legal-risk.server");
+
+        type Unit = {
+          acc: (typeof accounts)[number];
+          type: "tweet" | "comment" | "like" | "retweet" | "bookmark" | "follow";
+          content: string;
+          personaName: string;
+          targetTweetId?: string | null;
+          targetHandle?: string | null;
+        };
+        const units: Unit[] = [];
+        for (const acc of accounts) {
+          const variant = variationMap.get(acc.id);
+          const personaName = variant?.personaName ?? "";
+          if (data.mode === "tweet" || data.mode === "both") {
             units.push({
-              acc: acc as (typeof accounts)[number],
-              type: "follow",
-              content: `follow @${other.handle.replace(/^@/, "")}`,
-              personaName: "",
-              targetHandle: other.handle.replace(/^@/, ""),
+              acc,
+              type: "tweet",
+              content: appendLink(variant?.tweetText || data.tweetText, data.linkUrl),
+              personaName,
             });
           }
+          if (data.mode === "comment" || data.mode === "both") {
+            units.push({
+              acc,
+              type: "comment",
+              content: variant?.commentText || data.commentText,
+              personaName,
+            });
+            if (data.likeTarget && data.actions.like && data.targets.author)
+              units.push({ acc, type: "like", content: "", personaName });
+          }
+          if (targetId && data.targets.author) {
+            if (data.actions.retweet)
+              units.push({ acc, type: "retweet", content: "", personaName });
+            if (data.actions.bookmark)
+              units.push({ acc, type: "bookmark", content: "", personaName });
+          }
         }
-      }
 
-      const watchKinds = data.targets.watchlist
-        ? (["like", "retweet", "bookmark"] as const).filter((k) => data.actions[k])
-        : [];
-      if (watchKinds.length > 0) {
-        const watchTargets = await loadWatchTargets(twitter);
-        for (const acc of engagers) {
-          for (const target of watchTargets) {
-            if (target.handle.toLowerCase() === acc.handle.replace(/^@/, "").toLowerCase())
-              continue;
-            for (const kind of watchKinds) {
+        // Peer follows, watchlist engagement and peer-latest engagement are queued
+        // too, so nothing is fired inside this request and every action gets a turn.
+        if (engagers.length > 1 && data.actions.follow && data.targets.peer) {
+          for (const acc of engagers) {
+            for (const other of engagers) {
+              if (other.id === acc.id) continue;
               units.push({
                 acc: acc as (typeof accounts)[number],
-                type: kind,
-                content: `@${target.handle} · ${target.tweetId}`,
+                type: "follow",
+                content: `follow @${other.handle.replace(/^@/, "")}`,
                 personaName: "",
-                targetTweetId: target.tweetId,
+                targetHandle: other.handle.replace(/^@/, ""),
               });
             }
           }
         }
-      }
 
-      const peerKinds = data.targets.peer
-        ? (["like", "retweet"] as const).filter((k) => data.actions[k])
-        : [];
-      if (peerKinds.length > 0) {
-        const peerTargets = await loadPeerLatestTargets(twitter, engagers as any[]);
-        for (const acc of engagers) {
-          for (const target of peerTargets) {
-            if (target.accountId === acc.id) continue;
-            for (const kind of peerKinds) {
-              units.push({
-                acc: acc as (typeof accounts)[number],
-                type: kind,
-                content: `peer @${target.handle} · ${target.tweetId}`,
-                personaName: "",
-                targetTweetId: target.tweetId,
-              });
+        const watchKinds = data.targets.watchlist
+          ? (["like", "retweet", "bookmark"] as const).filter((k) => data.actions[k])
+          : [];
+        if (watchKinds.length > 0) {
+          const watchTargets = await loadWatchTargets(twitter);
+          for (const acc of engagers) {
+            for (const target of watchTargets) {
+              if (target.handle.toLowerCase() === acc.handle.replace(/^@/, "").toLowerCase())
+                continue;
+              for (const kind of watchKinds) {
+                units.push({
+                  acc: acc as (typeof accounts)[number],
+                  type: kind,
+                  content: `@${target.handle} · ${target.tweetId}`,
+                  personaName: "",
+                  targetTweetId: target.tweetId,
+                });
+              }
             }
           }
         }
-      }
 
-      const startAtMs = data.startAt ? Date.parse(data.startAt) : Number.NaN;
-      const startFrom =
-        Number.isFinite(startAtMs) && startAtMs > Date.now() ? startAtMs : Date.now();
-      const times = runTimesFor(units.length, data.spreadHours, startFrom);
-      const scheduledResults: PublishActionRow[] = [];
-      let failedCount = 0;
+        const peerKinds = data.targets.peer
+          ? (["like", "retweet"] as const).filter((k) => data.actions[k])
+          : [];
+        if (peerKinds.length > 0) {
+          const peerTargets = await loadPeerLatestTargets(twitter, engagers as any[]);
+          for (const acc of engagers) {
+            for (const target of peerTargets) {
+              if (target.accountId === acc.id) continue;
+              for (const kind of peerKinds) {
+                units.push({
+                  acc: acc as (typeof accounts)[number],
+                  type: kind,
+                  content: `peer @${target.handle} · ${target.tweetId}`,
+                  personaName: "",
+                  targetTweetId: target.tweetId,
+                });
+              }
+            }
+          }
+        }
 
-      for (let i = 0; i < units.length; i += 1) {
-        const unit = units[i]!;
-        // Legal-Risk gate still runs up front so held wording never queues.
-        if (unit.type === "tweet" || unit.type === "comment") {
-          const verdict = transformText(unit.content);
-          if (!verdict.autoPublishAllowed) {
-            void logReview({
-              record: verdict,
-              surface: "publish_blocked",
-              userId: context.userId,
-              reference: unit.acc.handle,
-            });
-            const heldError = `Held by legal review (${RISK_LEVEL_LABELS[verdict.riskLevel].toLowerCase()}): ${verdict.escalationNote || verdict.findings[0]?.reason || "wording needs senior approval"}`;
-            const { data: blocked } = await supabaseAdmin
-              .from("publish_actions")
-              .insert({
-                job_id: job.id,
-                user_id: context.userId,
-                account_id: unit.acc.id,
-                action_type: unit.type,
-                content: unit.content,
+        const startAtMs = data.startAt ? Date.parse(data.startAt) : Number.NaN;
+        const startFrom =
+          Number.isFinite(startAtMs) && startAtMs > Date.now() ? startAtMs : Date.now();
+        const times = runTimesFor(units.length, data.spreadHours, startFrom);
+        const scheduledResults: PublishActionRow[] = [];
+        let failedCount = 0;
+
+        for (let i = 0; i < units.length; i += 1) {
+          const unit = units[i]!;
+          // Legal-Risk gate still runs up front so held wording never queues.
+          if (unit.type === "tweet" || unit.type === "comment") {
+            const verdict = transformText(unit.content);
+            if (!verdict.autoPublishAllowed) {
+              void logReview({
+                record: verdict,
+                surface: "publish_blocked",
+                userId: context.userId,
+                reference: unit.acc.handle,
+              });
+              const heldError = `Held by legal review (${RISK_LEVEL_LABELS[verdict.riskLevel].toLowerCase()}): ${verdict.escalationNote || verdict.findings[0]?.reason || "wording needs senior approval"}`;
+              const { data: blocked } = await supabaseAdmin
+                .from("publish_actions")
+                .insert({
+                  job_id: job.id,
+                  user_id: context.userId,
+                  account_id: unit.acc.id,
+                  action_type: unit.type,
+                  content: unit.content,
+                  status: "failed",
+                  result_tweet_id: null,
+                  error: heldError,
+                })
+                .select("id")
+                .maybeSingle();
+              failedCount += 1;
+              scheduledResults.push({
+                id: blocked?.id ?? `${unit.acc.id}-${unit.type}-held`,
+                accountHandle: unit.acc.handle,
+                actionType: unit.type,
                 status: "failed",
-                result_tweet_id: null,
+                resultTweetId: null,
                 error: heldError,
-              })
-              .select("id")
-              .maybeSingle();
-            failedCount += 1;
-            scheduledResults.push({
-              id: blocked?.id ?? `${unit.acc.id}-${unit.type}-held`,
-              accountHandle: unit.acc.handle,
-              actionType: unit.type,
-              status: "failed",
-              resultTweetId: null,
-              error: heldError,
-              content: unit.content,
-              ...(unit.personaName ? { personaName: unit.personaName } : {}),
-            });
-            continue;
-          }
-        }
-
-        const runAt = times[i]!;
-        const { data: pendingRow } = await supabaseAdmin
-          .from("publish_actions")
-          .insert({
-            job_id: job.id,
-            user_id: context.userId,
-            account_id: unit.acc.id,
-            action_type: unit.type,
-            content: unit.content,
-            status: "pending",
-            result_tweet_id: null,
-            error: `Scheduled for ${new Date(runAt).toLocaleString()}`,
-          })
-          .select("id")
-          .maybeSingle();
-
-        await enqueueScheduledActions(supabaseAdmin as any, [
-          {
-            user_id: context.userId,
-            source: "publish",
-            job_id: job.id,
-            publish_action_id: pendingRow?.id ?? null,
-            account_id: unit.acc.id,
-            handle: unit.acc.handle,
-            persona_name: unit.personaName,
-            action_type: unit.type,
-            content: unit.content,
-            target_tweet_id:
-              unit.targetTweetId ??
-              (unit.type === "tweet" || unit.type === "follow" ? null : targetId),
-            target_handle: unit.targetHandle ?? null,
-            media_urls: unit.type === "tweet" || unit.type === "comment" ? data.imageUrls : [],
-            run_at: runAt,
-          },
-        ]);
-
-        scheduledResults.push({
-          id: pendingRow?.id ?? `${unit.acc.id}-${unit.type}-${i}`,
-          accountHandle: unit.acc.handle,
-          actionType: unit.type,
-          status: "pending",
-          resultTweetId: null,
-          error: `Scheduled for ${new Date(runAt).toLocaleString()}`,
-          content: unit.content,
-          ...(unit.personaName ? { personaName: unit.personaName } : {}),
-        });
-      }
-
-      // The first persona goes out straight away; everything else stays queued
-      // for its own run time so the fleet never posts in one burst.
-      if (scheduledResults.length > 0) {
-        try {
-          const { runDueScheduledActions } = await import("./scheduler.server");
-          await runDueScheduledActions({
-            admin: supabaseAdmin as any,
-            userId: context.userId,
-            jobId: job.id,
-            limit: 1,
-          });
-          const { data: firstRow } = await supabaseAdmin
-            .from("publish_actions")
-            .select("id, status, result_tweet_id, error")
-            .eq("job_id", job.id)
-            .in("status", ["success", "failed"])
-            .order("updated_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (firstRow) {
-            const match = scheduledResults.find((r) => r.id === firstRow.id);
-            if (match) {
-              match.status = firstRow.status === "success" ? "success" : "failed";
-              match.resultTweetId = firstRow.result_tweet_id ?? null;
-              match.error = firstRow.error ?? null;
+                content: unit.content,
+                ...(unit.personaName ? { personaName: unit.personaName } : {}),
+              });
+              continue;
             }
           }
-        } catch {
-          /* the cron drain picks it up on the next tick */
+
+          const runAt = times[i]!;
+          const { data: pendingRow } = await supabaseAdmin
+            .from("publish_actions")
+            .insert({
+              job_id: job.id,
+              user_id: context.userId,
+              account_id: unit.acc.id,
+              action_type: unit.type,
+              content: unit.content,
+              status: "pending",
+              result_tweet_id: null,
+              error: `Scheduled for ${new Date(runAt).toLocaleString()}`,
+            })
+            .select("id")
+            .maybeSingle();
+
+          await enqueueScheduledActions(supabaseAdmin as any, [
+            {
+              user_id: context.userId,
+              source: "publish",
+              job_id: job.id,
+              publish_action_id: pendingRow?.id ?? null,
+              account_id: unit.acc.id,
+              handle: unit.acc.handle,
+              persona_name: unit.personaName,
+              action_type: unit.type,
+              content: unit.content,
+              target_tweet_id:
+                unit.targetTweetId ??
+                (unit.type === "tweet" || unit.type === "follow" ? null : targetId),
+              target_handle: unit.targetHandle ?? null,
+              media_urls: unit.type === "tweet" || unit.type === "comment" ? data.imageUrls : [],
+              run_at: runAt,
+            },
+          ]);
+
+          scheduledResults.push({
+            id: pendingRow?.id ?? `${unit.acc.id}-${unit.type}-${i}`,
+            accountHandle: unit.acc.handle,
+            actionType: unit.type,
+            status: "pending",
+            resultTweetId: null,
+            error: `Scheduled for ${new Date(runAt).toLocaleString()}`,
+            content: unit.content,
+            ...(unit.personaName ? { personaName: unit.personaName } : {}),
+          });
         }
+
+        // The first persona goes out straight away; everything else stays queued
+        // for its own run time so the fleet never posts in one burst.
+        if (scheduledResults.length > 0) {
+          try {
+            const { runDueScheduledActions } = await import("./scheduler.server");
+            await runDueScheduledActions({
+              admin: supabaseAdmin as any,
+              userId: context.userId,
+              jobId: job.id,
+              limit: 1,
+            });
+            const { data: firstRow } = await supabaseAdmin
+              .from("publish_actions")
+              .select("id, status, result_tweet_id, error")
+              .eq("job_id", job.id)
+              .in("status", ["success", "failed"])
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (firstRow) {
+              const match = scheduledResults.find((r) => r.id === firstRow.id);
+              if (match) {
+                match.status = firstRow.status === "success" ? "success" : "failed";
+                match.resultTweetId = firstRow.result_tweet_id ?? null;
+                match.error = firstRow.error ?? null;
+              }
+            }
+          } catch {
+            /* the cron drain picks it up on the next tick */
+          }
+        }
+
+        await supabaseAdmin.from("publish_jobs").update({ status: "scheduled" }).eq("id", job.id);
+
+        return {
+          jobId: job.id,
+          mode: data.mode,
+          actions: scheduledResults,
+          succeeded: scheduledResults.filter((r) => r.status === "success").length,
+          failed: scheduledResults.filter((r) => r.status === "failed").length || failedCount,
+        };
       }
+    };
 
-      await supabaseAdmin.from("publish_jobs").update({ status: "scheduled" }).eq("id", job.id);
+    if (!data.idempotencyKey) return operation();
 
-      return {
-        jobId: job.id,
-        mode: data.mode,
-        actions: scheduledResults,
-        succeeded: scheduledResults.filter((r) => r.status === "success").length,
-        failed: scheduledResults.filter((r) => r.status === "failed").length || failedCount,
-      };
-    }
+    const { withIdempotencyKey, createSupabaseIdempotencyStore } =
+      await import("./platform/idempotency.server");
+    return withIdempotencyKey(
+      createSupabaseIdempotencyStore(supabaseAdmin as any),
+      {
+        key: data.idempotencyKey,
+        userId: context.userId,
+        payload: {
+          mode: data.mode,
+          tweetText: data.tweetText,
+          commentText: data.commentText,
+          accountIds: data.accountIds,
+          targetTweetUrl: data.targetTweetUrl,
+          linkUrl: data.linkUrl,
+        },
+      },
+      operation,
+    );
   });
 
 export const uploadPublishMedia = createServerFn({ method: "POST" })

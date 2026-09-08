@@ -52,7 +52,7 @@ import { OfflineNotice } from "@/components/offline-notice";
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   head: () => ({
     meta: [
-      { title: "Message test - CommsIQ" },
+      { title: "Message test - SMAIT" },
       {
         name: "description",
         content:
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/chat/$threadId")({
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Message test - CommsIQ" },
+      { property: "og:title", content: "Message test - SMAIT" },
       {
         property: "og:description",
         content: "Persona reactions, confidence scores and recommended rewrites.",
@@ -75,7 +75,7 @@ function ExecutiveSummary({ analysis, threadId }: { analysis: Analysis; threadId
     <Card className="p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="type-section">Executive summary</h2>
-        <span className="rounded-full bg-fkf-green/10 px-2 py-1 type-meta font-semibold text-fkf-green">
+        <span className="rounded-full bg-positive/10 px-2 py-1 type-meta font-semibold text-positive">
           {confidenceLabel(analysis.confidence)}
         </span>
       </div>
@@ -100,7 +100,7 @@ function ExecutiveSummary({ analysis, threadId }: { analysis: Analysis; threadId
                 ? "bg-primary/10 text-primary"
                 : analysis.classification.risk === "medium"
                   ? "bg-negative/10 text-negative"
-                  : "bg-fkf-green/10 text-fkf-green"
+                  : "bg-positive/10 text-positive"
             }`}
           >
             {analysis.classification.risk} risk
@@ -157,7 +157,7 @@ function ResultsContextRail({ analysis }: { analysis: Analysis }) {
     <>
       <RailCard title="Confidence">
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-semibold text-fkf-green">{analysis.confidence}%</span>
+          <span className="text-2xl font-semibold text-positive">{analysis.confidence}%</span>
           <span className="type-meta text-muted-foreground">
             {confidenceLabel(analysis.confidence)}
           </span>
@@ -169,7 +169,7 @@ function ResultsContextRail({ analysis }: { analysis: Analysis }) {
               className="h-1.5 flex-1 rounded-full"
               style={{
                 background:
-                  i < Math.round(analysis.confidence / 10) ? "var(--fkf-green)" : "var(--muted)",
+                  i < Math.round(analysis.confidence / 10) ? "var(--positive)" : "var(--muted)",
               }}
             />
           ))}
@@ -285,7 +285,7 @@ function ThreadPage() {
     if (!latestAnalysis) return;
     const a = latestAnalysis;
     const lines = [
-      `CommsIQ - ${thread?.title ?? "Message test"}`,
+      `SMAIT - ${thread?.title ?? "Message test"}`,
       "",
       `Confidence: ${a.confidence}% (${confidenceLabel(a.confidence)})`,
       `Expected reach: ${expectedReach(a)}% · Share probability: ${shareProbability(a)}% · Negative backlash: ${negativeBacklash(a)}%`,
@@ -303,7 +303,7 @@ function ThreadPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "fkf-commsiq-report.txt";
+    link.download = "smait-report.txt";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -396,7 +396,7 @@ function ThreadPage() {
                 >
                   {thread.visibility === "workspace" ? (
                     <>
-                      <Users className="size-4" /> Shared with FKF
+                      <Users className="size-4" /> Shared with team
                     </>
                   ) : (
                     <>
@@ -420,7 +420,7 @@ function ThreadPage() {
               <span
                 className={`rounded-full px-2 py-1 font-semibold ${
                   thread.confidence >= 75
-                    ? "bg-fkf-green/10 text-fkf-green"
+                    ? "bg-positive/10 text-positive"
                     : thread.confidence >= 60
                       ? "bg-neutral/15 text-foreground"
                       : "bg-primary/10 text-primary"

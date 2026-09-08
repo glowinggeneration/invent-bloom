@@ -224,13 +224,13 @@ export function OpportunitiesCard() {
   return (
     <Card className="p-4">
       <div className="flex items-center gap-2">
-        <Lightbulb className="size-4 text-fkf-green" aria-hidden="true" />
+        <Lightbulb className="size-4 text-positive" aria-hidden="true" />
         <SectionTitle className="type-card">Opportunities</SectionTitle>
       </div>
       {data.opportunities.length ? (
         <ul className="mt-3 grid gap-2.5">
           {data.opportunities.slice(0, 3).map((item) => (
-            <li key={item.title} className="rounded-xl bg-fkf-green/5 p-3">
+            <li key={item.title} className="rounded-xl bg-positive/5 p-3">
               <p className="type-body font-semibold">{item.title}</p>
               <p className="mt-1 type-meta text-muted-foreground">{item.detail}</p>
               <div className="mt-2 grid grid-cols-2 gap-2">

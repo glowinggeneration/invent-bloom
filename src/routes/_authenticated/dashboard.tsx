@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   }),
   head: () => ({
     meta: [
-      { title: "Brand Health - CommsIQ" },
+      { title: "Brand Health - SMAIT" },
       {
         name: "description",
         content:
@@ -68,7 +68,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Brand Health - CommsIQ" },
+      { property: "og:title", content: "Brand Health - SMAIT" },
       {
         property: "og:description",
         content:
@@ -79,7 +79,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: BrandHealthPage,
 });
 
-const SOURCE_COLORS = ["hsl(var(--primary))", "var(--color-fkf-green, #12A150)", "#1f2937"];
+const SOURCE_COLORS = ["hsl(var(--primary))", "var(--color-positive, #12A150)", "#1f2937"];
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -98,7 +98,7 @@ function HealthRing({ score }: { score: number }) {
   const tone = healthTone(score);
   const stroke =
     tone === "green"
-      ? "var(--color-fkf-green, #12A150)"
+      ? "var(--color-positive, #12A150)"
       : tone === "amber"
         ? "#D97706"
         : "hsl(var(--primary))";
@@ -391,7 +391,7 @@ function BrandHealthPage() {
                           t.confidence === null
                             ? "bg-secondary text-muted-foreground"
                             : t.confidence >= 75
-                              ? "bg-fkf-green/10 text-fkf-green"
+                              ? "bg-positive/10 text-positive"
                               : t.confidence >= 60
                                 ? "bg-neutral/15 text-foreground"
                                 : "bg-negative/10 text-negative"
@@ -567,7 +567,7 @@ function BrandHealthPage() {
                           <Area
                             type="monotone"
                             dataKey="engagements"
-                            stroke="var(--color-fkf-green, #12A150)"
+                            stroke="var(--color-positive, #12A150)"
                             strokeWidth={2}
                             fill="transparent"
                           />
@@ -813,10 +813,10 @@ function BrandHealthPage() {
                       <dd className="font-medium">{tests?.shared ?? 0}</dd>
                     </div>
                   </dl>
-                  {profile?.org === "fkf" && (
+                  {profile?.org === "team" && (
                     <Button asChild variant="outline" size="sm" className="mt-4 w-full gap-2">
                       <Link to="/shared">
-                        <Users className="size-4" /> Shared with FKF
+                        <Users className="size-4" /> Shared with team
                       </Link>
                     </Button>
                   )}

@@ -5,7 +5,8 @@
  *   classify -> sentiment -> /mentions
  *
  * Nothing an actor returns is trusted straight into the feed. A broad search
- * result that never names the federation or its president is discarded, and
+ * result that names none of the workspace's configured subject is
+ * discarded (unless nothing is configured yet - see isRelevant()), and
  * every surviving item is stored once, keyed on platform + external id.
  */
 import {
@@ -15,12 +16,14 @@ import {
   ACTORS,
   type RawMention,
 } from "./apify-collect.server";
+import type { ApifyPlatform } from "./apify-sources";
 import {
   WATCHED_PROFILES,
   classifyEntities,
+  isRelevant,
   matchKeywords,
-  type ApifyPlatform,
-} from "./apify-sources";
+} from "./apify-relevance.server";
+import { describeSubject, getWorkspaceSettings } from "./entity-config.server";
 
 export type SweepSourceResult = {
   key: string;
@@ -35,11 +38,11 @@ export type SweepSourceResult = {
 type Verdict = { sentiment: "positive" | "neutral" | "negative"; score: number; reason: string };
 
 /**
- * Reads how each item lands for the federation, in one batched call. A model
- * failure is never fatal: the item is stored neutral and still reaches the
- * feed.
+ * Reads how each item lands for the monitored subject, in one batched call.
+ * A model failure is never fatal: the item is stored neutral and still
+ * reaches the feed.
  */
-async function scoreSentiment(items: RawMention[]): Promise<Map<string, Verdict>> {
+async function scoreSentiment(items: RawMention[], subject: string): Promise<Map<string, Verdict>> {
   const out = new Map<string, Verdict>();
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey || !items.length) return out;
@@ -58,7 +61,7 @@ async function scoreSentiment(items: RawMention[]): Promise<Map<string, Verdict>
             {
               role: "system",
               content: [
-                "You judge how each public post or article reads FOR Football Kenya Federation (FKF) and its president Hussein Mohammed.",
+                `You judge how each public post or article reads FOR ${subject}.`,
                 "Kenyan English, Sheng and Kiswahili are common; read sarcasm and slang in context.",
                 "negative: scandal, corruption, court cases, bans, criticism, fan or player grievances, mockery.",
                 "positive: wins, investment, sponsorship, facilities, praise, milestones, grassroots progress.",
@@ -124,10 +127,9 @@ async function recordStatus(result: SweepSourceResult): Promise<void> {
 
 /** Relevance, classification, deduplication and storage for one lane's haul. */
 async function storeMentions(items: RawMention[]): Promise<{ relevant: number; stored: number }> {
-  const relevant = items.filter(
-    (m) =>
-      matchKeywords(m.title, m.content, m.authorName, m.authorHandle, JSON.stringify(m.raw))
-        .length > 0,
+  const settings = await getWorkspaceSettings();
+  const relevant = items.filter((m) =>
+    isRelevant(settings, m.title, m.content, m.authorName, m.authorHandle, JSON.stringify(m.raw)),
   );
   if (!relevant.length) return { relevant: 0, stored: 0 };
 
@@ -161,7 +163,7 @@ async function storeMentions(items: RawMention[]): Promise<{ relevant: number; s
   );
   if (!fresh.length) return { relevant: unique.length, stored: 0 };
 
-  const verdicts = await scoreSentiment(fresh);
+  const verdicts = await scoreSentiment(fresh, describeSubject(settings));
 
   const rows = fresh.map((m) => {
     const v = verdicts.get(`${m.platform}:${m.externalId}`);
@@ -182,8 +184,14 @@ async function storeMentions(items: RawMention[]): Promise<{ relevant: number; s
       likes: m.likes,
       comments: m.comments,
       shares: m.shares,
-      entities: classifyEntities(m.title, m.content, JSON.stringify(m.raw)),
-      matched_keywords: matchKeywords(m.title, m.content, m.authorHandle, JSON.stringify(m.raw)),
+      entities: classifyEntities(settings, m.title, m.content, JSON.stringify(m.raw)),
+      matched_keywords: matchKeywords(
+        settings,
+        m.title,
+        m.content,
+        m.authorHandle,
+        JSON.stringify(m.raw),
+      ),
       sentiment: v?.sentiment ?? "neutral",
       sentiment_score: v?.score ?? 0,
       sentiment_reason: v?.reason ?? null,
@@ -276,8 +284,8 @@ const s = (v: unknown): string | null => {
 };
 
 /**
- * Pulls the federation's own public page on each platform. Platforms that
- * cannot be read are skipped silently — the card simply does not appear.
+ * Pulls the workspace's own watched public page on each platform. Platforms
+ * that cannot be read are skipped silently — the card simply does not appear.
  */
 export async function refreshApifyProfiles(): Promise<{ stored: number; failed: string[] }> {
   const rows: ProfileRow[] = [];
@@ -402,7 +410,7 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
         rows.push({
           platform: "facebook",
           handle: s(item["pageName"]) ?? target.handle,
-          display_name: (s(item["title"]) ?? "Football Kenya Federation").split("|")[0]!.trim(),
+          display_name: (s(item["title"]) ?? target.handle).split("|")[0]!.trim(),
           description: s(item["intro"]),
           avatar_url: s(item["profilePictureUrl"]),
           banner_url: s(item["coverPhotoUrl"]),
@@ -465,8 +473,8 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
           likes_count: keep(r.likes_count, prev["likes_count"]),
         }
       : r;
-    // The federation's own pages fall back to the FKF crest when a platform
-    // hides the picture from the scraper.
+    // Watched pages fall back to the SMAIT mark when a platform hides the
+    // picture from the scraper.
     return { ...base, avatar_url: base.avatar_url ?? "/smait-logo.png" };
   });
 

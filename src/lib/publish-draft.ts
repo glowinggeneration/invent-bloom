@@ -2,6 +2,7 @@
  * Local autosave for the publish composer so a navigation, refresh or accidental
  * tab close never loses an in-progress message. Drafts stay on the device.
  */
+import { readWithLegacyKey } from "@/lib/legacy-storage";
 
 export type PublishDraft = {
   mode: string;
@@ -21,7 +22,8 @@ export type PublishDraft = {
   savedAt: number;
 };
 
-const KEY = "fkf.publish.draft.v1";
+const KEY = "smait.publish.draft.v1";
+const LEGACY_KEY = "fkf.publish.draft.v1";
 
 export function isDraftEmpty(
   draft: Pick<PublishDraft, "tweetText" | "commentText" | "targetTweetUrl" | "linkUrl" | "media">,
@@ -38,7 +40,7 @@ export function isDraftEmpty(
 export function loadPublishDraft(): PublishDraft | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = readWithLegacyKey(KEY, LEGACY_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PublishDraft;
     if (!parsed || typeof parsed !== "object") return null;
@@ -104,7 +106,8 @@ export type EngagementPreset = {
   targets: { author: boolean; peer: boolean; watchlist: boolean };
 };
 
-const PRESET_KEY = "fkf.publish.engagement-preset.v1";
+const PRESET_KEY = "smait.publish.engagement-preset.v1";
+const LEGACY_PRESET_KEY = "fkf.publish.engagement-preset.v1";
 
 export const DEFAULT_ENGAGEMENT_PRESET: EngagementPreset = {
   applyToAll: false,
@@ -115,7 +118,7 @@ export const DEFAULT_ENGAGEMENT_PRESET: EngagementPreset = {
 export function loadEngagementPreset(): EngagementPreset | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(PRESET_KEY);
+    const raw = readWithLegacyKey(PRESET_KEY, LEGACY_PRESET_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw) as EngagementPreset;
     if (!p || typeof p !== "object") return null;

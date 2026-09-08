@@ -7,14 +7,13 @@
  * counts current without duplicating history.
  */
 import type { BrandMention } from "./brand-mentions.functions";
-
-const PRESIDENT = /hussein|husseinmoha|\bmohammed\b/i;
-const FEDERATION = /\bfkf\b|football[_ ]?kenya|federation|harambee/i;
+import { classifyEntityMention, getWorkspaceSettings } from "./entity-config.server";
 
 export async function storeXMentions(mentions: BrandMention[]): Promise<number> {
   if (mentions.length === 0) return 0;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
+  const settings = await getWorkspaceSettings();
 
   const rows = mentions.map((m) => ({
     tweet_id: m.id,
@@ -30,8 +29,9 @@ export async function storeXMentions(mentions: BrandMention[]): Promise<number> 
     sentiment_score: Number(m.sentimentScore ?? 0),
     sentiment_reason: m.sentimentReason ?? "",
     reply_to_brand: Boolean(m.replyToBrand),
-    mentions_federation: FEDERATION.test(m.text) || (m.mentions ?? []).length > 0,
-    mentions_president: PRESIDENT.test(m.text),
+    mentions_federation:
+      classifyEntityMention(settings, m.text).org || (m.mentions ?? []).length > 0,
+    mentions_president: classifyEntityMention(settings, m.text).keyFigure,
     source: m.source ?? "mention",
     matched_keyword: m.matchedKeyword ?? "",
     collected_at: new Date().toISOString(),

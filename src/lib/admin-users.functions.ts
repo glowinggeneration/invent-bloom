@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
+import { logAuditEventAsCaller } from "./platform/audit-log.server";
 
 export type AdminUser = {
   id: string;
@@ -47,6 +48,31 @@ export const listAllUsers = createServerFn({ method: "POST" })
     return users.sort((a, b) => a.email.localeCompare(b.email));
   });
 
+/** Grants or revokes team-workspace membership. Admin-only. */
+export const setUserOrg = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { userId: string; org: "team" | "external" }) => {
+    if (!data?.userId) throw new Error("Missing user.");
+    if (data.org !== "team" && data.org !== "external") throw new Error("Invalid org value.");
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    assertAdmin(context as any);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ org: data.org })
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "account.status_change",
+      resourceTable: "profiles",
+      resourceId: data.userId,
+      metadata: { org: data.org },
+    });
+    return { ok: true as const };
+  });
+
 export const setUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { userId: string; password: string }) => {
@@ -63,5 +89,10 @@ export const setUserPassword = createServerFn({ method: "POST" })
       password: data.password,
     });
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "account.password_reset",
+      resourceTable: "auth.users",
+      resourceId: data.userId,
+    });
     return { ok: true as const };
   });

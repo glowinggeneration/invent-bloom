@@ -57,14 +57,15 @@ export type OfficialPost = {
 export const getOfficialPosts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<{ posts: OfficialPost[]; error: string | null }> => {
-    const { BRAND_PROFILE_HANDLES } = await import("./brand-profiles");
+    const { brandHandles, getWorkspaceSettings } = await import("./entity-config.server");
     const { fetchLatestTweetIds, fetchTweetMetrics, fetchXProfile } =
       await import("./twitterapi.server");
 
     const posts: OfficialPost[] = [];
     let error: string | null = null;
+    const settings = await getWorkspaceSettings();
 
-    for (const handle of BRAND_PROFILE_HANDLES) {
+    for (const handle of brandHandles(settings)) {
       const [{ ids, error: idError }, { profile }] = await Promise.all([
         fetchLatestTweetIds(handle, 1, false),
         fetchXProfile(handle),

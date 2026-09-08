@@ -172,8 +172,14 @@ export type OverviewData = {
   };
 
   entities: {
-    federation: SentimentSplit;
-    president: SentimentSplit;
+    org: SentimentSplit;
+    keyFigure: SentimentSplit;
+  };
+  /** Display labels for the entities split, resolved server-side from workspace_settings. */
+  entityLabels: {
+    org: string;
+    /** Null when no key figures are configured - the card renders an empty state instead. */
+    keyFigure: string | null;
   };
 
   platforms: PlatformSlice[];

@@ -10,18 +10,18 @@ import { EmptyState, PageTitle } from "@/components/ui-kit";
 export const Route = createFileRoute("/_authenticated/shared")({
   head: () => ({
     meta: [
-      { title: "Shared with FKF - CommsIQ" },
+      { title: "Shared with team - SMAIT" },
       {
         name: "description",
         content:
-          "Message tests colleagues have shared with the Football Kenya Federation workspace, open for follow-up analysis.",
+          "Message tests colleagues have shared with the team workspace, open for follow-up analysis.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Shared with FKF - CommsIQ" },
+      { property: "og:title", content: "Shared with team - SMAIT" },
       {
         property: "og:description",
-        content: "Departmental message tests shared across the FKF workspace.",
+        content: "Departmental message tests shared across the team workspace.",
       },
     ],
   }),
@@ -35,10 +35,10 @@ function SharedPage() {
   const { data: threads, isPending } = useQuery({
     queryKey: ["threads", "shared"],
     queryFn: () => fetchThreads({ data: { scope: "shared" } }),
-    enabled: profile?.org === "fkf",
+    enabled: profile?.org === "team",
   });
 
-  if (profile && profile.org !== "fkf") {
+  if (profile && profile.org !== "team") {
     return (
       <WorkspaceShell title="Shared">
         <PageTitle>Shared</PageTitle>
@@ -51,9 +51,9 @@ function SharedPage() {
   }
 
   return (
-    <WorkspaceShell title="Shared with FKF">
+    <WorkspaceShell title="Shared with team">
       <PageTitle description="Tests colleagues shared with the federation workspace.">
-        Shared with FKF
+        Shared with team
       </PageTitle>
 
       {(isPending || !profile) && (
@@ -65,7 +65,7 @@ function SharedPage() {
       {!isPending && threads?.length === 0 && (
         <EmptyState
           title="Nothing shared yet"
-          description="Open one of your tests and switch it to “Shared with FKF”."
+          description="Open one of your tests and switch it to “Shared with team”."
         />
       )}
 

@@ -69,7 +69,7 @@ import { deriveCampaignManagerMode } from "@/lib/campaign-manager-state";
 export const Route = createFileRoute("/_authenticated/campaign-manager")({
   head: () => ({
     meta: [
-      { title: "Campaign Manager - CommsIQ" },
+      { title: "Campaign Manager - SMAIT" },
       {
         name: "description",
         content:
@@ -77,7 +77,7 @@ export const Route = createFileRoute("/_authenticated/campaign-manager")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:title", content: "Campaign Manager - CommsIQ" },
+      { property: "og:title", content: "Campaign Manager - SMAIT" },
       {
         property: "og:description",
         content: "Live status, progress and controls for every campaign on the platform.",

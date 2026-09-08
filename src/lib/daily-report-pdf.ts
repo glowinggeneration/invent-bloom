@@ -5,7 +5,7 @@ const compact = compactNumber;
 
 /**
  * Branded PDF for a stored platform report (daily or custom period).
- * Uses the same FKF cover, palette and chart kit as every other export.
+ * Uses the same SMAIT cover, palette and chart kit as every other export.
  */
 export async function downloadReportPdf(report: ReportRecord) {
   const pdf = new BrandPdf();
@@ -138,8 +138,8 @@ export async function downloadReportPdf(report: ReportRecord) {
   }
 
   pdf.note(
-    `Created ${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })} - CommsIQ.`,
+    `Created ${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })} - SMAIT.`,
   );
 
-  pdf.save(`${slugify(`fkf-${title}-${report.reportDate}`, "fkf-report")}.pdf`);
+  pdf.save(`${slugify(`smait-${title}-${report.reportDate}`, "smait-report")}.pdf`);
 }

@@ -1,4 +1,4 @@
-# Build Checklist — Persona_Voices
+# Build Checklist — SMAIT
 
 Extracted from `MASTER_RULES.md` §14. Run through this before any release; unchecked items that can't be resolved go into `EXCEPTION_REGISTER.md`, not silently skipped.
 

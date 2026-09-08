@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
+import { logAuditEventAsCaller } from "./platform/audit-log.server";
 
 export type CampaignReadiness = {
   generatedAt: string;
@@ -119,6 +120,16 @@ export const pauseAllCampaignExecution = createServerFn({ method: "POST" })
         updated_at: now,
       });
       if (stateError) throw new Error(stateError.message);
+      await logAuditEventAsCaller(context.supabase, {
+        action: "config.change",
+        resourceTable: "workspace_execution_state",
+        metadata: {
+          change: "emergency_pause",
+          reason: data.reason,
+          pausedActions: (actions ?? []).length,
+          listeningRules: (rules ?? []).length,
+        },
+      });
       return { pausedActions: (actions ?? []).length, listeningRules: (rules ?? []).length };
     },
   );
@@ -137,6 +148,11 @@ export const clearWorkspacePause = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     });
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "config.change",
+      resourceTable: "workspace_execution_state",
+      metadata: { change: "resume_execution" },
+    });
     return { cleared: true };
   });
 
@@ -215,6 +231,12 @@ export const saveMonitoringWatch = createServerFn({ method: "POST" })
       : db.from("monitoring_watchlist").insert(row).select("*").single();
     const { data: saved, error } = await query;
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "config.change",
+      resourceTable: "monitoring_watchlist",
+      resourceId: saved.id,
+      metadata: { kind: data.kind, label: data.label, created: !data.id },
+    });
     return mapWatch(saved);
   });
 
@@ -226,6 +248,11 @@ export const deleteMonitoringWatch = createServerFn({ method: "POST" })
     const db = await adminClient();
     const { error } = await db.from("monitoring_watchlist").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "data.delete",
+      resourceTable: "monitoring_watchlist",
+      resourceId: data.id,
+    });
     return { deleted: true };
   });
 
@@ -290,5 +317,11 @@ export const saveDecisionLogItem = createServerFn({ method: "POST" })
       : db.from("decision_log").insert(row).select("*").single();
     const { data: saved, error } = await query;
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "config.change",
+      resourceTable: "decision_log",
+      resourceId: saved.id,
+      metadata: { status: data.status, created: !data.id },
+    });
     return mapDecision(saved);
   });

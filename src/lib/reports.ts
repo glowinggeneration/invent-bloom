@@ -83,8 +83,8 @@ export type ReportConversation = {
   mostDiscussed: string | null;
   fastestGrowing: string | null;
   mostEngagedPlatform: string | null;
-  federation: ReportSentiment;
-  president: ReportSentiment;
+  org: ReportSentiment;
+  keyFigure: ReportSentiment;
 };
 
 /** One campaign execution, frozen as it stood at the end of the period. */
@@ -255,5 +255,5 @@ export function reportDateKey(at: Date = new Date()): string {
 }
 
 export function csvFilename(prefix: string, dateKey: string): string {
-  return `FKF_${prefix}_${dateKey}.csv`;
+  return `SMAIT_${prefix}_${dateKey}.csv`;
 }

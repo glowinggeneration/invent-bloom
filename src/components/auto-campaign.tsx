@@ -16,7 +16,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AccountIdentity } from "@/components/account-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
@@ -104,6 +104,11 @@ export function AutoCampaign() {
     (!activities.intercept || keywordList.length > 0);
   const scheduled = timing.spreadHours > 0;
 
+  // Stable across retries of the same submit attempt so a network retry or
+  // double-fire returns the original result instead of posting twice;
+  // rotated after a successful submit so the next attempt is a fresh intent.
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
+
   const runMutation = useMutation({
     mutationFn: async (opts: { now: boolean; startAt?: Date }) => {
       const spreadHours = opts.now ? 0 : timing.spreadHours;
@@ -113,6 +118,7 @@ export function AutoCampaign() {
         await publish({
           data: {
             mode: "tweet" as const,
+            idempotencyKey: idempotencyKeyRef.current,
             accountIds: personas.selected,
             tweetText: objective,
             commentText: "",
@@ -161,6 +167,7 @@ export function AutoCampaign() {
       return { posted, listening };
     },
     onSuccess: (res, opts) => {
+      idempotencyKeyRef.current = crypto.randomUUID();
       setError(null);
       toast.success(
         [

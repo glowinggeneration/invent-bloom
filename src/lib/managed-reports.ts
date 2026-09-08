@@ -1,6 +1,6 @@
 /**
- * Managed Reports — the documents the Persona_Voices team prepares by hand and hands
- * over to the federation.
+ * Managed Reports — the documents the SMAIT team prepares by hand and hands
+ * over to the organisation.
  *
  * These are deliberately kept apart from the automated daily record: an
  * automated report is a machine snapshot of what happened, a managed report is

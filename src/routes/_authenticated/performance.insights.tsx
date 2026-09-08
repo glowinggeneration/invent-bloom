@@ -13,7 +13,7 @@ import { getPerformance } from "@/lib/performance.functions";
 export const Route = createFileRoute("/_authenticated/performance/insights")({
   head: () => ({
     meta: [
-      { title: "Performance insights - CommsIQ" },
+      { title: "Performance insights - SMAIT" },
       {
         name: "description",
         content:

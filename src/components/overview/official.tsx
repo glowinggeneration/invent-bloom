@@ -121,7 +121,7 @@ function PostCard({ post }: { post: OfficialPost }) {
   );
 }
 
-/** Latest official post from each FKF/President account, with reviewed next actions. */
+/** Latest official post from each watched account, with reviewed next actions. */
 export function OfficialPosts() {
   const fetchPosts = useServerFn(getOfficialPosts);
   const { data, isLoading } = useQuery({
@@ -136,7 +136,7 @@ export function OfficialPosts() {
       <div>
         <SectionTitle>Latest official posts</SectionTitle>
         <p className="type-meta mt-1 text-muted-foreground">
-          The latest FKF and President posts, with a clear next step for each.
+          The latest posts from watched accounts, with a clear next step for each.
         </p>
       </div>
       {isLoading ? (
