@@ -64,6 +64,17 @@ export const getManagedReportLink = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1), download: z.boolean().default(false) }).parse(input),
   )
   .handler(async ({ data, context }): Promise<{ url: string; fileName: string }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { checkRateLimit, createSupabaseRateLimitStore, RATE_LIMIT_PRESETS } =
+      await import("./platform/rate-limit.server");
+    const rate = await checkRateLimit(createSupabaseRateLimitStore(supabaseAdmin as any), {
+      bucketKey: `export:user:${context.userId}`,
+      ...RATE_LIMIT_PRESETS.export,
+    });
+    if (!rate.allowed) {
+      throw new Error("Too many downloads. Wait a while before downloading again.");
+    }
+
     const { data: row, error } = await (context.supabase as any)
       .from("managed_reports")
       .select("id, file_name, storage_path")
@@ -72,7 +83,6 @@ export const getManagedReportLink = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!row) throw new Error("That report is no longer available.");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error: signError } = await supabaseAdmin.storage
       .from(BUCKET)
       .createSignedUrl(String(row.storage_path), 60 * 60, {

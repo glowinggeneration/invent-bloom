@@ -151,6 +151,17 @@ export const getReportCsv = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<{ filename: string; csv: string }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { checkRateLimit, createSupabaseRateLimitStore, RATE_LIMIT_PRESETS } =
+      await import("./platform/rate-limit.server");
+    const rate = await checkRateLimit(createSupabaseRateLimitStore(supabaseAdmin as any), {
+      bucketKey: `export:user:${context.userId}`,
+      ...RATE_LIMIT_PRESETS.export,
+    });
+    if (!rate.allowed) {
+      throw new Error("Too many exports. Wait a while before exporting again.");
+    }
+
     const { data: row, error } = await (context.supabase as any)
       .from("reports")
       .select("report_date, period_start, period_end")
