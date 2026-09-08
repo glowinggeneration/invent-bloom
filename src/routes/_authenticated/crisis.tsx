@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   Download,
   Eye,
+  Loader2,
   MessageSquareText,
   RadioTower,
   ShieldAlert,
@@ -335,6 +336,8 @@ function CrisisCommandPage() {
     </>
   );
 
+  const isPending = intel.isPending || mentions.isPending || authority.isPending;
+
   return (
     <WorkspaceShell title="Crisis Command" wide>
       <PageTitle
@@ -355,141 +358,152 @@ function CrisisCommandPage() {
         Crisis Command
       </PageTitle>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Priority narratives"
-          value={narratives.length}
-          icon={ShieldAlert}
-          tone={narratives.length ? "negative" : "positive"}
-        />
-        <StatCard
-          label="Breaking / fast rising"
-          value={breaking}
-          icon={RadioTower}
-          tone={breaking ? "negative" : "neutral"}
-        />
-        <StatCard
-          label="Negative share"
-          value={`${intel.data?.currentNegativeShare ?? 0}%`}
-          icon={AlertTriangle}
-          tone={(intel.data?.currentNegativeShare ?? 0) >= 35 ? "negative" : "neutral"}
-        />
-        <StatCard label="High-authority sources" value={highAuthority.length} icon={Eye} />
-      </div>
+      {isPending && (
+        <div className="mt-6 flex items-center gap-2 type-body text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> Loading current signals…
+        </div>
+      )}
 
-      <div className="mt-5">
-        <CommandGrid left={leftRail} right={rightRail}>
-          <Card className="min-w-0">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="type-section">Priority narratives</h2>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/mentions">
-                  All mentions <ArrowUpRight className="size-4" />
-                </Link>
-              </Button>
-            </div>
-            {narratives.length ? (
-              <div className="mt-3 divide-y divide-border">
-                {narratives.map((narrative) => (
-                  <div key={narrative.id} className="min-w-0 py-4 first:pt-0 last:pb-0">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="type-body truncate font-semibold">{narrative.label}</p>
-                        <p className="mt-1 type-meta text-muted-foreground">
-                          {narrative.importance} · {narrative.velocity} · {narrative.lifecycle} ·{" "}
-                          {narrative.mentions} mentions · {narrative.views.toLocaleString()}{" "}
-                          recorded views
-                        </p>
-                      </div>
-                      <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-1 text-[11px] font-semibold text-destructive">
-                        {narrative.negative} negative
-                      </span>
-                    </div>
-                    {narrative.origin ? (
-                      <p className="mt-2 type-meta text-muted-foreground">
-                        Likely monitored origin: {narrative.origin.label || narrative.origin.handle}
-                      </p>
-                    ) : null}
-                    {narrative.amplifiers.length ? (
-                      <p className="mt-1 type-meta text-muted-foreground">
-                        Amplified by{" "}
-                        {narrative.amplifiers
-                          .slice(0, 3)
-                          .map((amplifier) => `@${amplifier.handle}`)
-                          .join(", ")}
-                      </p>
-                    ) : null}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Button asChild variant="outline" size="sm">
-                        <Link to="/mentions" search={{ topic: narrative.query } as any}>
-                          Investigate
-                        </Link>
-                      </Button>
-                      <Button asChild size="sm">
-                        <Link
-                          to="/new"
-                          search={
-                            {
-                              text: `Prepare a factual response to the ${narrative.label} conversation.`,
-                            } as any
-                          }
-                        >
-                          Test response
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="No high-impact crisis narrative is currently detected"
-                description="Continue monitoring. Rising signals will appear here when the stored conversation crosses the intelligence thresholds."
-              />
-            )}
-          </Card>
+      {!isPending && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label="Priority narratives"
+              value={narratives.length}
+              icon={ShieldAlert}
+              tone={narratives.length ? "negative" : "positive"}
+            />
+            <StatCard
+              label="Breaking / fast rising"
+              value={breaking}
+              icon={RadioTower}
+              tone={breaking ? "negative" : "neutral"}
+            />
+            <StatCard
+              label="Negative share"
+              value={`${intel.data?.currentNegativeShare ?? 0}%`}
+              icon={AlertTriangle}
+              tone={(intel.data?.currentNegativeShare ?? 0) >= 35 ? "negative" : "neutral"}
+            />
+            <StatCard label="High-authority sources" value={highAuthority.length} icon={Eye} />
+          </div>
 
-          <Card className="min-w-0">
-            <h2 className="type-section">Top damaging mentions</h2>
-            {damaging.length ? (
-              <div className="mt-3 divide-y divide-border">
-                {damaging.map((mention) => (
-                  <div key={mention.id} className="min-w-0 py-3 first:pt-0 last:pb-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="type-body truncate font-semibold">
-                          {mention.authorName || `@${mention.authorHandle}`}
-                        </p>
-                        <p className="mt-1 line-clamp-2 type-meta text-muted-foreground">
-                          {mention.text}
-                        </p>
-                        <p className="mt-1 type-meta text-muted-foreground">
-                          {mention.viewCount.toLocaleString()} views ·{" "}
-                          {mention.likeCount.toLocaleString()} likes
-                          {mention.isVerified ? " · verified" : ""}
-                        </p>
+          <div className="mt-5">
+            <CommandGrid left={leftRail} right={rightRail}>
+              <Card className="min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="type-section">Priority narratives</h2>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to="/mentions">
+                      All mentions <ArrowUpRight className="size-4" />
+                    </Link>
+                  </Button>
+                </div>
+                {narratives.length ? (
+                  <div className="mt-3 divide-y divide-border">
+                    {narratives.map((narrative) => (
+                      <div key={narrative.id} className="min-w-0 py-4 first:pt-0 last:pb-0">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="type-body truncate font-semibold">{narrative.label}</p>
+                            <p className="mt-1 type-meta text-muted-foreground">
+                              {narrative.importance} · {narrative.velocity} · {narrative.lifecycle}{" "}
+                              · {narrative.mentions} mentions · {narrative.views.toLocaleString()}{" "}
+                              recorded views
+                            </p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-1 text-[11px] font-semibold text-destructive">
+                            {narrative.negative} negative
+                          </span>
+                        </div>
+                        {narrative.origin ? (
+                          <p className="mt-2 type-meta text-muted-foreground">
+                            Likely monitored origin:{" "}
+                            {narrative.origin.label || narrative.origin.handle}
+                          </p>
+                        ) : null}
+                        {narrative.amplifiers.length ? (
+                          <p className="mt-1 type-meta text-muted-foreground">
+                            Amplified by{" "}
+                            {narrative.amplifiers
+                              .slice(0, 3)
+                              .map((amplifier) => `@${amplifier.handle}`)
+                              .join(", ")}
+                          </p>
+                        ) : null}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button asChild variant="outline" size="sm">
+                            <Link to="/mentions" search={{ topic: narrative.query } as any}>
+                              Investigate
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm">
+                            <Link
+                              to="/new"
+                              search={
+                                {
+                                  text: `Prepare a factual response to the ${narrative.label} conversation.`,
+                                } as any
+                              }
+                            >
+                              Test response
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
-                      <a
-                        href={mention.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="shrink-0 text-primary"
-                        aria-label="Open original mention"
-                      >
-                        <ArrowUpRight className="size-4" />
-                      </a>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 type-meta text-muted-foreground">
-                No negative X mentions are available in the current feed.
-              </p>
-            )}
-          </Card>
-        </CommandGrid>
-      </div>
+                ) : (
+                  <EmptyState
+                    title="No high-impact crisis narrative is currently detected"
+                    description="Continue monitoring. Rising signals will appear here when the stored conversation crosses the intelligence thresholds."
+                  />
+                )}
+              </Card>
+
+              <Card className="min-w-0">
+                <h2 className="type-section">Top damaging mentions</h2>
+                {damaging.length ? (
+                  <div className="mt-3 divide-y divide-border">
+                    {damaging.map((mention) => (
+                      <div key={mention.id} className="min-w-0 py-3 first:pt-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="type-body truncate font-semibold">
+                              {mention.authorName || `@${mention.authorHandle}`}
+                            </p>
+                            <p className="mt-1 line-clamp-2 type-meta text-muted-foreground">
+                              {mention.text}
+                            </p>
+                            <p className="mt-1 type-meta text-muted-foreground">
+                              {mention.viewCount.toLocaleString()} views ·{" "}
+                              {mention.likeCount.toLocaleString()} likes
+                              {mention.isVerified ? " · verified" : ""}
+                            </p>
+                          </div>
+                          <a
+                            href={mention.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="shrink-0 text-primary"
+                            aria-label="Open original mention"
+                          >
+                            <ArrowUpRight className="size-4" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 type-meta text-muted-foreground">
+                    No negative X mentions are available in the current feed.
+                  </p>
+                )}
+              </Card>
+            </CommandGrid>
+          </div>
+        </>
+      )}
     </WorkspaceShell>
   );
 }
