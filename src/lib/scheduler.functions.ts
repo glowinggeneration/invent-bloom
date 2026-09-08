@@ -3,6 +3,7 @@ import { z } from "zod";
 import { assertAdmin } from "./access";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { spreadTimes } from "./spread";
+import { logAuditEventAsCaller } from "./platform/audit-log.server";
 
 export type ScheduledActionView = {
   id: string;
@@ -66,7 +67,14 @@ export const cancelScheduledActions = createServerFn({ method: "POST" })
     if (!data.all && data.id) query = query.eq("id", data.id);
     const { data: rows, error } = await query.select("id");
     if (error) throw new Error(error.message);
-    return { cancelled: (rows ?? []).length };
+    const cancelled = (rows ?? []).length;
+    await logAuditEventAsCaller(context.supabase, {
+      action: "action.cancel",
+      resourceTable: "scheduled_actions",
+      ...(data.id ? { resourceId: data.id } : {}),
+      metadata: { all: data.all, cancelled },
+    });
+    return { cancelled };
   });
 
 /** Manual drain, for when someone does not want to wait for the next tick. */
@@ -76,7 +84,16 @@ export const runScheduledNow = createServerFn({ method: "POST" })
     assertAdmin(context as any);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { runDueScheduledActions } = await import("./scheduler.server");
-    return runDueScheduledActions({ admin: supabaseAdmin as any, userId: context.userId });
+    const summary = await runDueScheduledActions({
+      admin: supabaseAdmin as any,
+      userId: context.userId,
+    });
+    await logAuditEventAsCaller(context.supabase, {
+      action: "action.run_now",
+      resourceTable: "scheduled_actions",
+      metadata: summary,
+    });
+    return summary;
   });
 
 /**
@@ -140,5 +157,10 @@ export const scheduleLinkQueue = createServerFn({ method: "POST" })
       run_at: times[i]!,
     }));
     await enqueueScheduledActions(supabaseAdmin as any, rows);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "action.schedule",
+      resourceTable: "scheduled_actions",
+      metadata: { tweetCount: data.tweetIds.length, kinds, spreadHours: data.spreadHours },
+    });
     return { scheduled: rows.length };
   });

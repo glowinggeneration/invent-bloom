@@ -9,6 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
+import { logAuditEventAsCaller } from "./platform/audit-log.server";
 import type { ManagedReport, ManagedReportStatus } from "./managed-reports";
 
 const BUCKET = "managed-reports";
@@ -108,6 +109,12 @@ export const updateManagedReport = createServerFn({ method: "POST" })
       .update(clean as any)
       .eq("id", id);
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "config.change",
+      resourceTable: "managed_reports",
+      resourceId: id,
+      metadata: clean,
+    });
     return { ok: true };
   });
 
@@ -126,5 +133,10 @@ export const deleteManagedReport = createServerFn({ method: "POST" })
       await supabaseAdmin.storage.from(BUCKET).remove([String(row.storage_path)]);
     const { error } = await supabaseAdmin.from("managed_reports").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "data.delete",
+      resourceTable: "managed_reports",
+      resourceId: data.id,
+    });
     return { ok: true };
   });

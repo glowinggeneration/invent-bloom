@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { assertAdmin } from "./access";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { logAuditEventAsCaller } from "./platform/audit-log.server";
 import { z } from "zod";
 import { DEFAULT_INTENSITY, DEFAULT_TONE, PUBLISH_TONES } from "./voice-controls";
 import { RISK_LEVEL_LABELS, transformText } from "./legal-risk";
@@ -150,6 +151,11 @@ export const syncAccountHandles = createServerFn({ method: "POST" })
           .eq("id", row.accountId);
       }
 
+      await logAuditEventAsCaller(context.supabase, {
+        action: "integration.change",
+        resourceTable: "x_accounts",
+        metadata: { checked: rows.length, renamed, suspended },
+      });
       return { checked: rows.length, renamed, suspended };
     },
   );
@@ -177,6 +183,11 @@ export const saveXAccount = createServerFn({ method: "POST" })
       .from("x_accounts")
       .upsert(row as never, { onConflict: "user_id,handle" });
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "integration.change",
+      resourceTable: "x_accounts",
+      metadata: { handle: data.handle },
+    });
     return { ok: true };
   });
 
@@ -218,6 +229,11 @@ export const loginAndAddXAccount = createServerFn({ method: "POST" })
       proxy: data.proxy,
     });
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "integration.change",
+      resourceTable: "x_accounts",
+      metadata: { handle: data.handle },
+    });
     return { ok: true, handle: data.handle };
   });
 
@@ -325,6 +341,11 @@ export const bulkLoginXAccounts = createServerFn({ method: "POST" })
       );
       await new Promise((r) => setTimeout(r, 1200 + Math.random() * 1500));
     }
+    await logAuditEventAsCaller(context.supabase, {
+      action: "integration.change",
+      resourceTable: "x_accounts",
+      metadata: { count: results.length, succeeded: results.filter((r) => r.ok).length },
+    });
     return { results };
   });
 
@@ -422,6 +443,11 @@ export const submitLoginCode = createServerFn({ method: "POST" })
     if (upErr) return { ok: false, error: upErr.message };
 
     await admin.from("x_login_attempts").delete().eq("id", attempt.id);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "integration.change",
+      resourceTable: "x_accounts",
+      metadata: { handle: attempt.handle },
+    });
     return { ok: true };
   });
 
@@ -447,6 +473,11 @@ export const deleteXAccount = createServerFn({ method: "POST" })
     assertAdmin(context as any);
     const { error } = await context.supabase.from("x_accounts").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "data.delete",
+      resourceTable: "x_accounts",
+      resourceId: data.id,
+    });
     return { ok: true };
   });
 
@@ -1137,6 +1168,11 @@ export const renameXAccounts = createServerFn({ method: "POST" })
         });
       }
 
+      await logAuditEventAsCaller(context.supabase, {
+        action: "integration.change",
+        resourceTable: "x_accounts",
+        metadata: { count: data.renames.length, pushToX: data.pushToX },
+      });
       return { results };
     },
   );

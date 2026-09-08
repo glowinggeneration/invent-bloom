@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
+import { logAuditEventAsCaller } from "./platform/audit-log.server";
 import type { AlwaysOnPlanView, AlwaysOnPostView } from "./always-on-view";
 import type { AlwaysOnFeed } from "./always-on-feed";
 
@@ -131,7 +132,13 @@ export const editAlwaysOnPost = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<AlwaysOnPostView> => {
     assertAdmin(context as any);
     const { updatePostContent } = await import("./always-on-planner.server");
-    return updatePostContent({ userId: context.userId, ...data });
+    const result = await updatePostContent({ userId: context.userId, ...data });
+    await logAuditEventAsCaller(context.supabase, {
+      action: "content.edit",
+      resourceTable: "persona_daily_posts",
+      resourceId: data.postId,
+    });
+    return result;
   });
 
 /** Marks a held post as approved for publishing after human review. */
@@ -141,7 +148,18 @@ export const approveAlwaysOnPost = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<AlwaysOnPostView> => {
     assertAdmin(context as any);
     const { setPostStatus } = await import("./always-on-planner.server");
-    return setPostStatus({ userId: context.userId, postId: data.postId, status: "scheduled" });
+    const result = await setPostStatus({
+      userId: context.userId,
+      postId: data.postId,
+      status: "scheduled",
+    });
+    await logAuditEventAsCaller(context.supabase, {
+      action: "content.status_change",
+      resourceTable: "persona_daily_posts",
+      resourceId: data.postId,
+      metadata: { status: "scheduled" },
+    });
+    return result;
   });
 
 /** Skips a planned post for the day. */
@@ -151,7 +169,18 @@ export const skipAlwaysOnPost = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<AlwaysOnPostView> => {
     assertAdmin(context as any);
     const { setPostStatus } = await import("./always-on-planner.server");
-    return setPostStatus({ userId: context.userId, postId: data.postId, status: "skipped" });
+    const result = await setPostStatus({
+      userId: context.userId,
+      postId: data.postId,
+      status: "skipped",
+    });
+    await logAuditEventAsCaller(context.supabase, {
+      action: "content.status_change",
+      resourceTable: "persona_daily_posts",
+      resourceId: data.postId,
+      metadata: { status: "skipped" },
+    });
+    return result;
   });
 
 /**
@@ -177,7 +206,14 @@ export const publishDueAlwaysOnPosts = createServerFn({ method: "POST" })
     }
 
     const { publishDue } = await import("./always-on-planner.server");
-    return publishDue({ userId: context.userId, postId: data.postId });
+    const result = await publishDue({ userId: context.userId, postId: data.postId });
+    await logAuditEventAsCaller(context.supabase, {
+      action: "ai.publish",
+      resourceTable: "persona_daily_posts",
+      resourceId: data.postId,
+      metadata: result,
+    });
+    return result;
   });
 
 /** Turns editorial planning on or off for one linked account. */
@@ -192,5 +228,11 @@ export const setAccountAlwaysOn = createServerFn({ method: "POST" })
       .update({ always_on: data.alwaysOn })
       .eq("id", data.accountId);
     if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "config.change",
+      resourceTable: "x_accounts",
+      resourceId: data.accountId,
+      metadata: { alwaysOn: data.alwaysOn },
+    });
     return { ok: true };
   });
