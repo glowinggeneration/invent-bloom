@@ -191,7 +191,7 @@ export function FollowCampaign() {
                 rows={2}
                 value={raw}
                 onChange={(e) => setRaw(e.target.value)}
-                placeholder="@FKFEnvoy, https://x.com/handle"
+                placeholder="@newsdesk, https://x.com/handle"
                 aria-label="Handles to follow"
                 className="resize-y"
               />

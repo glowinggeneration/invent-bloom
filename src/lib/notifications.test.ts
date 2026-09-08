@@ -7,7 +7,7 @@ import { buildNotifications, isCriticalMention, isImportantNegativeMention } fro
 function mention(overrides: Partial<BrandMention> = {}): BrandMention {
   return {
     id: "m1",
-    text: "FKF needs to answer this criticism.",
+    text: "The federation needs to answer this criticism.",
     authorHandle: "fan",
     authorName: "Football Fan",
     url: "https://x.com/fan/status/1",
@@ -58,13 +58,13 @@ function campaign(overrides: Partial<ManagedCampaign> = {}): ManagedCampaign {
 
 function officialPost(overrides: Partial<OfficialPost> = {}): OfficialPost {
   return {
-    handle: "Football_Kenya",
-    name: "Football Kenya Federation",
+    handle: "the_federation",
+    name: "The Federation",
     avatarUrl: null,
     followers: 100000,
     tweetId: "1234567890123456789",
     text: "A new grassroots football update.",
-    url: "https://x.com/Football_Kenya/status/1234567890123456789",
+    url: "https://x.com/the_federation/status/1234567890123456789",
     postedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     likes: 100,
     retweets: 20,

@@ -186,7 +186,7 @@ export function rankPersonaFit(
       const sheng = /\b(sasa|poa|mambo|bro|manze|fam)\b/i.test(post);
       const languageFit = sheng ? (/sheng|street|youth|hustle/i.test(p.profile) ? 1 : 0.5) : 0.75;
 
-      const campaign = /fkf|harambee|football|league|stadium|referee|ticket/i.test(post)
+      const campaign = /football|league|stadium|referee|ticket/i.test(post)
         ? /football|sport|fan|coach|community/i.test(`${p.segment} ${p.role} ${p.profile}`)
           ? 1
           : 0.5

@@ -103,7 +103,7 @@ const TOPICS: { id: string; label: string; query: string; re: RegExp }[] = [
     id: "league",
     label: "League, clubs & competitions",
     query: "league",
-    re: /league|club|premier|fkfpl|nsl|competition|cup|referee|officiat/i,
+    re: /league|club|premier|nsl|competition|cup|referee|officiat/i,
   },
   {
     id: "facilities",

@@ -5,7 +5,7 @@ const TOPIC_PATTERNS: Record<string, RegExp> = {
   leadership: /leadership|governance|election|office|chairman|chairperson|director|board/i,
   harambee: /harambee|starlets|stars|national team|qualif|afcon|match|fixture|coach/i,
   grassroots: /grassroots|youth|academy|school|u15|u17|talent|development|coach education/i,
-  league: /league|club|premier|fkfpl|nsl|competition|cup|referee|officiat/i,
+  league: /league|club|premier|nsl|competition|cup|referee|officiat/i,
   stadium: /stadium|facility|facilities|investment|infrastructure|pitch|training ground/i,
   integrity:
     /court|tribunal|corrupt|fraud|scandal|dispute|ban|suspend|protest|accountab|integrity/i,

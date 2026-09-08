@@ -9,7 +9,7 @@ import {
 
 describe("matchesMentionTopic", () => {
   it("uses the known Overview narrative patterns", () => {
-    expect(matchesMentionTopic("Hussein Mohammed speaks about FKF governance", "leadership")).toBe(
+    expect(matchesMentionTopic("The chairperson speaks about board governance", "leadership")).toBe(
       true,
     );
     expect(
@@ -37,17 +37,17 @@ describe("matchesMentionTopic", () => {
 describe("mentionNoiseKey", () => {
   it("collapses links, handles, hashtags and repost boilerplate", () => {
     const first = mentionNoiseKey(
-      "RT @one: FKF launches youth programme #FootballKE https://t.co/abc",
+      "RT @one: The federation launches youth programme #FootballKE https://t.co/abc",
     );
     const second = mentionNoiseKey(
-      "via @two FKF launches youth programme #KenyaFootball https://example.com/story",
+      "via @two The federation launches youth programme #KenyaFootball https://example.com/story",
     );
     expect(first).toBe(second);
   });
 
   it("keeps materially different wording separate", () => {
-    expect(mentionNoiseKey("FKF launches youth programme")).not.toBe(
-      mentionNoiseKey("FKF suspends youth programme"),
+    expect(mentionNoiseKey("The federation launches youth programme")).not.toBe(
+      mentionNoiseKey("The federation suspends youth programme"),
     );
   });
 });

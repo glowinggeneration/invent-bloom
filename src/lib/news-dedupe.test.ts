@@ -103,8 +103,8 @@ describe("isSameStory", () => {
   });
 
   it("only matches short headlines exactly", () => {
-    expect(isSameStory("FKF statement", "FKF statement")).toBe(true);
-    expect(isSameStory("FKF statement", "FKF response")).toBe(false);
+    expect(isSameStory("Federation statement", "Federation statement")).toBe(true);
+    expect(isSameStory("Federation statement", "Federation response")).toBe(false);
   });
 
   it("strips publisher suffixes when normalizing", () => {
@@ -140,7 +140,7 @@ describe("dedupeByStory", () => {
     const { kept, duplicates } = dedupeByStory([
       item("Harambee Stars name squad for AFCON qualifier", null, ""),
       item("Tusker FC sign Ugandan striker on two-year deal", null, ""),
-      item("FKF President addresses league sponsorship talks", null, ""),
+      item("Federation chairperson addresses league sponsorship talks", null, ""),
     ]);
 
     expect(duplicates).toBe(0);
