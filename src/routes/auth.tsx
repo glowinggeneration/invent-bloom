@@ -50,13 +50,16 @@ const SOFTWARE_APPLICATION_JSON_LD = JSON.stringify({
 function AuthPage() {
   const navigate = useNavigate();
   const { next } = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   function proceed() {
     if (next) window.location.replace(next);
@@ -115,6 +118,34 @@ function AuthPage() {
       }
     }
     proceed();
+  }
+
+  async function onSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const cleanEmail = email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: { data: { full_name: fullName.trim() } },
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(
+        error.message.toLowerCase().includes("already registered") ||
+          error.message.toLowerCase().includes("already exists")
+          ? "An account with that email already exists. Try signing in instead."
+          : "Could not create your account. Check your details and try again.",
+      );
+      return;
+    }
+    window.localStorage.setItem("smait-email", cleanEmail);
+    if (data.session) {
+      proceed();
+      return;
+    }
+    // Email confirmation is required before a session exists.
+    setAwaitingConfirmation(true);
   }
 
   async function onVerifyMfa(e: React.FormEvent) {
@@ -201,6 +232,99 @@ function AuthPage() {
               Use a different account
             </button>
           </form>
+        ) : awaitingConfirmation ? (
+          <div className="mt-8 space-y-4 text-center">
+            <p className="type-meta text-foreground">
+              We sent a confirmation link to <span className="font-medium">{email}</span>.
+            </p>
+            <p className="type-meta text-muted-foreground">
+              Open it to finish creating your workspace, then come back and sign in.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setAwaitingConfirmation(false);
+                setMode("signin");
+                setPassword("");
+              }}
+              className="type-meta font-medium text-positive hover:underline"
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : mode === "signup" ? (
+          <form onSubmit={onSignUp} className="mt-8 space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="full-name">Full name</Label>
+              <Input
+                id="full-name"
+                autoComplete="name"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Jane Doe"
+                className="h-11"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="signup-email">Email address</Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="signup-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@yourorganisation.org"
+                  className="h-11 pl-9"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="signup-password">Password</Label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="signup-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 px-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+              <p className="type-meta text-muted-foreground">At least 8 characters.</p>
+            </div>
+
+            <Button type="submit" className="h-11 w-full" disabled={busy}>
+              {busy ? "Creating your workspace…" : "Create your workspace"}
+            </Button>
+
+            <p className="text-center type-meta text-muted-foreground">
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={() => setMode("signin")}
+                className="font-medium text-positive hover:underline"
+              >
+                Sign in
+              </button>
+            </p>
+          </form>
         ) : (
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
             <div className="space-y-1">
@@ -267,6 +391,17 @@ function AuthPage() {
             <Button type="submit" className="h-11 w-full" disabled={busy}>
               {busy ? "Signing in…" : "Sign in"}
             </Button>
+
+            <p className="text-center type-meta text-muted-foreground">
+              New here?{" "}
+              <button
+                type="button"
+                onClick={() => setMode("signup")}
+                className="font-medium text-positive hover:underline"
+              >
+                Create your workspace
+              </button>
+            </p>
           </form>
         )}
       </div>
