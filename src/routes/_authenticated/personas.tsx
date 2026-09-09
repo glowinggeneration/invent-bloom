@@ -551,6 +551,7 @@ function PersonaDetails({
             <img
               src={image.avatarUrl}
               alt={`Abstract artwork representing ${persona.name}`}
+              loading="lazy"
               className="size-18 rounded-full border-4 border-background object-cover shadow-sm"
             />
           ) : (

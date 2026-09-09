@@ -88,6 +88,7 @@ function ReportRow({ report, isAdmin }: { report: ManagedReport; isAdmin: boolea
           <img
             src={report.coverImage}
             alt=""
+            loading="lazy"
             className="hidden size-14 shrink-0 rounded-lg object-cover sm:block"
           />
         ) : (

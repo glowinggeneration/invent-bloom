@@ -1,4 +1,3 @@
-import { jsPDF } from "jspdf";
 import type { Analysis } from "@/lib/analysis";
 import { METRIC_LABELS } from "@/lib/analysis";
 import {
@@ -21,7 +20,8 @@ const M = 44; // page margin
 const W = 595.28; // A4 width (pt)
 const H = 841.89;
 
-export function buildAnalysisPdf(analysis: Analysis, title: string) {
+export async function buildAnalysisPdf(analysis: Analysis, title: string) {
+  const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   let y = M;
 
@@ -281,8 +281,8 @@ export function buildAnalysisPdf(analysis: Analysis, title: string) {
   return doc;
 }
 
-export function downloadAnalysisPdf(analysis: Analysis, title: string) {
-  const doc = buildAnalysisPdf(analysis, title);
+export async function downloadAnalysisPdf(analysis: Analysis, title: string) {
+  const doc = await buildAnalysisPdf(analysis, title);
   const slug = (title || "message-test")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")

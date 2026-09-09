@@ -109,7 +109,12 @@ export function ProfileCard({
                       key={f.name}
                       className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-muted py-1 pl-1 pr-3"
                     >
-                      <img src={f.avatarUrl} className="size-5 rounded-full object-cover" alt="" />
+                      <img
+                        src={f.avatarUrl}
+                        loading="lazy"
+                        className="size-5 rounded-full object-cover"
+                        alt=""
+                      />
                       <span className="text-xs font-medium">{f.name}</span>
                     </div>
                   ))}

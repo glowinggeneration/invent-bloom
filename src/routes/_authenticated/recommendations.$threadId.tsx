@@ -274,8 +274,9 @@ function RecommendationsPage() {
               variant="outline"
               className="gap-2 rounded-xl"
               onClick={() => {
-                downloadAnalysisPdf(analysis, data?.thread.title ?? "Message test");
-                toast.success("PDF report downloaded.");
+                void downloadAnalysisPdf(analysis, data?.thread.title ?? "Message test").then(() =>
+                  toast.success("PDF report downloaded."),
+                );
               }}
             >
               <FileDown className="size-4" /> PDF

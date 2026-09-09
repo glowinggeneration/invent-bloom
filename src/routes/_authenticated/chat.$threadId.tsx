@@ -340,8 +340,9 @@ function ThreadPage() {
                       size="sm"
                       className="gap-2 rounded-xl"
                       onClick={() => {
-                        downloadAnalysisPdf(latestAnalysis, thread.title);
-                        toast.success("PDF report downloaded.");
+                        void downloadAnalysisPdf(latestAnalysis, thread.title).then(() =>
+                          toast.success("PDF report downloaded."),
+                        );
                       }}
                     >
                       <FileDown className="size-4" /> PDF
@@ -489,6 +490,7 @@ function ThreadPage() {
                         <img
                           src={message.imageUrl}
                           alt="Tested creative"
+                          loading="lazy"
                           className="mb-2 max-h-56 w-full rounded-xl object-cover"
                         />
                       )}

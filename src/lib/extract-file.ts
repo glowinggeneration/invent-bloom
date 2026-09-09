@@ -1,5 +1,3 @@
-import * as XLSX from "xlsx";
-
 export type ExtractedFile = {
   name: string;
   kind: "image" | "document";
@@ -56,6 +54,7 @@ async function extractDocx(file: File): Promise<string> {
 }
 
 async function extractSheet(file: File): Promise<string> {
+  const XLSX = await import("xlsx");
   const book = XLSX.read(await readAsArrayBuffer(file), { type: "array" });
   return book.SheetNames.map((name) => {
     const sheet = book.Sheets[name];

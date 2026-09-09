@@ -1,5 +1,3 @@
-import { BRAND, BrandPdf } from "./pdf-brand";
-
 export type CommandReportSection = {
   heading: string;
   lines: string[];
@@ -19,6 +17,7 @@ export async function downloadCommandReportPdf(input: {
   generatedAt?: string | null;
   sections: CommandReportSection[];
 }) {
+  const { BRAND, BrandPdf } = await import("./pdf-brand");
   const pdf = new BrandPdf();
 
   await pdf.cover({

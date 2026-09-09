@@ -807,7 +807,12 @@ export function ReplyCampaign() {
                               playsInline
                             />
                           ) : (
-                            <img src={m.url} alt={m.name} className="h-16 w-full object-cover" />
+                            <img
+                              src={m.url}
+                              alt={m.name}
+                              loading="lazy"
+                              className="h-16 w-full object-cover"
+                            />
                           )}
                           <button
                             type="button"
@@ -1260,6 +1265,7 @@ export function ReplyCampaign() {
                                       key={m.url}
                                       src={m.url}
                                       alt={m.name}
+                                      loading="lazy"
                                       className="h-20 w-full rounded-lg object-cover"
                                     />
                                   ),

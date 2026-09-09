@@ -1,4 +1,3 @@
-import { BRAND, BrandPdf, compactNumber, slugify } from "./pdf-brand";
 import type { BrandHealthSummary } from "./brand-health";
 import type { OverviewData } from "./overview";
 import type { OverviewIntelligence } from "./overview-intelligence.functions";
@@ -22,8 +21,6 @@ export type CustomReportInput = {
   sections: CustomReportSections;
 };
 
-const compact = compactNumber;
-
 function dayLabel(date: string) {
   const parsed = new Date(date);
   return Number.isNaN(parsed.getTime())
@@ -33,6 +30,8 @@ function dayLabel(date: string) {
 
 /** Builds the branded, chart-led PDF used by the custom report builder. */
 export async function downloadCustomReportPdf(input: CustomReportInput) {
+  const { BRAND, BrandPdf, compactNumber, slugify } = await import("./pdf-brand");
+  const compact = compactNumber;
   const pdf = new BrandPdf();
 
   await pdf.cover({

@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { FileDown, Megaphone, Sparkles, TestTube2 } from "lucide-react";
-import { BRAND, BrandPdf } from "@/lib/pdf-brand";
 import { Button } from "@/components/ui/button";
 import { useOverviewIntelligence } from "@/components/overview-intelligence";
 import type { OverviewIntelligence } from "@/lib/overview-intelligence.functions";
@@ -85,6 +84,7 @@ async function generateOverviewPdf(
   rangeLabel: string,
   intel?: OverviewIntelligence,
 ) {
+  const { BRAND, BrandPdf } = await import("@/lib/pdf-brand");
   const pdf = new BrandPdf();
   await pdf.cover({
     title: "Brand Health & Communications Intelligence Report",
