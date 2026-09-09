@@ -66,11 +66,16 @@ function toPostView(row: any): AlwaysOnPostView {
   };
 }
 
-async function readPlans(admin: Admin, userId: string, date: string): Promise<AlwaysOnPlanView[]> {
+async function readPlans(
+  admin: Admin,
+  userId: string,
+  workspaceId: string,
+  date: string,
+): Promise<AlwaysOnPlanView[]> {
   const { data: plans, error } = await admin
     .from("persona_daily_plans")
     .select("*")
-
+    .eq("workspace_id", workspaceId)
     .eq("plan_date", date);
   if (error) throw new Error(error.message);
   if (!plans || plans.length === 0) return [];
@@ -78,14 +83,17 @@ async function readPlans(admin: Admin, userId: string, date: string): Promise<Al
   const { data: posts } = await admin
     .from("persona_daily_posts")
     .select("*")
-
+    .eq("workspace_id", workspaceId)
     .in(
       "plan_id",
       plans.map((p: any) => p.id),
     )
     .order("scheduled_at");
 
-  const { data: accounts } = await admin.from("x_accounts").select("id, handle, display_name");
+  const { data: accounts } = await admin
+    .from("x_accounts")
+    .select("id, handle, display_name")
+    .eq("workspace_id", workspaceId);
   const accountMap = new Map((accounts ?? []).map((a: any) => [a.id, a]));
 
   return plans
@@ -111,19 +119,30 @@ async function readPlans(admin: Admin, userId: string, date: string): Promise<Al
 
 export async function loadPlans(input: {
   userId: string;
+  workspaceId: string;
   date?: string;
 }): Promise<AlwaysOnPlanView[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return readPlans(supabaseAdmin as Admin, input.userId, input.date ?? localDate());
+  return readPlans(
+    supabaseAdmin as Admin,
+    input.userId,
+    input.workspaceId,
+    input.date ?? localDate(),
+  );
 }
 
 /** Recent published history for a persona, used for the cooldown checks. */
-async function loadRecent(admin: Admin, userId: string, accountId: string): Promise<RecentPost[]> {
+async function loadRecent(
+  admin: Admin,
+  userId: string,
+  workspaceId: string,
+  accountId: string,
+): Promise<RecentPost[]> {
   const since = new Date(Date.now() - 21 * 24 * 3_600_000).toISOString();
   const { data } = await admin
     .from("persona_daily_posts")
     .select("content, topic, category, image_id, published_at")
-
+    .eq("workspace_id", workspaceId)
     .eq("account_id", accountId)
     .eq("status", "published")
     .gte("published_at", since)
@@ -148,6 +167,7 @@ async function loadRecent(admin: Admin, userId: string, accountId: string): Prom
  */
 export async function runDailyPlanning(input: {
   userId: string;
+  workspaceId: string;
   date?: string;
   accountIds?: string[];
   campaignBrief?: string;
@@ -161,7 +181,7 @@ export async function runDailyPlanning(input: {
   let query = admin
     .from("x_accounts")
     .select("id, handle, display_name, persona_label, always_on, is_active")
-
+    .eq("workspace_id", input.workspaceId)
     .eq("is_active", true)
     .eq("suspended", false)
     .eq("always_on", true);
@@ -172,7 +192,7 @@ export async function runDailyPlanning(input: {
     const { recordSkippedAccounts } = await import("./skip-audit.server");
     await recordSkippedAccounts(
       admin,
-      { userId: input.userId, source: "auto", runRef: date },
+      { userId: input.userId, workspaceId: input.workspaceId, source: "auto", runRef: date },
       input.accountIds?.length ? input.accountIds : undefined,
     );
   }
@@ -188,6 +208,7 @@ export async function runDailyPlanning(input: {
     const { data: planned } = await admin
       .from("persona_daily_plans")
       .select("account_id")
+      .eq("workspace_id", input.workspaceId)
       .eq("plan_date", date);
     const done = new Set((planned ?? []).map((p: any) => String(p.account_id)));
     pending = pending.filter((a) => !done.has(String(a.id)));
@@ -221,7 +242,7 @@ export async function runDailyPlanning(input: {
       isWeekend: isWeekend(date),
     });
 
-    const recent = await loadRecent(admin, input.userId, account.id);
+    const recent = await loadRecent(admin, input.userId, input.workspaceId, account.id);
     const generated = await generatePlanContent({
       persona,
       plan,
@@ -238,7 +259,7 @@ export async function runDailyPlanning(input: {
     const { data: existing } = await admin
       .from("persona_daily_plans")
       .select("id")
-
+      .eq("workspace_id", input.workspaceId)
       .eq("account_id", account.id)
       .eq("plan_date", date)
       .maybeSingle();
@@ -255,6 +276,7 @@ export async function runDailyPlanning(input: {
       .from("persona_daily_plans")
       .insert({
         user_id: input.userId,
+        workspace_id: input.workspaceId,
         account_id: account.id,
         persona_id: persona.id,
         persona_name: persona.name,
@@ -271,6 +293,7 @@ export async function runDailyPlanning(input: {
 
     const rows = generated.map((g) => ({
       user_id: input.userId,
+      workspace_id: input.workspaceId,
       plan_id: planRow!.id,
       account_id: account.id,
       persona_id: persona.id,
@@ -309,12 +332,13 @@ export async function runDailyPlanning(input: {
     }
   }
 
-  return readPlans(admin, input.userId, date);
+  return readPlans(admin, input.userId, input.workspaceId, date);
 }
 
 /** Applies an admin edit and re-runs the deterministic legal check on it. */
 export async function updatePostContent(input: {
   userId: string;
+  workspaceId: string;
   postId: string;
   content: string;
 }): Promise<AlwaysOnPostView> {
@@ -337,7 +361,7 @@ export async function updatePostContent(input: {
       },
     })
     .eq("id", input.postId)
-
+    .eq("workspace_id", input.workspaceId)
     .select("*")
     .single();
   if (error) throw new Error(error.message);
@@ -346,6 +370,7 @@ export async function updatePostContent(input: {
 
 export async function setPostStatus(input: {
   userId: string;
+  workspaceId: string;
   postId: string;
   status: "scheduled" | "skipped";
 }): Promise<AlwaysOnPostView> {
@@ -358,7 +383,7 @@ export async function setPostStatus(input: {
       review_notes: input.status === "scheduled" ? "Approved by reviewer." : "Skipped for today.",
     })
     .eq("id", input.postId)
-
+    .eq("workspace_id", input.workspaceId)
     .neq("status", "published")
     .select("*")
     .single();
@@ -369,6 +394,7 @@ export async function setPostStatus(input: {
 /** Publishes every scheduled post whose time has come (or one specific post). */
 export async function publishDue(input: {
   userId: string;
+  workspaceId: string;
   postId?: string;
   now?: Date;
 }): Promise<{ published: number; failed: number }> {
@@ -380,7 +406,7 @@ export async function publishDue(input: {
   let query = admin
     .from("persona_daily_posts")
     .select("*")
-
+    .eq("workspace_id", input.workspaceId)
     .eq("status", "scheduled")
     .order("scheduled_at");
   query = input.postId
@@ -392,7 +418,8 @@ export async function publishDue(input: {
 
   const { data: accounts } = await admin
     .from("x_accounts")
-    .select("id, handle, auth_token, proxy, suspended, is_active");
+    .select("id, handle, auth_token, proxy, suspended, is_active")
+    .eq("workspace_id", input.workspaceId);
   const accountMap = new Map((accounts ?? []).map((a: any) => [a.id, a]));
 
   let published = 0;

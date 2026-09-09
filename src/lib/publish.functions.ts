@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { assertAdmin } from "./access";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { logAuditEventAsCaller } from "./platform/audit-log.server";
+import { resolveWorkspaceId } from "./workspace.server";
 import { z } from "zod";
 import { DEFAULT_INTENSITY, DEFAULT_TONE, PUBLISH_TONES } from "./voice-controls";
 import { RISK_LEVEL_LABELS, transformText } from "./legal-risk";
@@ -28,18 +29,22 @@ export const listXAccounts = createServerFn({ method: "POST" })
       .parse(data ?? {}),
   )
   .handler(async ({ context, data: input }): Promise<XAccount[]> => {
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin: pool } = await import("@/integrations/supabase/client.server");
     const { data, error } = await (pool as any)
       .from("x_accounts")
       .select(
         "id, handle, display_name, persona_label, bio, is_verified, is_active, always_on, avatar_url, background_url, avatar_color, avatar_credit_name, avatar_credit_url, suspended, previous_handle, handle_synced_at",
       )
-
+      .eq("workspace_id", workspaceId)
       .order("handle");
     if (error) throw new Error(error.message);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: tokens } = await supabaseAdmin.from("x_accounts").select("id, auth_token");
-    const tokenMap = new Map((tokens ?? []).map((t) => [t.id, Boolean(t.auth_token)]));
+    const { data: tokens } = await (supabaseAdmin as any)
+      .from("x_accounts")
+      .select("id, auth_token")
+      .eq("workspace_id", workspaceId);
+    const tokenMap = new Map((tokens ?? []).map((t: any) => [t.id, Boolean(t.auth_token)]));
 
     // Last activity = most recent publish action or campaign reply per account.
     const lastActivity = new Map<string, string>();
@@ -101,13 +106,14 @@ export const syncAccountHandles = createServerFn({ method: "POST" })
   .handler(
     async ({ context }): Promise<{ checked: number; renamed: number; suspended: number }> => {
       assertAdmin(context as any);
+      const workspaceId = await resolveWorkspaceId(context);
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { syncHandles } = await import("./handle-sync.server");
 
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await (supabaseAdmin as any)
         .from("x_accounts")
         .select("id, handle, display_name, persona_label")
-
+        .eq("workspace_id", workspaceId)
         .order("handle");
       if (error) throw new Error(error.message);
 
@@ -171,9 +177,11 @@ export const saveXAccount = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => accountInputSchema.parse(input))
   .handler(async ({ data, context }) => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const row: Record<string, unknown> = {
       user_id: context.userId,
+      workspace_id: workspaceId,
       handle: data.handle,
       display_name: data.displayName ?? "",
       persona_label: data.personaLabel ?? "",
@@ -209,6 +217,7 @@ export const loginAndAddXAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { loginAccount } = await import("./twitterapi.server");
     const login = await loginAccount({
       userName: data.userName,
@@ -220,8 +229,9 @@ export const loginAndAddXAccount = createServerFn({ method: "POST" })
     if ("error" in login) throw new Error(login.error);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("x_accounts").insert({
+    const { error } = await (supabaseAdmin as any).from("x_accounts").insert({
       user_id: context.userId,
+      workspace_id: workspaceId,
       handle: data.handle,
       display_name: data.displayName || login.handle,
       persona_label: data.personaLabel,
@@ -261,6 +271,7 @@ export const bulkLoginXAccounts = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { loginAccount } = await import("./twitterapi.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
@@ -296,6 +307,7 @@ export const bulkLoginXAccounts = createServerFn({ method: "POST" })
         await admin.from("x_login_attempts").upsert(
           {
             user_id: context.userId,
+            workspace_id: workspaceId,
             handle: acc.handle,
             email: acc.email,
             password: acc.password,
@@ -318,6 +330,7 @@ export const bulkLoginXAccounts = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.from("x_accounts").upsert(
         {
           user_id: context.userId,
+          workspace_id: workspaceId,
           handle: acc.handle,
           display_name: login.handle || acc.handle,
           persona_label: acc.personaLabel,
@@ -331,8 +344,8 @@ export const bulkLoginXAccounts = createServerFn({ method: "POST" })
         await admin
           .from("x_login_attempts")
           .delete()
-
-          .eq("handle", acc.handle);
+          .eq("handle", acc.handle)
+          .eq("workspace_id", workspaceId);
       }
       results.push(
         error
@@ -362,11 +375,12 @@ export const listPendingLogins = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PendingLogin[]> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await (supabaseAdmin as any)
       .from("x_login_attempts")
       .select("id, handle, persona_label, error, created_at")
-
+      .eq("workspace_id", workspaceId)
       .eq("status", "pending_code")
       .order("created_at");
     if (error) throw new Error(error.message);
@@ -392,6 +406,7 @@ export const submitLoginCode = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ ok: boolean; error?: string }> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
 
@@ -409,7 +424,7 @@ export const submitLoginCode = createServerFn({ method: "POST" })
       .from("x_login_attempts")
       .select("id, handle, email, password, proxy, persona_label")
       .eq("id", data.id)
-
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (readErr) throw new Error(readErr.message);
     if (!attempt) throw new Error("That pending login no longer exists.");
@@ -431,6 +446,7 @@ export const submitLoginCode = createServerFn({ method: "POST" })
     const { error: upErr } = await supabaseAdmin.from("x_accounts").upsert(
       {
         user_id: context.userId,
+        workspace_id: workspaceId,
         handle: attempt.handle,
         display_name: attempt.handle,
         persona_label: attempt.persona_label ?? "",
@@ -457,11 +473,13 @@ export const dismissPendingLogin = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await (supabaseAdmin as any)
       .from("x_login_attempts")
       .delete()
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -567,13 +585,15 @@ export const runPublish = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => publishInputSchema.parse(input))
   .handler(async ({ data, context }): Promise<PublishJobResult> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const workspaceId = await resolveWorkspaceId(context);
 
     const operation = async (): Promise<PublishJobResult> => {
       const twitter = await import("./twitterapi.server");
 
-      const { data: accounts, error: accErr } = await supabaseAdmin
+      const { data: accounts, error: accErr } = await (supabaseAdmin as any)
         .from("x_accounts")
         .select("id, handle, auth_token, proxy")
+        .eq("workspace_id", workspaceId)
         .eq("suspended", false)
         .eq("is_active", true)
         .in("id", data.accountIds);
@@ -582,7 +602,7 @@ export const runPublish = createServerFn({ method: "POST" })
         const { recordSkippedAccounts } = await import("./skip-audit.server");
         await recordSkippedAccounts(
           supabaseAdmin as any,
-          { userId: context.userId, source: "post" },
+          { userId: context.userId, workspaceId, source: "post" },
           data.accountIds,
         );
       }
@@ -591,7 +611,7 @@ export const runPublish = createServerFn({ method: "POST" })
       // Standing rules apply to EVERY linked account, not just the ones posting.
       const { loadActiveAccounts, loadWatchTargets, loadPeerLatestTargets } =
         await import("./engagement.server");
-      const allAccounts = await loadActiveAccounts(supabaseAdmin, context.userId);
+      const allAccounts = await loadActiveAccounts(supabaseAdmin, context.userId, workspaceId);
       const engagers = allAccounts.length > 0 ? allAccounts : (accounts as any[]);
 
       const targetId = data.targetTweetUrl ? twitter.extractTweetId(data.targetTweetUrl) : null;
@@ -599,10 +619,11 @@ export const runPublish = createServerFn({ method: "POST" })
         throw new Error("Could not read a tweet ID from that URL.");
       }
 
-      const { data: job, error: jobErr } = await supabaseAdmin
+      const { data: job, error: jobErr } = await (supabaseAdmin as any)
         .from("publish_jobs")
         .insert({
           user_id: context.userId,
+          workspace_id: workspaceId,
           mode: data.mode,
           tweet_text: data.tweetText,
           comment_text: data.commentText,
@@ -636,7 +657,7 @@ export const runPublish = createServerFn({ method: "POST" })
       } else if (data.varyByPersona) {
         const { buildPersonaVariations } = await import("./variations.server");
         const built = await buildPersonaVariations({
-          accounts: accounts.map((a) => ({ id: a.id, handle: a.handle })),
+          accounts: accounts.map((a: any) => ({ id: a.id, handle: a.handle })),
           tweetText: data.tweetText,
           commentText: data.commentText,
           objectiveMode: data.objectiveMode,
@@ -778,11 +799,12 @@ export const runPublish = createServerFn({ method: "POST" })
                 reference: unit.acc.handle,
               });
               const heldError = `Held by legal review (${RISK_LEVEL_LABELS[verdict.riskLevel].toLowerCase()}): ${verdict.escalationNote || verdict.findings[0]?.reason || "wording needs senior approval"}`;
-              const { data: blocked } = await supabaseAdmin
+              const { data: blocked } = await (supabaseAdmin as any)
                 .from("publish_actions")
                 .insert({
                   job_id: job.id,
                   user_id: context.userId,
+                  workspace_id: workspaceId,
                   account_id: unit.acc.id,
                   action_type: unit.type,
                   content: unit.content,
@@ -808,11 +830,12 @@ export const runPublish = createServerFn({ method: "POST" })
           }
 
           const runAt = times[i]!;
-          const { data: pendingRow } = await supabaseAdmin
+          const { data: pendingRow } = await (supabaseAdmin as any)
             .from("publish_actions")
             .insert({
               job_id: job.id,
               user_id: context.userId,
+              workspace_id: workspaceId,
               account_id: unit.acc.id,
               action_type: unit.type,
               content: unit.content,
@@ -826,6 +849,7 @@ export const runPublish = createServerFn({ method: "POST" })
           await enqueueScheduledActions(supabaseAdmin as any, [
             {
               user_id: context.userId,
+              workspace_id: workspaceId,
               source: "publish",
               job_id: job.id,
               publish_action_id: pendingRow?.id ?? null,
@@ -887,7 +911,11 @@ export const runPublish = createServerFn({ method: "POST" })
           }
         }
 
-        await supabaseAdmin.from("publish_jobs").update({ status: "scheduled" }).eq("id", job.id);
+        await (supabaseAdmin as any)
+          .from("publish_jobs")
+          .update({ status: "scheduled" })
+          .eq("id", job.id)
+          .eq("workspace_id", workspaceId);
 
         return {
           jobId: job.id,
@@ -940,8 +968,9 @@ export const uploadPublishMedia = createServerFn({ method: "POST" })
     const bytes = Buffer.from(match[2] ?? "", "base64");
     if (bytes.byteLength > 15_000_000) throw new Error("File is larger than 15MB.");
 
+    const workspaceId = await resolveWorkspaceId(context);
     const ext = data.fileName.split(".").pop()?.slice(0, 8) || mime.split("/")[1] || "bin";
-    const path = `publish/${context.userId}/${crypto.randomUUID()}.${ext}`;
+    const path = `publish/${workspaceId}/${context.userId}/${crypto.randomUUID()}.${ext}`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.storage
       .from("message-uploads")
@@ -975,13 +1004,14 @@ export const previewPersonaVariations = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    void context;
-    // Accounts live in the shared workspace, so preview reads them with the
+    const workspaceId = await resolveWorkspaceId(context);
+    // Accounts live in the caller's workspace, so preview reads them with the
     // service client (same live filters as publishing) instead of per-user RLS.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: accounts, error } = await supabaseAdmin
+    const { data: accounts, error } = await (supabaseAdmin as any)
       .from("x_accounts")
       .select("id, handle")
+      .eq("workspace_id", workspaceId)
       .eq("suspended", false)
       .eq("is_active", true)
       .in("id", data.accountIds)
@@ -991,7 +1021,7 @@ export const previewPersonaVariations = createServerFn({ method: "POST" })
 
     const { buildPersonaVariations } = await import("./variations.server");
     return buildPersonaVariations({
-      accounts: accounts.map((a) => ({ id: a.id, handle: a.handle })),
+      accounts: accounts.map((a: any) => ({ id: a.id, handle: a.handle })),
       tweetText: data.tweetText,
       commentText: data.commentText,
       objectiveMode: data.objectiveMode,
@@ -1071,19 +1101,20 @@ export const renameXAccounts = createServerFn({ method: "POST" })
       }[];
     }> => {
       assertAdmin(context as any);
+      const workspaceId = await resolveWorkspaceId(context);
 
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const twitter = await import("./twitterapi.server");
 
       const ids = data.renames.map((r) => r.accountId);
-      const { data: accounts, error } = await supabaseAdmin
+      const { data: accounts, error } = await (supabaseAdmin as any)
         .from("x_accounts")
         .select("id, handle, auth_token, proxy")
-
+        .eq("workspace_id", workspaceId)
         .in("id", ids);
       if (error) throw new Error(error.message);
 
-      const byId = new Map((accounts ?? []).map((a) => [a.id, a]));
+      const byId = new Map<string, any>((accounts ?? []).map((a: any) => [a.id, a]));
       const results: {
         handle: string;
         displayName: string;

@@ -103,14 +103,16 @@ async function draftReplies(input: {
 export async function runCampaignOnce(input: {
   admin: Admin;
   userId: string;
+  workspaceId: string;
   campaignId: string;
 }): Promise<CampaignRunResult> {
-  const { admin, userId, campaignId } = input;
+  const { admin, userId, workspaceId, campaignId } = input;
 
   const { data: campaign, error } = await admin
     .from("listening_campaigns")
     .select("*")
     .eq("id", campaignId)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!campaign) throw new Error("Campaign not found.");
@@ -136,7 +138,7 @@ export async function runCampaignOnce(input: {
   let accountsQuery = admin
     .from("x_accounts")
     .select("id, handle, persona_label, auth_token, proxy, is_active")
-
+    .eq("workspace_id", workspaceId)
     .eq("is_active", true)
     .eq("suspended", false);
   const chosen: string[] = campaign.account_ids ?? [];
@@ -148,7 +150,7 @@ export async function runCampaignOnce(input: {
     const { recordSkippedAccounts } = await import("./skip-audit.server");
     await recordSkippedAccounts(
       admin,
-      { userId, source: "reply", campaignId },
+      { userId, workspaceId, source: "reply", campaignId },
       chosen.length ? chosen : undefined,
     );
   }
@@ -237,6 +239,7 @@ export async function runCampaignOnce(input: {
       const row = {
         campaign_id: campaignId,
         user_id: userId,
+        workspace_id: workspaceId,
         account_id: pair.account.id,
         handle: pair.account.handle,
         persona_name: pair.persona.name,
@@ -259,6 +262,7 @@ export async function runCampaignOnce(input: {
       const queued: any[] = [
         {
           user_id: userId,
+          workspace_id: workspaceId,
           source: "campaign",
           campaign_id: campaignId,
           campaign_reply_id: inserted?.id ?? null,
@@ -274,6 +278,7 @@ export async function runCampaignOnce(input: {
       if (campaign.like_target) {
         queued.push({
           user_id: userId,
+          workspace_id: workspaceId,
           source: "campaign",
           campaign_id: campaignId,
           account_id: pair.account.id,
@@ -287,6 +292,7 @@ export async function runCampaignOnce(input: {
       if (campaign.follow_author) {
         queued.push({
           user_id: userId,
+          workspace_id: workspaceId,
           source: "campaign",
           campaign_id: campaignId,
           account_id: pair.account.id,
@@ -314,6 +320,7 @@ export async function runCampaignOnce(input: {
     const row = {
       campaign_id: campaignId,
       user_id: userId,
+      workspace_id: workspaceId,
       account_id: pair.account.id,
       handle: pair.account.handle,
       persona_name: pair.persona.name,

@@ -16,10 +16,15 @@ export type SweepSummary = {
 type Row = { id: string; handle: string; auth_token: string | null; proxy: string | null };
 
 /** Every linked, active account that can act (has a session token). */
-export async function loadActiveAccounts(admin: any, _userId: string): Promise<Row[]> {
+export async function loadActiveAccounts(
+  admin: any,
+  _userId: string,
+  workspaceId: string,
+): Promise<Row[]> {
   const { data, error } = await admin
     .from("x_accounts")
     .select("id, handle, auth_token, proxy")
+    .eq("workspace_id", workspaceId)
     .eq("is_active", true)
     .eq("suspended", false)
     .order("handle");
@@ -91,10 +96,13 @@ export async function crossFollowBatch(
 export type LatestTarget = { handle: string; tweetId: string; accountId: string };
 
 /** Newest post of every linked, active account. Read-only monitoring helper. */
-export async function loadOwnLatestTargets(userId: string): Promise<LatestTarget[]> {
+export async function loadOwnLatestTargets(
+  userId: string,
+  workspaceId: string,
+): Promise<LatestTarget[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const twitter = await import("./twitterapi.server");
-  const accounts = await loadActiveAccounts(supabaseAdmin as any, userId);
+  const accounts = await loadActiveAccounts(supabaseAdmin as any, userId, workspaceId);
 
   const out: LatestTarget[] = [];
   const chunk = 8;

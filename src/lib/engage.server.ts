@@ -9,14 +9,20 @@ export type EngageActions = { like: boolean; retweet: boolean; bookmark: boolean
 
 type Row = { id: string; handle: string; auth_token: string | null; proxy: string | null };
 
-async function loadSelected(admin: any, userId: string, accountIds: string[]): Promise<Row[]> {
+async function loadSelected(
+  admin: any,
+  userId: string,
+  workspaceId: string,
+  accountIds: string[],
+): Promise<Row[]> {
   // Audit the accounts this run cannot use (suspended, off, or no session).
   const { recordSkippedAccounts } = await import("./skip-audit.server");
-  await recordSkippedAccounts(admin, { userId, source: "engage" }, accountIds);
+  await recordSkippedAccounts(admin, { userId, workspaceId, source: "engage" }, accountIds);
 
   const { data, error } = await admin
     .from("x_accounts")
     .select("id, handle, auth_token, proxy")
+    .eq("workspace_id", workspaceId)
     .eq("is_active", true)
     .eq("suspended", false)
     .in("id", accountIds)
@@ -32,6 +38,7 @@ function enabledKinds(actions: EngageActions) {
 /** Immediate run: every selected persona performs the chosen actions on each link. */
 export async function engageLinksWithAccounts(
   userId: string,
+  workspaceId: string,
   tweetUrls: string[],
   accountIds: string[],
   actions: EngageActions,
@@ -49,13 +56,14 @@ export async function engageLinksWithAccounts(
     .filter((l): l is { url: string; tweetId: string } => Boolean(l.tweetId));
   if (links.length === 0) throw new Error("Could not read a tweet ID from those links.");
 
-  const accounts = await loadSelected(admin, userId, accountIds);
+  const accounts = await loadSelected(admin, userId, workspaceId, accountIds);
   if (accounts.length === 0) throw new Error("No selected personas have a saved session.");
 
   const { data: job } = await admin
     .from("publish_jobs")
     .insert({
       user_id: userId,
+      workspace_id: workspaceId,
       mode: "engagement",
       tweet_text: "",
       comment_text: "",
@@ -100,6 +108,7 @@ export async function engageLinksWithAccounts(
           await admin.from("publish_actions").insert({
             job_id: job.id,
             user_id: userId,
+            workspace_id: workspaceId,
             account_id: acc.id,
             action_type: kind,
             content: link.url,
@@ -126,6 +135,7 @@ export async function engageLinksWithAccounts(
 /** Queue the same work with human-like timing instead of running it now. */
 export async function scheduleEngageActions(
   userId: string,
+  workspaceId: string,
   input: {
     tweetUrls: string[];
     accountIds: string[];
@@ -149,7 +159,7 @@ export async function scheduleEngageActions(
     .filter((id): id is string => Boolean(id));
   if (tweetIds.length === 0) throw new Error("Could not read a tweet ID from those links.");
 
-  const accounts = await loadSelected(admin, userId, input.accountIds);
+  const accounts = await loadSelected(admin, userId, workspaceId, input.accountIds);
   if (accounts.length === 0) throw new Error("No selected personas have a saved session.");
 
   const units: { accountId: string; handle: string; kind: string; tweetId: string }[] = [];
@@ -175,6 +185,7 @@ export async function scheduleEngageActions(
     .from("publish_jobs")
     .insert({
       user_id: userId,
+      workspace_id: workspaceId,
       mode: "engagement",
       tweet_text: "",
       comment_text: "",
@@ -188,6 +199,7 @@ export async function scheduleEngageActions(
 
   const rows = units.map((u, i) => ({
     user_id: userId,
+    workspace_id: workspaceId,
     source: "queue" as const,
     ...(job?.id ? { job_id: job.id as string } : {}),
     account_id: u.accountId,

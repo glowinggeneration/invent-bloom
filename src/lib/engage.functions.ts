@@ -6,6 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveWorkspaceId } from "./workspace.server";
 
 const actionsSchema = z
   .object({
@@ -29,9 +30,11 @@ export const runEngageLinks = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const workspaceId = await resolveWorkspaceId(context);
     const { engageLinksWithAccounts } = await import("./engage.server");
     return engageLinksWithAccounts(
       context.userId,
+      workspaceId,
       data.tweetUrls,
       data.accountIds,
       data.actions,
@@ -56,6 +59,7 @@ export const scheduleEngageLinks = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<{ scheduled: number }> => {
+    const workspaceId = await resolveWorkspaceId(context);
     const { scheduleEngageActions } = await import("./engage.server");
-    return scheduleEngageActions(context.userId, data);
+    return scheduleEngageActions(context.userId, workspaceId, data);
   });

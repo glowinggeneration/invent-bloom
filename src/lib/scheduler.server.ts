@@ -29,6 +29,7 @@ type Admin = SupabaseClient<any, any, any>;
 
 export type ScheduledActionInsert = {
   user_id: string;
+  workspace_id: string;
   source: "publish" | "campaign" | "queue";
   job_id?: string | null;
   campaign_id?: string | null;
@@ -180,6 +181,7 @@ export async function enqueueScheduledActions(
     .insert(
       planned.map(({ row, runAt }) => ({
         user_id: row.user_id,
+        workspace_id: row.workspace_id,
         source: row.source,
         job_id: row.job_id ?? null,
         campaign_id: row.campaign_id ?? null,

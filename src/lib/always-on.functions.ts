@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
 import { logAuditEventAsCaller } from "./platform/audit-log.server";
-import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
+import { resolveWorkspaceId } from "./workspace.server";
 import type { AlwaysOnPlanView, AlwaysOnPostView } from "./always-on-view";
 import type { AlwaysOnFeed } from "./always-on-feed";
 
@@ -31,9 +31,11 @@ export const generateAlwaysOnPlans = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => generateSchema.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<AlwaysOnPlanView[]> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { runDailyPlanning } = await import("./always-on-planner.server");
     return runDailyPlanning({
       userId: context.userId,
+      workspaceId,
       replan: true,
       maxAccounts: 12,
       ...(data.date ? { date: data.date } : {}),
@@ -48,8 +50,13 @@ export const listAlwaysOnPlans = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ date: z.string().optional() }).parse(input ?? {}))
   .handler(async ({ data, context }): Promise<AlwaysOnPlanView[]> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { loadPlans } = await import("./always-on-planner.server");
-    return loadPlans({ userId: context.userId, ...(data.date ? { date: data.date } : {}) });
+    return loadPlans({
+      userId: context.userId,
+      workspaceId,
+      ...(data.date ? { date: data.date } : {}),
+    });
   });
 
 /** Reads everything published through the reviewed Always-On workflow. */
@@ -60,13 +67,15 @@ export const listAlwaysOnPublished = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<AlwaysOnFeed> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: rows, error } = await supabaseAdmin
+    const { data: rows, error } = await (supabaseAdmin as any)
       .from("persona_daily_posts")
       .select(
         "id, account_id, category, topic, content, image_url, published_at, scheduled_at, result_tweet_id",
       )
+      .eq("workspace_id", workspaceId)
       .eq("status", "published")
       .order("published_at", { ascending: false, nullsFirst: false })
       .limit(data.limit ?? 200);
@@ -79,9 +88,10 @@ export const listAlwaysOnPublished = createServerFn({ method: "POST" })
       { handle: string; displayName: string; avatarUrl: string | null; personaName: string }
     >();
     if (accountIds.length) {
-      const { data: accounts } = await supabaseAdmin
+      const { data: accounts } = await (supabaseAdmin as any)
         .from("x_accounts")
         .select("id, handle, display_name, avatar_url, persona_label")
+        .eq("workspace_id", workspaceId)
         .in("id", accountIds);
       for (const a of accounts ?? []) {
         accountMap.set(a.id, {
@@ -120,8 +130,10 @@ export const listAlwaysOnPublished = createServerFn({ method: "POST" })
     return {
       items,
       total: items.length,
-      today: items.filter((i) => new Date(i.publishedAt).getTime() >= startOfDay.getTime()).length,
-      accounts: new Set(items.map((i) => i.handle)).size,
+      today: items.filter(
+        (i: (typeof items)[number]) => new Date(i.publishedAt).getTime() >= startOfDay.getTime(),
+      ).length,
+      accounts: new Set(items.map((i: (typeof items)[number]) => i.handle)).size,
       lastPublishedAt: items[0]?.publishedAt ?? null,
     };
   });
@@ -132,8 +144,9 @@ export const editAlwaysOnPost = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => editSchema.parse(input))
   .handler(async ({ data, context }): Promise<AlwaysOnPostView> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { updatePostContent } = await import("./always-on-planner.server");
-    const result = await updatePostContent({ userId: context.userId, ...data });
+    const result = await updatePostContent({ userId: context.userId, workspaceId, ...data });
     await logAuditEventAsCaller(context.supabase, {
       action: "content.edit",
       resourceTable: "persona_daily_posts",
@@ -148,9 +161,11 @@ export const approveAlwaysOnPost = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => idSchema.parse(input))
   .handler(async ({ data, context }): Promise<AlwaysOnPostView> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { setPostStatus } = await import("./always-on-planner.server");
     const result = await setPostStatus({
       userId: context.userId,
+      workspaceId,
       postId: data.postId,
       status: "scheduled",
     });
@@ -169,9 +184,11 @@ export const skipAlwaysOnPost = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => idSchema.parse(input))
   .handler(async ({ data, context }): Promise<AlwaysOnPostView> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { setPostStatus } = await import("./always-on-planner.server");
     const result = await setPostStatus({
       userId: context.userId,
+      workspaceId,
       postId: data.postId,
       status: "skipped",
     });
@@ -193,13 +210,12 @@ export const publishDueAlwaysOnPosts = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => idSchema.parse(input))
   .handler(async ({ data, context }): Promise<{ published: number; failed: number }> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // TODO(Phase 3): thread the caller's real workspaceId here instead of
-    // the LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
     const { data: executionState, error: stateError } = await (supabaseAdmin as any)
       .from("workspace_execution_state")
       .select("paused, reason")
-      .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (stateError) throw new Error(stateError.message);
     if (executionState?.paused) {
@@ -209,7 +225,7 @@ export const publishDueAlwaysOnPosts = createServerFn({ method: "POST" })
     }
 
     const { publishDue } = await import("./always-on-planner.server");
-    const result = await publishDue({ userId: context.userId, postId: data.postId });
+    const result = await publishDue({ userId: context.userId, workspaceId, postId: data.postId });
     await logAuditEventAsCaller(context.supabase, {
       action: "ai.publish",
       resourceTable: "persona_daily_posts",
@@ -225,11 +241,13 @@ export const setAccountAlwaysOn = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => toggleSchema.parse(input))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as any)
       .from("x_accounts")
       .update({ always_on: data.alwaysOn })
-      .eq("id", data.accountId);
+      .eq("id", data.accountId)
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     await logAuditEventAsCaller(context.supabase, {
       action: "config.change",

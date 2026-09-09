@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveWorkspaceId } from "./workspace.server";
 
 const handlesSchema = z.array(z.string().trim().min(1).max(120)).min(1).max(25);
 
@@ -21,8 +22,15 @@ export const runFollowTargets = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const workspaceId = await resolveWorkspaceId(context);
     const { followHandlesWithAccounts } = await import("./follow.server");
-    return followHandlesWithAccounts(context.userId, data.handles, data.accountIds, data.name);
+    return followHandlesWithAccounts(
+      context.userId,
+      workspaceId,
+      data.handles,
+      data.accountIds,
+      data.name,
+    );
   });
 
 /** Queue the follows across a spread window (or a fixed per-action delay). */
@@ -41,6 +49,7 @@ export const scheduleFollowTargets = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<{ scheduled: number }> => {
+    const workspaceId = await resolveWorkspaceId(context);
     const { scheduleFollowActions } = await import("./follow.server");
-    return scheduleFollowActions(context.userId, data);
+    return scheduleFollowActions(context.userId, workspaceId, data);
   });

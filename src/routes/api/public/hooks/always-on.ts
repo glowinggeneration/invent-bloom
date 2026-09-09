@@ -46,20 +46,26 @@ export const Route = createFileRoute("/api/public/hooks/always-on")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: owners, error } = await supabaseAdmin
+        // Background/cron context, not a single request's session - resolve
+        // (userId, workspaceId) pairs directly from x_accounts (which already
+        // carries workspace_id) rather than a per-request workspace resolver.
+        const { data: owners, error } = await (supabaseAdmin as any)
           .from("x_accounts")
-          .select("user_id")
+          .select("user_id, workspace_id")
           .eq("always_on", true)
           .eq("is_active", true);
         if (error) return Response.json({ error: error.message }, { status: 500 });
 
-        const userIds = [...new Set((owners ?? []).map((r: { user_id: string }) => r.user_id))];
+        const pairs = new Map<string, string>();
+        for (const r of (owners ?? []) as { user_id: string; workspace_id: string }[]) {
+          pairs.set(r.user_id, r.workspace_id);
+        }
         const { runDailyPlanning } = await import("@/lib/always-on-planner.server");
 
         const results: Record<string, unknown>[] = [];
-        for (const userId of userIds) {
+        for (const [userId, workspaceId] of pairs) {
           try {
-            const plans = await runDailyPlanning({ userId, maxAccounts });
+            const plans = await runDailyPlanning({ userId, workspaceId, maxAccounts });
             results.push({
               userId,
               accountsPlanned: plans.length,

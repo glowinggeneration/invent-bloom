@@ -22,6 +22,7 @@ export type SkipReason = "suspended" | "inactive" | "no_session";
 
 type Ctx = {
   userId: string;
+  workspaceId: string;
   source: SkipSource;
   campaignId?: string | null;
   jobId?: string | null;
@@ -66,7 +67,8 @@ export async function recordSkippedAccounts(
   try {
     let query = admin
       .from("x_accounts")
-      .select("id, handle, persona_label, display_name, is_active, suspended, auth_token");
+      .select("id, handle, persona_label, display_name, is_active, suspended, auth_token")
+      .eq("workspace_id", ctx.workspaceId);
     if (accountIds && accountIds.length) query = query.in("id", accountIds);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
@@ -80,6 +82,7 @@ export async function recordSkippedAccounts(
       await admin.from("campaign_skip_audit").insert(
         skipped.map(({ row, reason }) => ({
           user_id: ctx.userId,
+          workspace_id: ctx.workspaceId,
           source: ctx.source,
           campaign_id: ctx.campaignId ?? null,
           job_id: ctx.jobId ?? null,

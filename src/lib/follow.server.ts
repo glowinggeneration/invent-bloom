@@ -18,14 +18,20 @@ export function normalizeHandles(raw: string[]): string[] {
   ];
 }
 
-async function loadSelected(admin: any, userId: string, accountIds: string[]): Promise<Row[]> {
+async function loadSelected(
+  admin: any,
+  userId: string,
+  workspaceId: string,
+  accountIds: string[],
+): Promise<Row[]> {
   // Audit the accounts this run cannot use (suspended, off, or no session).
   const { recordSkippedAccounts } = await import("./skip-audit.server");
-  await recordSkippedAccounts(admin, { userId, source: "follow" }, accountIds);
+  await recordSkippedAccounts(admin, { userId, workspaceId, source: "follow" }, accountIds);
 
   const { data, error } = await admin
     .from("x_accounts")
     .select("id, handle, auth_token, proxy")
+    .eq("workspace_id", workspaceId)
     .eq("is_active", true)
     .eq("suspended", false)
     .in("id", accountIds)
@@ -37,6 +43,7 @@ async function loadSelected(admin: any, userId: string, accountIds: string[]): P
 /** Immediate run: each selected persona follows each target handle. */
 export async function followHandlesWithAccounts(
   userId: string,
+  workspaceId: string,
   handles: string[],
   accountIds: string[],
   name = "",
@@ -54,13 +61,14 @@ export async function followHandlesWithAccounts(
   const targets = normalizeHandles(handles);
   if (targets.length === 0) throw new Error("Add at least one valid handle.");
 
-  const accounts = await loadSelected(admin, userId, accountIds);
+  const accounts = await loadSelected(admin, userId, workspaceId, accountIds);
   if (accounts.length === 0) throw new Error("No selected personas have a saved session.");
 
   const { data: job } = await admin
     .from("publish_jobs")
     .insert({
       user_id: userId,
+      workspace_id: workspaceId,
       mode: "engagement",
       tweet_text: "",
       comment_text: "",
@@ -94,6 +102,7 @@ export async function followHandlesWithAccounts(
         await admin.from("publish_actions").insert({
           job_id: job.id,
           user_id: userId,
+          workspace_id: workspaceId,
           account_id: acc.id,
           action_type: "follow",
           content: `@${target}`,
@@ -118,6 +127,7 @@ export async function followHandlesWithAccounts(
 /** Queue the same follows with human-like timing. */
 export async function scheduleFollowActions(
   userId: string,
+  workspaceId: string,
   input: {
     handles: string[];
     accountIds: string[];
@@ -134,7 +144,7 @@ export async function scheduleFollowActions(
   const targets = normalizeHandles(input.handles);
   if (targets.length === 0) throw new Error("Add at least one valid handle.");
 
-  const accounts = await loadSelected(admin, userId, input.accountIds);
+  const accounts = await loadSelected(admin, userId, workspaceId, input.accountIds);
   if (accounts.length === 0) throw new Error("No selected personas have a saved session.");
 
   const units: { accountId: string; handle: string; target: string }[] = [];
@@ -156,6 +166,7 @@ export async function scheduleFollowActions(
     .from("publish_jobs")
     .insert({
       user_id: userId,
+      workspace_id: workspaceId,
       mode: "engagement",
       tweet_text: "",
       comment_text: "",
@@ -169,6 +180,7 @@ export async function scheduleFollowActions(
 
   const rows = units.map((u, i) => ({
     user_id: userId,
+    workspace_id: workspaceId,
     source: "queue" as const,
     ...(job?.id ? { job_id: job.id as string } : {}),
     account_id: u.accountId,

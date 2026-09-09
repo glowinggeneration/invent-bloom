@@ -4,6 +4,7 @@ import { assertAdmin } from "./access";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { spreadTimes } from "./spread";
 import { logAuditEventAsCaller } from "./platform/audit-log.server";
+import { resolveWorkspaceId } from "./workspace.server";
 
 export type ScheduledActionView = {
   id: string;
@@ -119,19 +120,25 @@ export const scheduleLinkQueue = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ scheduled: number }> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { enqueueScheduledActions } = await import("./scheduler.server");
 
-    const { data: accounts, error } = await supabaseAdmin
+    const { data: accounts, error } = await (supabaseAdmin as any)
       .from("x_accounts")
       .select("id, handle")
+      .eq("workspace_id", workspaceId)
       .eq("is_active", true)
       .eq("suspended", false);
     if (error) throw new Error(error.message);
     const list = (accounts ?? []) as { id: string; handle: string }[];
     {
       const { recordSkippedAccounts } = await import("./skip-audit.server");
-      await recordSkippedAccounts(supabaseAdmin as any, { userId: context.userId, source: "like" });
+      await recordSkippedAccounts(supabaseAdmin as any, {
+        userId: context.userId,
+        workspaceId,
+        source: "like",
+      });
     }
     if (!list.length) throw new Error("No active accounts to schedule.");
 
@@ -149,6 +156,7 @@ export const scheduleLinkQueue = createServerFn({ method: "POST" })
     const times = spreadTimes(units.length, data.spreadHours);
     const rows = units.map((u, i) => ({
       user_id: context.userId,
+      workspace_id: workspaceId,
       source: "queue" as const,
       account_id: u.accountId,
       handle: u.handle,
