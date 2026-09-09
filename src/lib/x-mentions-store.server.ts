@@ -9,17 +9,17 @@
 import type { BrandMention } from "./brand-mentions.functions";
 import { classifyEntityMention, getWorkspaceSettings } from "./entity-config.server";
 
-export async function storeXMentions(mentions: BrandMention[]): Promise<number> {
+export async function storeXMentions(
+  mentions: BrandMention[],
+  workspaceId: string,
+): Promise<number> {
   if (mentions.length === 0) return 0;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
-  // TODO(Phase 3): shared background sweep, not a single request's context -
-  // see workspace.server.ts.
-  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
-  const settings = await getWorkspaceSettings(LEGACY_SINGLE_WORKSPACE_ID);
+  const settings = await getWorkspaceSettings(workspaceId);
 
   const rows = mentions.map((m) => ({
-    workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
+    workspace_id: workspaceId,
     tweet_id: m.id,
     text: m.text,
     author_handle: m.authorHandle ?? "",

@@ -64,18 +64,15 @@ function uniqueTerms(terms: string[], limit: number): string[] {
  * keywords second. If the Watchlist migration has not been applied yet, the
  * existing keyword table continues to work unchanged.
  */
-export async function activeKeywords(limit = 12): Promise<string[]> {
+export async function activeKeywords(workspaceId: string, limit = 12): Promise<string[]> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as any;
-    // TODO(Phase 3): shared background sweep, not a single request's context -
-    // see workspace.server.ts.
-    const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
 
     const { data: keywordRows, error: keywordError } = await db
       .from("mention_keywords")
       .select("term")
-      .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
+      .eq("workspace_id", workspaceId)
       .eq("is_active", true)
       .order("created_at", { ascending: true })
       .limit(Math.max(limit, 60));
@@ -90,7 +87,7 @@ export async function activeKeywords(limit = 12): Promise<string[]> {
       const { data: watchRows, error: watchError } = await db
         .from("monitoring_watchlist")
         .select("kind, label, value, platform, priority")
-        .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
+        .eq("workspace_id", workspaceId)
         .eq("is_active", true)
         .limit(100);
       if (!watchError) watched = (watchRows ?? []) as WatchKeyword[];
@@ -129,18 +126,17 @@ export function keywordQuery(terms: string[]): string {
  * conversation already being pulled, then stores the ones we do not have.
  * Runs daily from the scheduled hook.
  */
-export async function refreshKeywords(): Promise<{ added: string[]; checked: number }> {
+export async function refreshKeywords(
+  workspaceId: string,
+): Promise<{ added: string[]; checked: number }> {
   const apiKey = process.env["LOVABLE_API_KEY"];
-  const existing = await activeKeywords(60);
+  const existing = await activeKeywords(workspaceId, 60);
   if (!apiKey) return { added: [], checked: existing.length };
   if (!existing.length) return { added: [], checked: 0 };
 
   const { searchTweets } = await import("./twitterapi.server");
   const { describeSubject, getWorkspaceSettings } = await import("./entity-config.server");
-  // TODO(Phase 3): shared background sweep, not a single request's context -
-  // see workspace.server.ts.
-  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
-  const subject = describeSubject(await getWorkspaceSettings(LEGACY_SINGLE_WORKSPACE_ID));
+  const subject = describeSubject(await getWorkspaceSettings(workspaceId));
   const { tweets } = await searchTweets(keywordQuery(existing.slice(0, 8)), 40);
   const sample = tweets.slice(0, 40).map((t) => t.text.slice(0, 220));
 
@@ -189,7 +185,7 @@ export async function refreshKeywords(): Promise<{ added: string[]; checked: num
   if (fresh.length) {
     await (supabaseAdmin as any).from("mention_keywords").insert(
       fresh.map((term) => ({
-        workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
+        workspace_id: workspaceId,
         term,
         source: "ai",
         last_refreshed_at: new Date().toISOString(),

@@ -559,7 +559,7 @@ export const listBrandMentions = createServerFn({ method: "GET" })
       let keywordTweets: typeof tweets = [];
       let activeTerms: string[] = [];
       if (!data.cursor) {
-        activeTerms = await activeKeywords();
+        activeTerms = await activeKeywords(workspaceId);
         const q = keywordQuery(activeTerms);
         if (q) {
           try {
@@ -682,7 +682,7 @@ export const listBrandMentions = createServerFn({ method: "GET" })
       // Keep a history of what we saw, so Overview can compare periods.
       try {
         const { storeXMentions } = await import("./x-mentions-store.server");
-        await storeXMentions(relevant);
+        await storeXMentions(relevant, workspaceId);
       } catch (err) {
         console.error("Storing X mentions failed", err);
       }
