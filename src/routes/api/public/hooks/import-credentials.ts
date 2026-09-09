@@ -46,11 +46,15 @@ export const Route = createFileRoute("/api/public/hooks/import-credentials")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        // TODO(Phase 3): shared background maintenance job, not a single
+        // request's context - see workspace.server.ts.
+        const { LEGACY_SINGLE_WORKSPACE_ID } = await import("@/lib/workspace.server");
         const proxy = (process.env["DEFAULT_TWITTER_PROXY"] ?? "").trim();
 
         const { data: accounts } = await (supabaseAdmin as any)
           .from("x_accounts")
-          .select("id, user_id, handle, previous_handle, persona_label, proxy");
+          .select("id, user_id, handle, previous_handle, persona_label, proxy")
+          .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID);
 
         // Personas get renamed on X, so a saved credential may match either the
         // current handle or the one it was imported under.
@@ -73,6 +77,7 @@ export const Route = createFileRoute("/api/public/hooks/import-credentials")({
             continue;
           }
           rows.push({
+            workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
             user_id: account.user_id,
             handle: account.handle,
             email: cred.email,

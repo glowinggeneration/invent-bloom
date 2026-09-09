@@ -156,6 +156,7 @@ export async function generatePlanContent(input: {
   recent: RecentPost[];
   peerPosts?: { content: string; personaId: string }[];
   userId?: string;
+  workspaceId: string;
 }): Promise<GeneratedPost[]> {
   const drafts = await generateDrafts({
     persona: input.persona,
@@ -222,6 +223,7 @@ export async function generatePlanContent(input: {
       };
       if (legalRecord.riskLevel > 0) {
         void logLegalReview({
+          workspaceId: input.workspaceId,
           record: legalRecord,
           surface: "always_on_post",
           personaId: input.persona.id,

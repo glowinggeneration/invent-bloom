@@ -66,17 +66,22 @@ export const Route = createFileRoute("/api/public/hooks/bulk-relogin")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const twitter = await import("@/lib/twitterapi.server");
+        // TODO(Phase 3): shared background maintenance job, not a single
+        // request's context - see workspace.server.ts.
+        const { LEGACY_SINGLE_WORKSPACE_ID } = await import("@/lib/workspace.server");
         const proxy = (process.env["DEFAULT_TWITTER_PROXY"] ?? "").trim();
 
         const { data: accountRows, error: accErr } = await (supabaseAdmin as any)
           .from("x_accounts")
           .select("id, handle, previous_handle, persona_label, auth_token, suspended")
+          .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
           .order("handle");
         if (accErr) return Response.json({ error: accErr.message }, { status: 500 });
 
         const { data: credRows, error: credErr } = await (supabaseAdmin as any)
           .from("x_login_attempts")
-          .select("handle, email, password, totp_secret, persona_label");
+          .select("handle, email, password, totp_secret, persona_label")
+          .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID);
         if (credErr) return Response.json({ error: credErr.message }, { status: 500 });
 
         const creds = (credRows ?? []) as Cred[];

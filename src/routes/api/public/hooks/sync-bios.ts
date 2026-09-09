@@ -33,17 +33,21 @@ export const Route = createFileRoute("/api/public/hooks/sync-bios")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const twitter = await import("@/lib/twitterapi.server");
+        // TODO(Phase 3): shared background maintenance job, not a single
+        // request's context - see workspace.server.ts.
+        const { LEGACY_SINGLE_WORKSPACE_ID } = await import("@/lib/workspace.server");
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await (supabaseAdmin as any)
           .from("x_accounts")
           .select("id, handle, display_name, bio, auth_token, proxy")
+          .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
           .eq("is_active", true)
           .order("handle");
         if (error) {
           return new Response(JSON.stringify({ error: error.message }), { status: 500 });
         }
 
-        const accounts = (data ?? []).filter((a) => Boolean(a.auth_token) && Boolean(a.bio));
+        const accounts = (data ?? []).filter((a: any) => Boolean(a.auth_token) && Boolean(a.bio));
         const slice = accounts.slice(parsed.offset, parsed.offset + parsed.limit);
 
         let ok = 0;

@@ -48,6 +48,9 @@ export const Route = createFileRoute("/api/public/hooks/relogin")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const twitter = await import("@/lib/twitterapi.server");
+        // TODO(Phase 3): shared background maintenance job, not a single
+        // request's context - see workspace.server.ts.
+        const { LEGACY_SINGLE_WORKSPACE_ID } = await import("@/lib/workspace.server");
         const proxy = (process.env["DEFAULT_TWITTER_PROXY"] ?? "").trim();
 
         const results: Array<Record<string, unknown>> = [];
@@ -67,9 +70,10 @@ export const Route = createFileRoute("/api/public/hooks/relogin")({
             continue;
           }
 
-          const { data: row } = await supabaseAdmin
+          const { data: row } = await (supabaseAdmin as any)
             .from("x_accounts")
             .select("id, handle, display_name, bio, avatar_url, background_url")
+            .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
             .eq("handle", cred.username)
             .maybeSingle();
 

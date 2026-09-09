@@ -120,6 +120,7 @@ export async function reviewTexts(items: ReviewItem[]): Promise<Map<string, Lega
 export async function logLegalReview(input: {
   record: LegalReviewRecord;
   surface: string;
+  workspaceId: string;
   userId?: string | null;
   personaId?: string | null;
   reference?: string | null;
@@ -127,7 +128,8 @@ export async function logLegalReview(input: {
   if (input.record.riskLevel === 0) return;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("legal_reviews").insert({
+    const { error } = await (supabaseAdmin as any).from("legal_reviews").insert({
+      workspace_id: input.workspaceId,
       surface: input.surface,
       user_id: input.userId ?? null,
       persona_id: input.personaId ?? null,

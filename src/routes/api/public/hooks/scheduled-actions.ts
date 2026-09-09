@@ -22,12 +22,15 @@ export const Route = createFileRoute("/api/public/hooks/scheduled-actions")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        // TODO(Phase 3): shared background maintenance job, not a single
+        // request's context - see workspace.server.ts.
+        const { LEGACY_SINGLE_WORKSPACE_ID } = await import("@/lib/workspace.server");
 
         try {
           const { data: executionState, error: stateError } = await (supabaseAdmin as any)
             .from("workspace_execution_state")
             .select("paused, reason, paused_at")
-            .eq("singleton", true)
+            .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
             .maybeSingle();
           if (stateError) throw new Error(stateError.message);
 

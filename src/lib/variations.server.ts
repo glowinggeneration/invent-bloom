@@ -121,6 +121,7 @@ export async function buildPersonaVariations(input: {
   intensity?: number;
   /** Operator briefing on how personas should frame their replies. */
   briefing?: string;
+  workspaceId: string;
 }): Promise<AccountVariation[]> {
   // Publishing mode (scope 7.5/8.5): only personas with a credible reason to
   // join this conversation, spread across segments.
@@ -307,6 +308,7 @@ export async function buildPersonaVariations(input: {
         const rec = reviews.get(`${key}:${o.accountId}`);
         if (!rec || rec.riskLevel === 0) continue;
         void logLegalReview({
+          workspaceId: input.workspaceId,
           record: rec,
           surface: "persona_variation",
           personaId: o.personaId,

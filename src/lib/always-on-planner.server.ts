@@ -250,6 +250,7 @@ export async function runDailyPlanning(input: {
       recent,
       peerPosts,
       userId: input.userId,
+      workspaceId: input.workspaceId,
     });
     for (const g of generated) {
       if (g.status === "scheduled") peerPosts.push({ content: g.content, personaId: persona.id });

@@ -186,6 +186,8 @@ export const getPerformance = createServerFn({ method: "POST" })
 export const refreshPerformance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { resolveWorkspaceId } = await import("./workspace.server");
+    const workspaceId = await resolveWorkspaceId(context);
     const { refreshUserMetrics } = await import("./performance.server");
-    return refreshUserMetrics(context.userId);
+    return refreshUserMetrics(context.userId, workspaceId);
   });

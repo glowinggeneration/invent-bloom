@@ -664,6 +664,7 @@ export const runPublish = createServerFn({ method: "POST" })
           tone: data.tone,
           intensity: data.intensity,
           briefing: data.briefing,
+          workspaceId,
         });
         for (const v of built) {
           variationMap.set(v.accountId, {
@@ -793,6 +794,7 @@ export const runPublish = createServerFn({ method: "POST" })
             const verdict = transformText(unit.content);
             if (!verdict.autoPublishAllowed) {
               void logReview({
+                workspaceId,
                 record: verdict,
                 surface: "publish_blocked",
                 userId: context.userId,
@@ -1028,6 +1030,7 @@ export const previewPersonaVariations = createServerFn({ method: "POST" })
       tone: data.tone,
       intensity: data.intensity,
       briefing: data.briefing,
+      workspaceId,
     });
   });
 

@@ -338,6 +338,7 @@ export async function runAnalysis(input: {
 export async function applyLegalReview(
   analysis: Analysis,
   submittedText: string,
+  workspaceId: string,
 ): Promise<Analysis> {
   const items = [
     { id: "input", text: submittedText },
@@ -375,7 +376,11 @@ export async function applyLegalReview(
   // Audit trail (§13) - fire and forget, never blocks the user.
   void Promise.all(
     [...reviews.entries()].map(([id, record]) =>
-      logLegalReview({ record, surface: id === "input" ? "tested_message" : "recommendation" }),
+      logLegalReview({
+        record,
+        surface: id === "input" ? "tested_message" : "recommendation",
+        workspaceId,
+      }),
     ),
   );
 

@@ -52,10 +52,14 @@ export const Route = createFileRoute("/api/public/hooks/sync-profiles")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const twitter = await import("@/lib/twitterapi.server");
+        // TODO(Phase 3): shared background maintenance job, not a single
+        // request's context - see workspace.server.ts.
+        const { LEGACY_SINGLE_WORKSPACE_ID } = await import("@/lib/workspace.server");
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await (supabaseAdmin as any)
           .from("x_accounts")
           .select("id, handle, display_name, bio, auth_token, proxy, avatar_url, background_url")
+          .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
           .eq("is_active", true)
           .order("handle");
         if (error) {
@@ -67,8 +71,8 @@ export const Route = createFileRoute("/api/public/hooks/sync-profiles")({
 
         const wanted = new Set(parsed.handles.map((h) => h.replace(/^@/, "").toLowerCase()));
         const accounts = (data ?? [])
-          .filter((a) => Boolean(a.auth_token))
-          .filter((a) => wanted.size === 0 || wanted.has(a.handle.toLowerCase()));
+          .filter((a: any) => Boolean(a.auth_token))
+          .filter((a: any) => wanted.size === 0 || wanted.has(a.handle.toLowerCase()));
         const slice = accounts.slice(parsed.offset, parsed.offset + parsed.limit);
 
         const results: Array<Record<string, unknown>> = [];

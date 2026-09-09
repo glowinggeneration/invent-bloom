@@ -355,7 +355,7 @@ export const sendMessage = createServerFn({ method: "POST" })
 
     // Legal-Risk Language Transformation Engine: rewrite risky wording in the
     // recommendations and record the verdict on the tested message.
-    const analysis = await applyLegalReview(rawAnalysis, data.text);
+    const analysis = await applyLegalReview(rawAnalysis, data.text, workspaceId);
 
     const { error: assistantInsertError } = await supabase.from("messages").insert({
       thread_id: threadId,

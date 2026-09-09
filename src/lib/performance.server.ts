@@ -21,7 +21,10 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 /** Pull fresh engagement numbers for one workspace owner. */
-export async function refreshUserMetrics(userId: string): Promise<RefreshResult> {
+export async function refreshUserMetrics(
+  userId: string,
+  workspaceId: string,
+): Promise<RefreshResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const errors: string[] = [];
 
@@ -36,7 +39,7 @@ export async function refreshUserMetrics(userId: string): Promise<RefreshResult>
     const { data: actions, error } = await (supabaseAdmin as any)
       .from("publish_actions")
       .select("account_id, action_type, content, result_tweet_id, x_accounts(handle)")
-
+      .eq("workspace_id", workspaceId)
       .eq("status", "success")
       .in("action_type", [...POST_ACTIONS])
       .not("result_tweet_id", "is", null)
@@ -66,7 +69,7 @@ export async function refreshUserMetrics(userId: string): Promise<RefreshResult>
   const { data: campaignReplies } = await (supabaseAdmin as any)
     .from("campaign_replies")
     .select("account_id, handle, reply_text, result_tweet_id")
-
+    .eq("workspace_id", workspaceId)
     .eq("status", "success")
     .not("result_tweet_id", "is", null)
     .order("created_at", { ascending: false })
@@ -86,7 +89,7 @@ export async function refreshUserMetrics(userId: string): Promise<RefreshResult>
   const { data: dailyPosts } = await (supabaseAdmin as any)
     .from("persona_daily_posts")
     .select("account_id, content, result_tweet_id, x_accounts(handle)")
-
+    .eq("workspace_id", workspaceId)
     .eq("status", "published")
     .not("result_tweet_id", "is", null)
     .order("published_at", { ascending: false })
@@ -111,7 +114,7 @@ export async function refreshUserMetrics(userId: string): Promise<RefreshResult>
     const { data: known } = await (supabaseAdmin as any)
       .from("tweet_metrics")
       .select("tweet_id, fetched_at")
-
+      .eq("workspace_id", workspaceId)
       .range(page * 1000, page * 1000 + 999);
     const rows = (known ?? []) as { tweet_id: string; fetched_at: string }[];
     for (const r of rows) seen.set(r.tweet_id, r.fetched_at);
@@ -137,6 +140,7 @@ export async function refreshUserMetrics(userId: string): Promise<RefreshResult>
     const rows = tweets.map((t) => {
       const meta = byTweet.get(t.tweetId);
       return {
+        workspace_id: workspaceId,
         user_id: userId,
         account_id: meta?.accountId ?? null,
         handle: meta?.handle || t.authorHandle,
@@ -178,13 +182,16 @@ export async function refreshAllMetrics(): Promise<RefreshResult[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await (supabaseAdmin as any)
     .from("x_accounts")
-    .select("user_id")
+    .select("user_id, workspace_id")
     .eq("is_active", true);
-  const userIds = [...new Set(((data ?? []) as { user_id: string }[]).map((r) => r.user_id))];
+  const pairs = new Map<string, string>();
+  for (const r of (data ?? []) as { user_id: string; workspace_id: string }[]) {
+    pairs.set(r.user_id, r.workspace_id);
+  }
   const results: RefreshResult[] = [];
-  for (const userId of userIds) {
+  for (const [userId, workspaceId] of pairs) {
     try {
-      results.push(await refreshUserMetrics(userId));
+      results.push(await refreshUserMetrics(userId, workspaceId));
     } catch (e) {
       results.push({
         userId,

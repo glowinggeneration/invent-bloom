@@ -221,6 +221,7 @@ export async function runCampaignOnce(input: {
 
     if (record && record.riskLevel > 0) {
       void logLegalReview({
+        workspaceId,
         record,
         surface: "campaign_reply",
         personaId: pair.persona.id,
