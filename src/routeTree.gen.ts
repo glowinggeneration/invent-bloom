@@ -49,6 +49,7 @@ import { Route as AuthenticatedAdminAccountsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
 import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenticated/admin.health'
 import { Route as AuthenticatedAdminProfileRouteImport } from './routes/_authenticated/admin.profile'
+import { Route as AuthenticatedAdminWorkspacesRouteImport } from './routes/_authenticated/admin.workspaces'
 import { Route as AuthenticatedCampaignActionRouteImport } from './routes/_authenticated/campaign.$action'
 import { Route as AuthenticatedCampaignOverviewRouteImport } from './routes/_authenticated/campaign.overview'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
@@ -288,6 +289,12 @@ const AuthenticatedAdminProfileRoute =
     path: '/admin/profile',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminWorkspacesRoute =
+  AuthenticatedAdminWorkspacesRouteImport.update({
+    id: '/admin/workspaces',
+    path: '/admin/workspaces',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCampaignActionRoute =
   AuthenticatedCampaignActionRouteImport.update({
     id: '/campaign/$action',
@@ -481,6 +488,7 @@ export interface FileRoutesByFullPath {
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRoute
   '/campaign/$action': typeof AuthenticatedCampaignActionRoute
   '/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -548,6 +556,7 @@ export interface FileRoutesByTo {
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/admin/workspaces': typeof AuthenticatedAdminWorkspacesRoute
   '/campaign/$action': typeof AuthenticatedCampaignActionRoute
   '/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -617,6 +626,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/activity': typeof AuthenticatedAdminActivityRoute
   '/_authenticated/admin/health': typeof AuthenticatedAdminHealthRoute
   '/_authenticated/admin/profile': typeof AuthenticatedAdminProfileRoute
+  '/_authenticated/admin/workspaces': typeof AuthenticatedAdminWorkspacesRoute
   '/_authenticated/campaign/$action': typeof AuthenticatedCampaignActionRoute
   '/_authenticated/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -686,6 +696,7 @@ export interface FileRouteTypes {
     | '/admin/activity'
     | '/admin/health'
     | '/admin/profile'
+    | '/admin/workspaces'
     | '/campaign/$action'
     | '/campaign/overview'
     | '/chat/$threadId'
@@ -753,6 +764,7 @@ export interface FileRouteTypes {
     | '/admin/activity'
     | '/admin/health'
     | '/admin/profile'
+    | '/admin/workspaces'
     | '/campaign/$action'
     | '/campaign/overview'
     | '/chat/$threadId'
@@ -821,6 +833,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/activity'
     | '/_authenticated/admin/health'
     | '/_authenticated/admin/profile'
+    | '/_authenticated/admin/workspaces'
     | '/_authenticated/campaign/$action'
     | '/_authenticated/campaign/overview'
     | '/_authenticated/chat/$threadId'
@@ -1160,6 +1173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/workspaces': {
+      id: '/_authenticated/admin/workspaces'
+      path: '/admin/workspaces'
+      fullPath: '/admin/workspaces'
+      preLoaderRoute: typeof AuthenticatedAdminWorkspacesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/campaign/$action': {
       id: '/_authenticated/campaign/$action'
       path: '/campaign/$action'
@@ -1393,6 +1413,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminActivityRoute: typeof AuthenticatedAdminActivityRoute
   AuthenticatedAdminHealthRoute: typeof AuthenticatedAdminHealthRoute
   AuthenticatedAdminProfileRoute: typeof AuthenticatedAdminProfileRoute
+  AuthenticatedAdminWorkspacesRoute: typeof AuthenticatedAdminWorkspacesRoute
   AuthenticatedCampaignActionRoute: typeof AuthenticatedCampaignActionRoute
   AuthenticatedCampaignOverviewRoute: typeof AuthenticatedCampaignOverviewRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
@@ -1435,6 +1456,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminActivityRoute: AuthenticatedAdminActivityRoute,
   AuthenticatedAdminHealthRoute: AuthenticatedAdminHealthRoute,
   AuthenticatedAdminProfileRoute: AuthenticatedAdminProfileRoute,
+  AuthenticatedAdminWorkspacesRoute: AuthenticatedAdminWorkspacesRoute,
   AuthenticatedCampaignActionRoute: AuthenticatedCampaignActionRoute,
   AuthenticatedCampaignOverviewRoute: AuthenticatedCampaignOverviewRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,

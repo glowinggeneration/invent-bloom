@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
 import { logAuditEventAsCaller } from "./platform/audit-log.server";
@@ -69,6 +70,100 @@ export const setUserOrg = createServerFn({ method: "POST" })
       resourceTable: "profiles",
       resourceId: data.userId,
       metadata: { org: data.org },
+    });
+    return { ok: true as const };
+  });
+
+export type AdminWorkspace = {
+  id: string;
+  name: string;
+  planTier: string;
+  status: string;
+  ownerEmail: string | null;
+  memberCount: number;
+  accountCount: number;
+  createdAt: string;
+};
+
+/** Cross-tenant: every workspace on the platform, for the SaaS-owner view. */
+export const listAllWorkspaces = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminWorkspace[]> => {
+    assertAdmin(context as any);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+
+    const { data: workspaces, error } = await admin
+      .from("workspaces")
+      .select("id, name, plan_tier, status, owner_user_id, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const ids = (workspaces ?? []).map((w: any) => w.id as string);
+    const ownerIds = [
+      ...new Set((workspaces ?? []).map((w: any) => w.owner_user_id).filter(Boolean)),
+    ];
+
+    const [membersRes, accountsRes, ownersRes] = await Promise.all([
+      ids.length
+        ? admin.from("workspace_members").select("workspace_id").in("workspace_id", ids)
+        : Promise.resolve({ data: [] }),
+      ids.length
+        ? admin.from("x_accounts").select("workspace_id").in("workspace_id", ids)
+        : Promise.resolve({ data: [] }),
+      ownerIds.length
+        ? admin.from("profiles").select("id, email").in("id", ownerIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const memberCounts = new Map<string, number>();
+    for (const r of (membersRes.data ?? []) as { workspace_id: string }[]) {
+      memberCounts.set(r.workspace_id, (memberCounts.get(r.workspace_id) ?? 0) + 1);
+    }
+    const accountCounts = new Map<string, number>();
+    for (const r of (accountsRes.data ?? []) as { workspace_id: string }[]) {
+      accountCounts.set(r.workspace_id, (accountCounts.get(r.workspace_id) ?? 0) + 1);
+    }
+    const emailByOwner = new Map(
+      ((ownersRes.data ?? []) as { id: string; email: string }[]).map((p) => [p.id, p.email]),
+    );
+
+    return (workspaces ?? []).map((w: any) => ({
+      id: w.id,
+      name: w.name || "Workspace",
+      planTier: w.plan_tier,
+      status: w.status,
+      ownerEmail: w.owner_user_id ? (emailByOwner.get(w.owner_user_id) ?? null) : null,
+      memberCount: memberCounts.get(w.id) ?? 0,
+      accountCount: accountCounts.get(w.id) ?? 0,
+      createdAt: w.created_at,
+    }));
+  });
+
+/** Cross-tenant: admin-set plan change. No payment processor - just the shape. */
+export const updateWorkspacePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        planTier: z.enum(["free", "pro", "enterprise"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    assertAdmin(context as any);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
+      .from("workspaces")
+      .update({ plan_tier: data.planTier, updated_at: new Date().toISOString() })
+      .eq("id", data.workspaceId);
+    if (error) throw new Error(error.message);
+    await logAuditEventAsCaller(context.supabase, {
+      action: "config.change",
+      resourceTable: "workspaces",
+      resourceId: data.workspaceId,
+      metadata: { planTier: data.planTier },
     });
     return { ok: true as const };
   });

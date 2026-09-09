@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -14,7 +14,10 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  UserMinus,
+  UserPlus,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { AnimatedBackground } from "@/components/core/animated-background";
@@ -32,6 +35,11 @@ import { useProfile } from "@/hooks/use-profile";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { updateProfileName } from "@/lib/smait.functions";
+import {
+  getWorkspaceOverview,
+  inviteWorkspaceMember,
+  removeWorkspaceMember,
+} from "@/lib/workspace-team.functions";
 import { cn } from "@/lib/utils";
 
 type SectionId = "profile" | "preferences" | "plan" | "security";
@@ -79,6 +87,36 @@ function ProfilePage() {
   const [saveState, setSaveState] = useState<ActionState>("idle");
   const [saveError, setSaveError] = useState("");
   const [resetState, setResetState] = useState<ActionState>("idle");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
+
+  const loadWorkspace = useServerFn(getWorkspaceOverview);
+  const invite = useServerFn(inviteWorkspaceMember);
+  const removeMember = useServerFn(removeWorkspaceMember);
+
+  const workspaceOverview = useQuery({
+    queryKey: ["workspace-overview"],
+    queryFn: () => loadWorkspace(),
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: () => invite({ data: { email: inviteEmail, role: inviteRole } }),
+    onSuccess: () => {
+      toast.success("Member added.");
+      setInviteEmail("");
+      void queryClient.invalidateQueries({ queryKey: ["workspace-overview"] });
+    },
+    onError: (e: Error) => toast.error(friendlyError(e, { action: "add that member" })),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (userId: string) => removeMember({ data: { userId } }),
+    onSuccess: () => {
+      toast.success("Member removed.");
+      void queryClient.invalidateQueries({ queryKey: ["workspace-overview"] });
+    },
+    onError: (e: Error) => toast.error(friendlyError(e, { action: "remove that member" })),
+  });
 
   useEffect(() => {
     if (!section) return;
@@ -438,56 +476,169 @@ function ProfilePage() {
                   description="Your workspace plan determines the tools and capacity available to this account."
                 />
 
-                <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-                  <article className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="type-meta font-semibold uppercase tracking-[0.08em] text-primary">
-                          Current plan
+                {workspaceOverview.isLoading ? (
+                  <div
+                    className="mt-5 h-40 animate-pulse rounded-2xl bg-muted"
+                    aria-hidden="true"
+                  />
+                ) : workspaceOverview.data ? (
+                  <>
+                    <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+                      <article className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="type-meta font-semibold uppercase tracking-[0.08em] text-primary">
+                              Current plan
+                            </p>
+                            <h3 className="mt-1 type-card font-semibold capitalize">
+                              {workspaceOverview.data.limits.label}
+                            </h3>
+                            <p className="mt-1 type-meta text-muted-foreground">
+                              {workspaceOverview.data.name}
+                            </p>
+                          </div>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 type-meta font-semibold capitalize text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                            <BadgeCheck className="size-3.5" aria-hidden="true" />
+                            {workspaceOverview.data.status}
+                          </span>
+                        </div>
+
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                          <UsageStat
+                            icon={<UserPlus className="size-4" />}
+                            label="Seats"
+                            used={workspaceOverview.data.usage.seats}
+                            limit={workspaceOverview.data.limits.maxSeats}
+                          />
+                          <UsageStat
+                            icon={<Building2 className="size-4" />}
+                            label="Linked accounts"
+                            used={workspaceOverview.data.usage.accounts}
+                            limit={workspaceOverview.data.limits.maxAccounts}
+                          />
+                          <UsageStat
+                            icon={<Sparkles className="size-4" />}
+                            label="Monitored keywords"
+                            used={workspaceOverview.data.usage.keywords}
+                            limit={workspaceOverview.data.limits.maxKeywords}
+                          />
+                          <UsageStat
+                            icon={<Megaphone className="size-4" />}
+                            label="AI calls this month"
+                            used={workspaceOverview.data.usage.aiCallsThisMonth}
+                            limit={workspaceOverview.data.limits.maxAiCallsMonth}
+                          />
+                        </div>
+                      </article>
+
+                      <article className="rounded-2xl border border-border p-5">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="size-4 text-muted-foreground" aria-hidden="true" />
+                          <h3 className="type-body font-medium">Plan management</h3>
+                        </div>
+                        <p className="mt-3 type-meta leading-relaxed text-muted-foreground">
+                          There is no self-serve upgrade yet — plan changes are made by the platform
+                          administrator. Contact support to change tiers.
                         </p>
-                        <h3 className="mt-1 type-card font-semibold">Workspace</h3>
-                        <p className="mt-1 type-meta text-muted-foreground">
-                          Managed centrally for the {workspaceName} workspace.
-                        </p>
-                      </div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 type-meta font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        <BadgeCheck className="size-3.5" aria-hidden="true" /> Active
-                      </span>
+                        <ContactSupportButton
+                          context="Plan and billing support"
+                          className="mt-5 min-h-11 w-full rounded-xl"
+                        />
+                      </article>
                     </div>
 
-                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                      <PlanCapability
-                        icon={<Sparkles className="size-4" />}
-                        title="Intelligence"
-                        description="Listening and response tools"
-                      />
-                      <PlanCapability
-                        icon={<Megaphone className="size-4" />}
-                        title="Campaigns"
-                        description="Guided execution workflows"
-                      />
-                      <PlanCapability
-                        icon={<FileDown className="size-4" />}
-                        title="Reporting"
-                        description="Reports and exports"
-                      />
-                    </div>
-                  </article>
+                    <div className="mt-5 rounded-2xl border border-border p-5">
+                      <h3 className="type-body font-medium">Team</h3>
+                      <p className="mt-1 type-meta text-muted-foreground">
+                        Everyone with access to this workspace.
+                      </p>
 
-                  <article className="rounded-2xl border border-border p-5">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="size-4 text-muted-foreground" aria-hidden="true" />
-                      <h3 className="type-body font-medium">Plan management</h3>
+                      <ul className="mt-4 divide-y divide-border">
+                        {workspaceOverview.data.members.map((member) => (
+                          <li
+                            key={member.userId}
+                            className="flex items-center justify-between gap-3 py-3"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate type-body font-medium">
+                                {member.fullName || member.email}
+                              </p>
+                              <p className="truncate type-meta text-muted-foreground">
+                                {member.email}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <span className="rounded-full bg-muted px-2.5 py-1 type-meta font-medium capitalize text-muted-foreground">
+                                {member.role}
+                              </span>
+                              {workspaceOverview.data?.callerRole === "owner" &&
+                              member.userId !== profile?.id ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                  aria-label={`Remove ${member.email}`}
+                                  disabled={removeMutation.isPending}
+                                  onClick={() => removeMutation.mutate(member.userId)}
+                                >
+                                  <UserMinus className="size-4" />
+                                </Button>
+                              ) : null}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {workspaceOverview.data.callerRole === "owner" ||
+                      workspaceOverview.data.callerRole === "admin" ? (
+                        <form
+                          className="mt-4 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-end"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            if (!inviteEmail.trim()) return;
+                            inviteMutation.mutate();
+                          }}
+                        >
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <Label htmlFor="invite-email">Add a member by email</Label>
+                            <Input
+                              id="invite-email"
+                              type="email"
+                              value={inviteEmail}
+                              onChange={(e) => setInviteEmail(e.target.value)}
+                              placeholder="teammate@example.com"
+                              className="h-11 rounded-xl"
+                            />
+                            <p className="type-meta text-muted-foreground">
+                              They need an existing account. There is no email invite yet.
+                            </p>
+                          </div>
+                          <select
+                            aria-label="Role"
+                            value={inviteRole}
+                            onChange={(e) => setInviteRole(e.target.value as "admin" | "member")}
+                            className="h-11 rounded-xl border border-input bg-background px-3 type-meta capitalize outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <option value="member">Member</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                          <Button
+                            type="submit"
+                            disabled={inviteMutation.isPending || !inviteEmail.trim()}
+                            className="h-11 rounded-xl"
+                          >
+                            {inviteMutation.isPending ? "Adding…" : "Add"}
+                          </Button>
+                        </form>
+                      ) : null}
                     </div>
-                    <p className="mt-3 type-meta leading-relaxed text-muted-foreground">
-                      Billing, seats and plan changes are controlled by the workspace administrator.
-                    </p>
-                    <ContactSupportButton
-                      context="Plan and billing support"
-                      className="mt-5 min-h-11 w-full rounded-xl"
-                    />
-                  </article>
-                </div>
+                  </>
+                ) : (
+                  <p className="mt-5 type-body text-muted-foreground">
+                    Plan and usage details could not be loaded.
+                  </p>
+                )}
               </section>
 
               <section
@@ -570,25 +721,43 @@ function PanelHeader({ title, description }: { title: string; description: strin
   );
 }
 
-function PlanCapability({
+function UsageStat({
   icon,
-  title,
-  description,
+  label,
+  used,
+  limit,
 }: {
   icon: ReactNode;
-  title: string;
-  description: string;
+  label: string;
+  used: number;
+  limit: number;
 }) {
+  const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const near = pct >= 90;
   return (
     <div className="rounded-xl border border-border/70 bg-background p-3">
-      <span
-        className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary"
-        aria-hidden
-      >
-        {icon}
-      </span>
-      <p className="mt-3 type-meta font-semibold text-foreground">{title}</p>
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{description}</p>
+      <div className="flex items-center gap-2">
+        <span
+          className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
+          aria-hidden
+        >
+          {icon}
+        </span>
+        <p className="min-w-0 truncate type-meta font-semibold text-foreground">{label}</p>
+      </div>
+      <p className="mt-2 type-body font-semibold">
+        {used.toLocaleString()}
+        <span className="type-meta font-normal text-muted-foreground">
+          {" "}
+          / {limit.toLocaleString()}
+        </span>
+      </p>
+      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div
+          className={cn("h-full rounded-full", near ? "bg-amber-500" : "bg-primary")}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }

@@ -1,5 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Activity, Bell, Database, Gauge, ShieldCheck, UsersRound, Wrench } from "lucide-react";
+import {
+  Activity,
+  Bell,
+  Building2,
+  Database,
+  Gauge,
+  ShieldCheck,
+  UsersRound,
+  Wrench,
+} from "lucide-react";
 
 import { AdminMfaCard } from "@/components/admin-mfa";
 import { AdminUsersPanel } from "@/components/admin-users";
@@ -84,6 +93,11 @@ function AdminProfilePage() {
               <Wrench className="size-4 text-primary" /> Administration
             </h2>
             <div className="mt-3 grid gap-2">
+              <Button asChild variant="outline" className="justify-start">
+                <Link to="/admin/workspaces">
+                  <Building2 className="size-4" /> All Workspaces
+                </Link>
+              </Button>
               <Button asChild variant="outline" className="justify-start">
                 <Link to="/linked-accounts">
                   <UsersRound className="size-4" /> Linked Accounts
