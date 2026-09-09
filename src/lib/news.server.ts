@@ -336,6 +336,11 @@ export async function storeArticles(
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
+  // TODO(Phase 3): this is a shared background sweep, not a single request's
+  // context - once multiple workspaces exist with independently-configured
+  // keywords, this needs to run (and store) per-workspace instead of the
+  // LEGACY_SINGLE_WORKSPACE_ID stopgap. See workspace.server.ts.
+  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
 
   // Compared over a recent window: the same event is only ever re-reported
   // within a few days.
@@ -343,6 +348,7 @@ export async function storeArticles(
   const { data: existing } = await admin
     .from("news_articles")
     .select("title")
+    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
     .gte("created_at", since)
     .limit(1000);
   const knownTitles = ((existing ?? []) as { title: string }[]).map((r) => r.title);
@@ -361,6 +367,7 @@ export async function storeArticles(
   await attachStoryImages(articles);
 
   const rows = articles.map((a) => ({
+    workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
     link: a.link,
     title: a.title,
     description: a.description,
@@ -382,6 +389,7 @@ export async function storeArticles(
   const { data: bare } = await admin
     .from("news_articles")
     .select("link")
+    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
     .is("image_url", null)
     .order("pub_date", { ascending: false, nullsFirst: false })
     .limit(40);

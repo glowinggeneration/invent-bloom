@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { EMPTY_SOCIALS, cleanHandle, type SetupStatus } from "./onboarding";
-import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
+import { resolveWorkspaceId } from "./workspace.server";
 
 const socialsSchema = z.object({
   facebook: z.string().trim().max(120).default(""),
@@ -34,8 +34,9 @@ export const getSetupStatus = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
 
+    const workspaceId = await resolveWorkspaceId(context);
     const { getWorkspaceSettings } = await import("./entity-config.server");
-    const settings = await getWorkspaceSettings();
+    const settings = await getWorkspaceSettings(workspaceId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as any;
@@ -43,6 +44,7 @@ export const getSetupStatus = createServerFn({ method: "POST" })
     const { data: keywordRows } = await db
       .from("mention_keywords")
       .select("term")
+      .eq("workspace_id", workspaceId)
       .eq("is_active", true)
       .order("created_at", { ascending: true })
       .limit(40);
@@ -50,6 +52,7 @@ export const getSetupStatus = createServerFn({ method: "POST" })
     const { data: watchRows } = await db
       .from("monitoring_watchlist")
       .select("platform, value")
+      .eq("workspace_id", workspaceId)
       .eq("kind", "account")
       .eq("is_active", true)
       .limit(60);
@@ -96,14 +99,13 @@ export const saveSetup = createServerFn({ method: "POST" })
       .eq("id", context.userId);
     if (profileError) throw new Error(profileError.message);
 
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as any;
 
     // Organisation identity and key figures are workspace-wide, not per-user -
     // every team member's setup writes into the same shared row, same as the
     // shared mention_keywords/monitoring_watchlist writes below.
-    // TODO(Phase 3): thread the caller's real workspaceId here instead of
-    // the LEGACY_SINGLE_WORKSPACE_ID stopgap - see workspace.server.ts.
     const { error: settingsError } = await db
       .from("workspace_settings")
       .update({
@@ -112,11 +114,14 @@ export const saveSetup = createServerFn({ method: "POST" })
         key_figures: data.keyFigures,
         updated_by: context.userId,
       })
-      .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID);
+      .eq("workspace_id", workspaceId);
     if (settingsError) throw new Error(settingsError.message);
 
     // Monitoring keywords — the listening pipeline reads this list every run.
-    const { data: existingKeywords } = await db.from("mention_keywords").select("term");
+    const { data: existingKeywords } = await db
+      .from("mention_keywords")
+      .select("term")
+      .eq("workspace_id", workspaceId);
     const known = new Set(
       ((existingKeywords ?? []) as { term: string }[]).map((r) => r.term.trim().toLowerCase()),
     );
@@ -130,6 +135,7 @@ export const saveSetup = createServerFn({ method: "POST" })
     if (fresh.length) {
       await db.from("mention_keywords").insert(
         fresh.map((term) => ({
+          workspace_id: workspaceId,
           term,
           source: "setup",
           is_active: true,
@@ -157,7 +163,8 @@ export const saveSetup = createServerFn({ method: "POST" })
     if (accounts.length) {
       const { data: existingWatch } = await db
         .from("monitoring_watchlist")
-        .select("platform, value");
+        .select("platform, value")
+        .eq("workspace_id", workspaceId);
       const seen = new Set(
         ((existingWatch ?? []) as { platform: string | null; value: string }[]).map(
           (r) => `${String(r.platform ?? "").toLowerCase()}:${r.value.trim().toLowerCase()}`,
@@ -166,6 +173,7 @@ export const saveSetup = createServerFn({ method: "POST" })
       const rows = accounts
         .filter((a) => !seen.has(`${a.platform}:${a.value.toLowerCase()}`))
         .map((a) => ({
+          workspace_id: workspaceId,
           kind: "account",
           label: a.label.slice(0, 120),
           value: a.value,

@@ -8,6 +8,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveWorkspaceId } from "./workspace.server";
 import type { OverviewData, OverviewIntel, OverviewWindow } from "./overview";
 
 export const getOverview = createServerFn({ method: "GET" })
@@ -18,9 +19,10 @@ export const getOverview = createServerFn({ method: "GET" })
       .default({ window: "24h" })
       .parse(input ?? {}),
   )
-  .handler(async ({ data }): Promise<OverviewData> => {
+  .handler(async ({ data, context }): Promise<OverviewData> => {
+    const workspaceId = await resolveWorkspaceId(context);
     const { buildOverview } = await import("./overview.server");
-    return buildOverview(data.window as OverviewWindow);
+    return buildOverview(data.window as OverviewWindow, workspaceId);
   });
 
 export const getOverviewIntel = createServerFn({ method: "POST" })
@@ -31,9 +33,10 @@ export const getOverviewIntel = createServerFn({ method: "POST" })
       .default({ refresh: false })
       .parse(input ?? {}),
   )
-  .handler(async ({ data }): Promise<OverviewIntel> => {
+  .handler(async ({ data, context }): Promise<OverviewIntel> => {
+    const workspaceId = await resolveWorkspaceId(context);
     const { getIntel } = await import("./overview.server");
-    return getIntel(data.refresh);
+    return getIntel(data.refresh, workspaceId);
   });
 
 export type OfficialPost = {
@@ -56,14 +59,15 @@ export type OfficialPost = {
 /** The newest post from each official account, with live public metrics. */
 export const getOfficialPosts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<{ posts: OfficialPost[]; error: string | null }> => {
+  .handler(async ({ context }): Promise<{ posts: OfficialPost[]; error: string | null }> => {
     const { brandHandles, getWorkspaceSettings } = await import("./entity-config.server");
     const { fetchLatestTweetIds, fetchTweetMetrics, fetchXProfile } =
       await import("./twitterapi.server");
 
     const posts: OfficialPost[] = [];
     let error: string | null = null;
-    const settings = await getWorkspaceSettings();
+    const workspaceId = await resolveWorkspaceId(context);
+    const settings = await getWorkspaceSettings(workspaceId);
 
     for (const handle of brandHandles(settings)) {
       const [{ ids, error: idError }, { profile }] = await Promise.all([

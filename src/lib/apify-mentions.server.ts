@@ -110,8 +110,12 @@ async function scoreSentiment(items: RawMention[], subject: string): Promise<Map
 
 async function recordStatus(result: SweepSourceResult): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // TODO(Phase 3): shared background sweep, not a single request's context -
+  // see workspace.server.ts.
+  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
   await (supabaseAdmin as any).from("apify_source_status").upsert(
     {
+      workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
       source_key: result.key,
       label: result.label,
       status: result.status,
@@ -127,7 +131,10 @@ async function recordStatus(result: SweepSourceResult): Promise<void> {
 
 /** Relevance, classification, deduplication and storage for one lane's haul. */
 async function storeMentions(items: RawMention[]): Promise<{ relevant: number; stored: number }> {
-  const settings = await getWorkspaceSettings();
+  // TODO(Phase 3): shared background sweep, not a single request's context -
+  // see workspace.server.ts.
+  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
+  const settings = await getWorkspaceSettings(LEGACY_SINGLE_WORKSPACE_ID);
   const relevant = items.filter((m) =>
     isRelevant(settings, m.title, m.content, m.authorName, m.authorHandle, JSON.stringify(m.raw)),
   );
@@ -152,6 +159,7 @@ async function storeMentions(items: RawMention[]): Promise<{ relevant: number; s
   const { data: existing } = await admin
     .from("apify_mentions")
     .select("platform, external_id, url")
+    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
     .in("url", unique.map((m) => m.url).slice(0, 500));
   const known = new Set<string>();
   for (const row of (existing ?? []) as { platform: string; external_id: string; url: string }[]) {
@@ -168,6 +176,7 @@ async function storeMentions(items: RawMention[]): Promise<{ relevant: number; s
   const rows = fresh.map((m) => {
     const v = verdicts.get(`${m.platform}:${m.externalId}`);
     return {
+      workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
       platform: m.platform,
       content_type: m.contentType,
       source_label: m.sourceLabel,
@@ -435,12 +444,16 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
+  // TODO(Phase 3): shared background sweep, not a single request's context -
+  // see workspace.server.ts.
+  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
 
   // Drop pages we no longer watch, so retired cards disappear.
   const watched = WATCHED_PROFILES.map((p) => p.platform);
   await admin
     .from("apify_profiles")
     .delete()
+    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
     .not("platform", "in", `(${watched.join(",")})`);
 
   if (!real.length) return { stored: 0, failed };
@@ -451,7 +464,8 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
     .from("apify_profiles")
     .select(
       "platform, handle, display_name, description, avatar_url, banner_url, followers, following, posts_count, likes_count",
-    );
+    )
+    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID);
   const known = new Map<string, Record<string, any>>(
     ((existing ?? []) as Record<string, any>[]).map((r) => [`${r["platform"]}:${r["handle"]}`, r]),
   );
@@ -475,7 +489,11 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
       : r;
     // Watched pages fall back to the SMAIT mark when a platform hides the
     // picture from the scraper.
-    return { ...base, avatar_url: base.avatar_url ?? "/smait-logo.png" };
+    return {
+      ...base,
+      workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
+      avatar_url: base.avatar_url ?? "/smait-logo.png",
+    };
   });
 
   const { error } = await admin

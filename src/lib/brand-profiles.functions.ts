@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { type BrandProfile } from "./brand-profiles";
 import { brandHandles, getWorkspaceSettings } from "./entity-config.server";
+import { resolveWorkspaceId } from "./workspace.server";
 
 /** Stored brand profile cards for the signed-in workspace. */
 export const listBrandProfiles = createServerFn({ method: "GET" })
@@ -23,7 +24,8 @@ export const refreshBrandProfiles = createServerFn({ method: "POST" })
     const { mapBrandRows } = await import("./brand-profiles.server");
 
     const errors: string[] = [];
-    const settings = await getWorkspaceSettings();
+    const workspaceId = await resolveWorkspaceId(context);
+    const settings = await getWorkspaceSettings(workspaceId);
     for (const handle of brandHandles(settings)) {
       const { profile, error } = await fetchXProfile(handle);
       if (!profile) {

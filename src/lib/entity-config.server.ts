@@ -13,7 +13,6 @@
  * freshly-provisioned workspace with no error anyone would notice.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
 
 export type WorkspaceSettings = {
   orgName: string;
@@ -33,11 +32,7 @@ const EMPTY_SETTINGS: WorkspaceSettings = {
   workspaceEmailDomain: null,
 };
 
-export async function getWorkspaceSettings(): Promise<WorkspaceSettings> {
-  // TODO(Phase 3): thread a real per-request workspaceId through this
-  // function's ~17 call sites instead of the LEGACY_SINGLE_WORKSPACE_ID
-  // stopgap - see workspace.server.ts for why this is safe for now and why
-  // it must change before self-serve signup ships.
+export async function getWorkspaceSettings(workspaceId: string): Promise<WorkspaceSettings> {
   // Cast: the generated Supabase types don't know about workspace_id yet -
   // types are regenerated from the live schema, which this environment has
   // no credentials to reach. Same gap, same fix, as every other workspace_id
@@ -45,7 +40,7 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettings> {
   const { data, error } = await (supabaseAdmin as any)
     .from("workspace_settings")
     .select("org_name, org_aliases, org_handle, key_figures, context_terms, workspace_email_domain")
-    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
   if (error || !data) return EMPTY_SETTINGS;
   return {

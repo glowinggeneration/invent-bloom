@@ -13,7 +13,13 @@ export const suggestReplyDraft = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { resolveWorkspaceId } = await import("./workspace.server");
+    const workspaceId = await resolveWorkspaceId(context);
     const { suggestReply } = await import("./reply-suggestion.server");
-    return suggestReply({ targetUrl: data.targetUrl, guidance: data.guidance ?? null });
+    return suggestReply({
+      targetUrl: data.targetUrl,
+      guidance: data.guidance ?? null,
+      workspaceId,
+    });
   });

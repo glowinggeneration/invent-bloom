@@ -85,6 +85,7 @@ export async function loadMentions(
   toISO: string,
   errors: string[],
   settings: WorkspaceSettings,
+  workspaceId: string,
 ): Promise<MentionItem[]> {
   const items: MentionItem[] = [];
 
@@ -94,6 +95,7 @@ export async function loadMentions(
       .select(
         "tweet_id, text, author_handle, author_name, url, posted_at, like_count, view_count, sentiment, matched_keyword, collected_at, mentions_federation, mentions_president",
       )
+      .eq("workspace_id", workspaceId)
       .gte("posted_at", fromISO)
       .lt("posted_at", toISO)
       .order("posted_at", { ascending: false })
@@ -137,6 +139,7 @@ export async function loadMentions(
       .select(
         "platform, source_label, author_name, author_handle, title, content, url, published_at, views, likes, comments, shares, entities, matched_keywords, sentiment, collected_at",
       )
+      .eq("workspace_id", workspaceId)
       .gte("published_at", fromISO)
       .lt("published_at", toISO)
       .order("published_at", { ascending: false })
@@ -316,6 +319,7 @@ export async function loadExecutions(
   fromISO: string,
   toISO: string,
   errors: string[],
+  workspaceId: string,
 ): Promise<ExecRow[]> {
   const rows: ExecRow[] = [];
 
@@ -325,6 +329,7 @@ export async function loadExecutions(
       .select(
         "source, job_id, campaign_id, publish_action_id, campaign_reply_id, account_id, handle, persona_name, action_type, status, target_tweet_id, target_handle, updated_at, run_at, result_tweet_id",
       )
+      .eq("workspace_id", workspaceId)
       .gte("updated_at", fromISO)
       .lt("updated_at", toISO)
       .limit(20000);
@@ -360,6 +365,7 @@ export async function loadExecutions(
     const { data, error } = await admin
       .from("publish_actions")
       .select("job_id, account_id, action_type, status, result_tweet_id, created_at, updated_at")
+      .eq("workspace_id", workspaceId)
       .gte("updated_at", fromISO)
       .lt("updated_at", toISO)
       .limit(20000);
@@ -389,6 +395,7 @@ export async function loadExecutions(
       .select(
         "campaign_id, account_id, handle, persona_name, status, tweet_url, tweet_id, result_tweet_id, created_at",
       )
+      .eq("workspace_id", workspaceId)
       .gte("created_at", fromISO)
       .lt("created_at", toISO)
       .limit(20000);
@@ -435,6 +442,7 @@ async function buildCampaigns(
   rows: ExecRow[],
   accounts: Map<string, { handle: string; persona: string }>,
   errors: string[],
+  workspaceId: string,
 ): Promise<{
   campaigns: ReportCampaigns;
   personas: ReportPersonas;
@@ -452,6 +460,7 @@ async function buildCampaigns(
         .select(
           "id, name, summary, mode, status, tweet_text, comment_text, objective_text, target_tweet_url, engagement_actions, created_at",
         )
+        .eq("workspace_id", workspaceId)
         .in("id", jobIds);
       for (const j of (data ?? []) as any[]) meta.set(`publish:${j.id}`, j);
     } catch (err) {
@@ -463,6 +472,7 @@ async function buildCampaigns(
       const { data } = await admin
         .from("listening_campaigns")
         .select("id, name, summary, core_message, account_ids, is_active, created_at, last_run_at")
+        .eq("workspace_id", workspaceId)
         .in("id", listenIds);
       for (const c of (data ?? []) as any[]) meta.set(`listen:${c.id}`, c);
     } catch (err) {
@@ -749,23 +759,26 @@ export async function buildReport(options: {
   label: string;
   periodStart: string;
   periodEnd: string;
+  workspaceId: string;
 }): Promise<BuiltReport> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
   const errors: string[] = [];
-  const settings = await getWorkspaceSettings();
+  const { workspaceId } = options;
+  const settings = await getWorkspaceSettings(workspaceId);
 
   const from = new Date(options.periodStart).getTime();
   const to = new Date(options.periodEnd).getTime();
   const prevFrom = new Date(from - (to - from)).toISOString();
 
   const [current, previous, execs, accountRows] = await Promise.all([
-    loadMentions(admin, options.periodStart, options.periodEnd, errors, settings),
-    loadMentions(admin, prevFrom, options.periodStart, [], settings),
-    loadExecutions(admin, options.periodStart, options.periodEnd, errors),
+    loadMentions(admin, options.periodStart, options.periodEnd, errors, settings, workspaceId),
+    loadMentions(admin, prevFrom, options.periodStart, [], settings, workspaceId),
+    loadExecutions(admin, options.periodStart, options.periodEnd, errors, workspaceId),
     admin
       .from("x_accounts")
       .select("id, handle, persona_label, display_name")
+      .eq("workspace_id", workspaceId)
       .then((r: any) => r.data ?? [])
       .catch(() => []),
   ]);
@@ -796,7 +809,7 @@ export async function buildReport(options: {
   };
 
   const conversation = buildConversation(current, previous);
-  const { campaigns, personas } = await buildCampaigns(admin, execs, accounts, errors);
+  const { campaigns, personas } = await buildCampaigns(admin, execs, accounts, errors, workspaceId);
 
   const { runs, ...campaignTotals } = campaigns;
   const written =
@@ -837,6 +850,7 @@ export async function generateReport(options: {
   label: string;
   periodStart: string;
   periodEnd: string;
+  workspaceId: string;
 }): Promise<ReportRecord> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
@@ -889,6 +903,7 @@ export async function generateReport(options: {
   }
 
   const row = {
+    workspace_id: options.workspaceId,
     kind: built.kind,
     report_date: built.reportDate,
     label: built.label,
@@ -913,6 +928,11 @@ export async function generateReport(options: {
     typeof value === "string" ? sanitizeText(value) : value,
   );
 
+  // TODO(Phase 3): this onConflict target doesn't include workspace_id - the
+  // underlying unique constraint needs a migration to add it before a second
+  // workspace exists, or two workspaces generating the same-shaped report
+  // (e.g. both a "daily" report for the same day) would silently overwrite
+  // each other's row instead of getting their own.
   const { data, error } = await admin
     .from("reports")
     .upsert(clean, { onConflict: "kind,report_date,period_start,period_end" })
@@ -928,7 +948,10 @@ export async function generateReport(options: {
 }
 
 /** Generates the daily report for a reporting day (defaults to today, Nairobi). */
-export async function generateDailyReport(dateKey?: string): Promise<ReportRecord> {
+export async function generateDailyReport(
+  dateKey: string | undefined,
+  workspaceId: string,
+): Promise<ReportRecord> {
   const key = dateKey ?? reportDateKey();
   const { start, end } = dayBounds(key);
   return generateReport({
@@ -937,5 +960,6 @@ export async function generateDailyReport(dateKey?: string): Promise<ReportRecor
     label: `Daily Report — ${formatReportDate(key)}`,
     periodStart: start,
     periodEnd: end,
+    workspaceId,
   });
 }

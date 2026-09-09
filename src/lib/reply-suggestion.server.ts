@@ -50,6 +50,7 @@ export async function suggestReply(input: {
   targetUrl: string;
   /** Optional extra steer from the user. */
   guidance?: string | null;
+  workspaceId: string;
 }): Promise<ReplySuggestion> {
   let target: ReplySuggestion["target"] = null;
   try {
@@ -91,7 +92,7 @@ export async function suggestReply(input: {
 
   try {
     const { describeSubject, getWorkspaceSettings } = await import("./entity-config.server");
-    const subject = describeSubject(await getWorkspaceSettings());
+    const subject = describeSubject(await getWorkspaceSettings(input.workspaceId));
     const res = await fetch(GATEWAY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },

@@ -496,6 +496,8 @@ export const generateCampaignNames = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ named: number }> => {
     const supabase = context.supabase as any;
+    const { resolveWorkspaceId } = await import("./workspace.server");
+    const workspaceId = await resolveWorkspaceId(context);
     const { generateCampaignName, isGenericName } = await import("./campaign-naming.server");
 
     const { data: jobs } = await supabase
@@ -512,15 +514,18 @@ export const generateCampaignNames = createServerFn({ method: "POST" })
     let named = 0;
 
     for (const job of pending) {
-      const { name, summary } = await generateCampaignName({
-        actionType: String(job.mode ?? "campaign"),
-        objective: job.objective_text || null,
-        content: job.tweet_text || job.comment_text || null,
-        targetUrl: job.target_tweet_url || null,
-        handles: Array.isArray(job.engagement_targets)
-          ? job.engagement_targets.map((t: any) => String(t?.handle ?? t)).slice(0, 10)
-          : [],
-      });
+      const { name, summary } = await generateCampaignName(
+        {
+          actionType: String(job.mode ?? "campaign"),
+          objective: job.objective_text || null,
+          content: job.tweet_text || job.comment_text || null,
+          targetUrl: job.target_tweet_url || null,
+          handles: Array.isArray(job.engagement_targets)
+            ? job.engagement_targets.map((t: any) => String(t?.handle ?? t)).slice(0, 10)
+            : [],
+        },
+        workspaceId,
+      );
       const { error } = await supabase
         .from("publish_jobs")
         .update({ name, summary })
@@ -536,12 +541,15 @@ export const generateCampaignNames = createServerFn({ method: "POST" })
       .limit(8);
 
     for (const c of (listens ?? []) as any[]) {
-      const { name, summary } = await generateCampaignName({
-        actionType: "intercept",
-        objective: c.core_message || null,
-        keywords: c.keywords ?? [],
-        hashtags: c.hashtags ?? [],
-      });
+      const { name, summary } = await generateCampaignName(
+        {
+          actionType: "intercept",
+          objective: c.core_message || null,
+          keywords: c.keywords ?? [],
+          hashtags: c.hashtags ?? [],
+        },
+        workspaceId,
+      );
       await supabase
         .from("listening_campaigns")
         .update({

@@ -16,6 +16,7 @@ import {
   type ReportListItem,
   type ReportRecord,
 } from "./reports";
+import { resolveWorkspaceId } from "./workspace.server";
 
 function toRecord(row: any): ReportRecord {
   return {
@@ -95,7 +96,8 @@ export const createReport = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }): Promise<{ id: string }> => {
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    const workspaceId = await resolveWorkspaceId(context);
     const { generateReport } = await import("./reports.server");
 
     const today = reportDateKey();
@@ -110,6 +112,7 @@ export const createReport = createServerFn({ method: "POST" })
         label: `Daily Report — ${formatReportDate(key)}`,
         periodStart: start,
         periodEnd: end,
+        workspaceId,
       });
       return { id: report.id };
     }
@@ -138,6 +141,7 @@ export const createReport = createServerFn({ method: "POST" })
       label: `${formatReportDate(startKey)} – ${formatReportDate(endKey)}`,
       periodStart: start,
       periodEnd: end,
+      workspaceId,
     });
     return { id: report.id };
   });
@@ -152,6 +156,7 @@ export const getReportCsv = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ filename: string; csv: string }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const workspaceId = await resolveWorkspaceId(context);
     const { checkRateLimit, createSupabaseRateLimitStore, RATE_LIMIT_PRESETS } =
       await import("./platform/rate-limit.server");
     const rate = await checkRateLimit(createSupabaseRateLimitStore(supabaseAdmin as any), {
@@ -176,13 +181,19 @@ export const getReportCsv = createServerFn({ method: "POST" })
     const date = String(row.report_date);
 
     if (data.sheet === "mentions") {
-      return { filename: `SMAIT_Mentions_${date}.csv`, csv: await mentionsCsv(start, end) };
+      return {
+        filename: `SMAIT_Mentions_${date}.csv`,
+        csv: await mentionsCsv(start, end, workspaceId),
+      };
     }
     if (data.sheet === "campaigns") {
-      return { filename: `SMAIT_Campaigns_${date}.csv`, csv: await campaignsCsv(start, end) };
+      return {
+        filename: `SMAIT_Campaigns_${date}.csv`,
+        csv: await campaignsCsv(start, end, workspaceId),
+      };
     }
     return {
       filename: `SMAIT_Persona_Activity_${date}.csv`,
-      csv: await personaActivityCsv(start, end),
+      csv: await personaActivityCsv(start, end, workspaceId),
     };
   });

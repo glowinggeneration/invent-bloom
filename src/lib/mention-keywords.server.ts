@@ -68,10 +68,14 @@ export async function activeKeywords(limit = 12): Promise<string[]> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as any;
+    // TODO(Phase 3): shared background sweep, not a single request's context -
+    // see workspace.server.ts.
+    const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
 
     const { data: keywordRows, error: keywordError } = await db
       .from("mention_keywords")
       .select("term")
+      .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
       .eq("is_active", true)
       .order("created_at", { ascending: true })
       .limit(Math.max(limit, 60));
@@ -86,6 +90,7 @@ export async function activeKeywords(limit = 12): Promise<string[]> {
       const { data: watchRows, error: watchError } = await db
         .from("monitoring_watchlist")
         .select("kind, label, value, platform, priority")
+        .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
         .eq("is_active", true)
         .limit(100);
       if (!watchError) watched = (watchRows ?? []) as WatchKeyword[];
@@ -132,7 +137,10 @@ export async function refreshKeywords(): Promise<{ added: string[]; checked: num
 
   const { searchTweets } = await import("./twitterapi.server");
   const { describeSubject, getWorkspaceSettings } = await import("./entity-config.server");
-  const subject = describeSubject(await getWorkspaceSettings());
+  // TODO(Phase 3): shared background sweep, not a single request's context -
+  // see workspace.server.ts.
+  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
+  const subject = describeSubject(await getWorkspaceSettings(LEGACY_SINGLE_WORKSPACE_ID));
   const { tweets } = await searchTweets(keywordQuery(existing.slice(0, 8)), 40);
   const sample = tweets.slice(0, 40).map((t) => t.text.slice(0, 220));
 
@@ -179,11 +187,14 @@ export async function refreshKeywords(): Promise<{ added: string[]; checked: num
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   if (fresh.length) {
-    await (supabaseAdmin as any)
-      .from("mention_keywords")
-      .insert(
-        fresh.map((term) => ({ term, source: "ai", last_refreshed_at: new Date().toISOString() })),
-      );
+    await (supabaseAdmin as any).from("mention_keywords").insert(
+      fresh.map((term) => ({
+        workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
+        term,
+        source: "ai",
+        last_refreshed_at: new Date().toISOString(),
+      })),
+    );
   }
   return { added: fresh, checked: existing.length };
 }

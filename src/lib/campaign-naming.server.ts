@@ -111,13 +111,16 @@ function buildSystemPrompt(subject: string): string {
 }
 
 /** Names a single campaign. Never throws. */
-export async function generateCampaignName(ctx: CampaignNameContext): Promise<CampaignName> {
+export async function generateCampaignName(
+  ctx: CampaignNameContext,
+  workspaceId: string,
+): Promise<CampaignName> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   const fallback = fallbackName(ctx);
   if (!apiKey) return fallback;
   try {
     const { describeSubject, getWorkspaceSettings } = await import("./entity-config.server");
-    const subject = describeSubject(await getWorkspaceSettings());
+    const subject = describeSubject(await getWorkspaceSettings(workspaceId));
     const res = await fetch(GATEWAY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
@@ -152,10 +155,11 @@ export async function nameCampaignJob(
   admin: any,
   jobId: string | null | undefined,
   ctx: CampaignNameContext,
+  workspaceId: string,
 ) {
   if (!jobId) return;
   try {
-    const { name, summary } = await generateCampaignName(ctx);
+    const { name, summary } = await generateCampaignName(ctx, workspaceId);
     await admin.from("publish_jobs").update({ name, summary }).eq("id", jobId);
   } catch {
     /* naming is best effort */

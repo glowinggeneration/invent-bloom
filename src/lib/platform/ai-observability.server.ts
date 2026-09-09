@@ -20,6 +20,7 @@ import type { AiOutcome } from "./ai-provider.server";
 
 export type AiEventInput = {
   userId: string | null;
+  workspaceId: string;
   org?: string | null;
   feature: string;
   correlationId?: string;
@@ -36,6 +37,7 @@ export async function recordAiEvent(
   const row = input.outcome.ok
     ? {
         user_id: input.userId,
+        workspace_id: input.workspaceId,
         org: input.org ?? null,
         feature: input.feature,
         provider: input.outcome.response.provider,
@@ -52,6 +54,7 @@ export async function recordAiEvent(
       }
     : {
         user_id: input.userId,
+        workspace_id: input.workspaceId,
         org: input.org ?? null,
         feature: input.feature,
         provider: "none",

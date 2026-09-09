@@ -28,6 +28,7 @@ function describe(p: Persona, state?: PersonaStateRow): string {
  */
 async function recordGatewayEvent(meta: {
   userId: string | null;
+  workspaceId: string;
   feature: string;
   startedAt: number;
   usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -47,6 +48,7 @@ async function recordGatewayEvent(meta: {
       response.outputTokens = meta.usage.completion_tokens;
     await recordAiEvent(supabaseAdmin as any, {
       userId: meta.userId,
+      workspaceId: meta.workspaceId,
       feature: meta.feature,
       startedAt: meta.startedAt,
       outcome:
@@ -63,7 +65,7 @@ async function callGateway(
   apiKey: string,
   system: string,
   content: GatewayMessageContent[],
-  meta: { userId: string | null; feature: string },
+  meta: { userId: string | null; workspaceId: string; feature: string },
 ): Promise<Record<string, unknown>> {
   const startedAt = Date.now();
   const response = await fetch(GATEWAY_URL, {
@@ -186,6 +188,7 @@ export async function runAnalysis(input: {
   attachments?: { name: string; excerpt: string }[];
   history?: { role: "user" | "assistant"; content: string }[];
   userId?: string | null;
+  workspaceId: string;
 }): Promise<Analysis> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured for this project.");
@@ -224,6 +227,7 @@ export async function runAnalysis(input: {
       }
       const parsed = await callGateway(apiKey, PANEL_SYSTEM, content, {
         userId: input.userId ?? null,
+        workspaceId: input.workspaceId,
         feature: "smait.persona_panel",
       });
       const list = Array.isArray(parsed["reactions"]) ? parsed["reactions"] : [];
@@ -277,7 +281,7 @@ export async function runAnalysis(input: {
     apiKey,
     SYNTHESIS_SYSTEM,
     [{ type: "text", text: `${messageBlock}\n\nPanel digest:\n${digest}` }],
-    { userId: input.userId ?? null, feature: "smait.synthesis" },
+    { userId: input.userId ?? null, workspaceId: input.workspaceId, feature: "smait.synthesis" },
   );
 
   const metrics = (synthesis["metrics"] ?? {}) as Record<string, unknown>;

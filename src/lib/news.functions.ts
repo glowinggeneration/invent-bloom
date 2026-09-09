@@ -21,6 +21,7 @@ import {
   describeSubject,
   getWorkspaceSettings,
 } from "./entity-config.server";
+import { resolveWorkspaceId } from "./workspace.server";
 
 /** An article as the feed shows it: press record plus how the story reads. */
 export type ScoredNewsArticle = NewsArticle & {
@@ -182,7 +183,8 @@ export const listNews = createServerFn({ method: "GET" })
       // feed (or the model) even when the sweep query was loose. An
       // unconfigured workspace (no pattern) keeps everything rather than
       // emptying the feed - see isNewsRelevant()'s doc comment.
-      const settings = await getWorkspaceSettings();
+      const workspaceId = await resolveWorkspaceId(context);
+      const settings = await getWorkspaceSettings(workspaceId);
       const pattern = buildRelevancePattern(settings);
       const relevantByKeyword = kept.filter((a) =>
         isNewsRelevant(pattern, a.title, a.description, a.matchedQuery),

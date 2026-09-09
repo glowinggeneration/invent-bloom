@@ -27,7 +27,9 @@ export const getProfile = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!data) throw new Error("Profile not found.");
     const { getWorkspaceSettings } = await import("./entity-config.server");
-    const settings = await getWorkspaceSettings();
+    const { resolveWorkspaceId } = await import("./workspace.server");
+    const workspaceId = await resolveWorkspaceId(context);
+    const settings = await getWorkspaceSettings(workspaceId);
     return {
       id: data.id,
       email: data.email,
@@ -258,7 +260,9 @@ export const sendMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ threadId: string }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { runAnalysis, applyLegalReview } = await import("./smait.server");
+    const { resolveWorkspaceId } = await import("./workspace.server");
     const supabase = context.supabase;
+    const workspaceId = await resolveWorkspaceId(context);
 
     const { checkRateLimit, createSupabaseRateLimitStore, RATE_LIMIT_PRESETS } =
       await import("./platform/rate-limit.server");
@@ -287,14 +291,23 @@ export const sendMessage = createServerFn({ method: "POST" })
         .eq("id", context.userId)
         .maybeSingle();
       const title = data.text.slice(0, 60) + (data.text.length > 60 ? "…" : "");
-      const { data: created, error } = await supabase
+      // Cast: the generated Supabase types don't know about workspace_id yet -
+      // types are regenerated from the live schema, which this environment has
+      // no credentials to reach.
+      const { data: created, error } = await (supabase as any)
         .from("threads")
-        .insert({ user_id: context.userId, org: profile?.org ?? "external", title })
+        .insert({
+          user_id: context.userId,
+          workspace_id: workspaceId,
+          org: profile?.org ?? "external",
+          title,
+        })
         .select("id")
         .single();
       if (error || !created) throw new Error(error?.message ?? "Could not start a test.");
-      threadId = created.id;
+      threadId = created.id as string;
     }
+    if (!threadId) throw new Error("Could not start a test.");
 
     let storagePath: string | null = null;
     if (data.imageDataUrl?.startsWith("data:")) {
@@ -337,6 +350,7 @@ export const sendMessage = createServerFn({ method: "POST" })
         content: p.content,
       })),
       userId: context.userId,
+      workspaceId,
     });
 
     // Legal-Risk Language Transformation Engine: rewrite risky wording in the

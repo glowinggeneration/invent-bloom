@@ -71,6 +71,7 @@ async function loadItems(
   admin: any,
   fromISO: string,
   settings: WorkspaceSettings,
+  workspaceId: string,
 ): Promise<Item[]> {
   const [x, social] = await Promise.all([
     admin
@@ -78,6 +79,7 @@ async function loadItems(
       .select(
         "tweet_id, text, author_handle, author_name, url, posted_at, like_count, view_count, sentiment, mentions_federation, mentions_president",
       )
+      .eq("workspace_id", workspaceId)
       .gte("posted_at", fromISO)
       .order("posted_at", { ascending: false })
       .limit(5000),
@@ -86,6 +88,7 @@ async function loadItems(
       .select(
         "id, platform, source_label, author_name, author_handle, author_avatar, title, content, url, thumbnail_url, published_at, views, likes, comments, shares, entities, sentiment",
       )
+      .eq("workspace_id", workspaceId)
       .gte("published_at", fromISO)
       .order("published_at", { ascending: false })
       .limit(5000),
@@ -288,10 +291,12 @@ async function publishedPosts(
   admin: any,
   fromISO: string,
   prevFromISO: string,
+  workspaceId: string,
 ): Promise<{ now: number; prev: number }> {
   const { data } = await admin
     .from("publish_actions")
     .select("created_at, status, action_type")
+    .eq("workspace_id", workspaceId)
     .gte("created_at", prevFromISO)
     .eq("status", "success")
     .limit(5000);
@@ -311,6 +316,7 @@ async function publishedPosts(
 /** The full Overview payload for one time window. */
 export async function buildOverview(
   window: OverviewWindow,
+  workspaceId: string,
   customHours?: number | null,
 ): Promise<OverviewData> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -321,8 +327,8 @@ export async function buildOverview(
   const from = to - hours * 3600 * 1000;
   const prevFrom = from - hours * 3600 * 1000;
 
-  const settings = await getWorkspaceSettings();
-  const all = await loadItems(admin, new Date(prevFrom).toISOString(), settings);
+  const settings = await getWorkspaceSettings(workspaceId);
+  const all = await loadItems(admin, new Date(prevFrom).toISOString(), settings, workspaceId);
   const current = all.filter((i) => i.at! >= from);
   const previous = all.filter((i) => i.at! < from);
 
@@ -338,6 +344,7 @@ export async function buildOverview(
     admin,
     new Date(from).toISOString(),
     new Date(prevFrom).toISOString(),
+    workspaceId,
   );
 
   const dayAgo = to - 24 * 3600 * 1000;
@@ -573,13 +580,14 @@ async function writeIntel(input: {
  * cache window or when the caller forces a refresh. Regeneration is the only
  * path that spends X or AI calls.
  */
-export async function getIntel(force = false): Promise<OverviewIntel> {
+export async function getIntel(force: boolean, workspaceId: string): Promise<OverviewIntel> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
 
   const { data: cached } = await admin
     .from("overview_intel")
     .select("payload, generated_at")
+    .eq("workspace_id", workspaceId)
     .eq("key", INTEL_KEY)
     .maybeSingle();
 
@@ -593,8 +601,13 @@ export async function getIntel(force = false): Promise<OverviewIntel> {
   const hours = 48;
   const to = Date.now();
   const from = to - hours * 3600 * 1000;
-  const settings = await getWorkspaceSettings();
-  const all = await loadItems(admin, new Date(from - hours * 3600 * 1000).toISOString(), settings);
+  const settings = await getWorkspaceSettings(workspaceId);
+  const all = await loadItems(
+    admin,
+    new Date(from - hours * 3600 * 1000).toISOString(),
+    settings,
+    workspaceId,
+  );
   const current = all.filter((i) => i.at! >= from);
   const previous = all.filter((i) => i.at! < from);
 
@@ -641,7 +654,7 @@ export async function getIntel(force = false): Promise<OverviewIntel> {
     await admin
       .from("overview_intel")
       .upsert(
-        { key: INTEL_KEY, payload, generated_at: payload.generatedAt },
+        { workspace_id: workspaceId, key: INTEL_KEY, payload, generated_at: payload.generatedAt },
         { onConflict: "key" },
       );
   } else {

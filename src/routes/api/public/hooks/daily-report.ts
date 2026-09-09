@@ -26,8 +26,14 @@ export const Route = createFileRoute("/api/public/hooks/daily-report")({
         const date = new URL(request.url).searchParams.get("date");
         try {
           const { generateDailyReport } = await import("@/lib/reports.server");
+          // TODO(Phase 3): this cron runs for the whole platform, not one
+          // request - once multiple workspaces exist, it needs to generate a
+          // report per workspace instead of the LEGACY_SINGLE_WORKSPACE_ID
+          // stopgap. See workspace.server.ts.
+          const { LEGACY_SINGLE_WORKSPACE_ID } = await import("@/lib/workspace.server");
           const report = await generateDailyReport(
             date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined,
+            LEGACY_SINGLE_WORKSPACE_ID,
           );
           return Response.json({
             ok: true,

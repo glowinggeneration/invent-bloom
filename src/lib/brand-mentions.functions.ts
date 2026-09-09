@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { brandHandles, describeSubject, getWorkspaceSettings } from "./entity-config.server";
+import { resolveWorkspaceId } from "./workspace.server";
 
 export type MentionSentiment = "positive" | "neutral" | "negative";
 
@@ -524,7 +525,8 @@ export const listBrandMentions = createServerFn({ method: "GET" })
       const { searchTweets, fetchTweetMetrics } = await import("./twitterapi.server");
       const { activeKeywords, keywordQuery } = await import("./mention-keywords.server");
 
-      const settings = await getWorkspaceSettings();
+      const workspaceId = await resolveWorkspaceId(context);
+      const settings = await getWorkspaceSettings(workspaceId);
       const configuredHandles = brandHandles(settings);
 
       const { data: accounts } = await context.supabase.from("x_accounts").select("handle");

@@ -37,10 +37,21 @@ function dateParts(iso: string | null): [string, string] {
   return [shifted.slice(0, 10), shifted.slice(11, 19)];
 }
 
-export async function mentionsCsv(periodStart: string, periodEnd: string): Promise<string> {
+export async function mentionsCsv(
+  periodStart: string,
+  periodEnd: string,
+  workspaceId: string,
+): Promise<string> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const settings = await getWorkspaceSettings();
-  const items = await loadMentions(supabaseAdmin as any, periodStart, periodEnd, [], settings);
+  const settings = await getWorkspaceSettings(workspaceId);
+  const items = await loadMentions(
+    supabaseAdmin as any,
+    periodStart,
+    periodEnd,
+    [],
+    settings,
+    workspaceId,
+  );
   const out = [
     line([
       "Date",
@@ -89,7 +100,11 @@ export async function mentionsCsv(periodStart: string, periodEnd: string): Promi
   return out.join("\n");
 }
 
-export async function campaignsCsv(periodStart: string, periodEnd: string): Promise<string> {
+export async function campaignsCsv(
+  periodStart: string,
+  periodEnd: string,
+  workspaceId: string,
+): Promise<string> {
   const { buildReport } = await import("./reports.server");
   const report = await buildReport({
     kind: "custom",
@@ -97,6 +112,7 @@ export async function campaignsCsv(periodStart: string, periodEnd: string): Prom
     label: "",
     periodStart,
     periodEnd,
+    workspaceId,
   });
 
   const out = [
@@ -152,15 +168,20 @@ export async function campaignsCsv(periodStart: string, periodEnd: string): Prom
   return out.join("\n");
 }
 
-export async function personaActivityCsv(periodStart: string, periodEnd: string): Promise<string> {
+export async function personaActivityCsv(
+  periodStart: string,
+  periodEnd: string,
+  workspaceId: string,
+): Promise<string> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as any;
 
   const [rows, accountRows] = await Promise.all([
-    loadExecutions(admin, periodStart, periodEnd, []),
+    loadExecutions(admin, periodStart, periodEnd, [], workspaceId),
     admin
       .from("x_accounts")
       .select("id, handle, persona_label, display_name")
+      .eq("workspace_id", workspaceId)
       .then((r: any) => r.data ?? [])
       .catch(() => []),
   ]);
@@ -179,11 +200,19 @@ export async function personaActivityCsv(periodStart: string, periodEnd: string)
     ...new Set(rows.filter((r) => r.source === "listen").map((r) => r.campaignId)),
   ];
   if (jobIds.length) {
-    const { data } = await admin.from("publish_jobs").select("id, name").in("id", jobIds);
+    const { data } = await admin
+      .from("publish_jobs")
+      .select("id, name")
+      .eq("workspace_id", workspaceId)
+      .in("id", jobIds);
     for (const j of (data ?? []) as any[]) names.set(`publish:${j.id}`, String(j.name ?? ""));
   }
   if (listenIds.length) {
-    const { data } = await admin.from("listening_campaigns").select("id, name").in("id", listenIds);
+    const { data } = await admin
+      .from("listening_campaigns")
+      .select("id, name")
+      .eq("workspace_id", workspaceId)
+      .in("id", listenIds);
     for (const c of (data ?? []) as any[]) names.set(`listen:${c.id}`, String(c.name ?? ""));
   }
 
