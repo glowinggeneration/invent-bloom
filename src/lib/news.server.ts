@@ -382,7 +382,7 @@ export async function storeArticles(
 
   const { error } = await admin
     .from("news_articles")
-    .upsert(rows, { onConflict: "link", ignoreDuplicates: true });
+    .upsert(rows, { onConflict: "workspace_id,link", ignoreDuplicates: true });
   if (error) throw new Error(error.message);
 
   // Backfill older items that are still without an image.
@@ -402,7 +402,11 @@ export async function storeArticles(
 
     for (const item of pending) {
       if (!item.imageUrl) continue;
-      await admin.from("news_articles").update({ image_url: item.imageUrl }).eq("link", item.link);
+      await admin
+        .from("news_articles")
+        .update({ image_url: item.imageUrl })
+        .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
+        .eq("link", item.link);
     }
   }
 

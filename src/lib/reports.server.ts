@@ -928,14 +928,9 @@ export async function generateReport(options: {
     typeof value === "string" ? sanitizeText(value) : value,
   );
 
-  // TODO(Phase 3): this onConflict target doesn't include workspace_id - the
-  // underlying unique constraint needs a migration to add it before a second
-  // workspace exists, or two workspaces generating the same-shaped report
-  // (e.g. both a "daily" report for the same day) would silently overwrite
-  // each other's row instead of getting their own.
   const { data, error } = await admin
     .from("reports")
-    .upsert(clean, { onConflict: "kind,report_date,period_start,period_end" })
+    .upsert(clean, { onConflict: "workspace_id,kind,report_date,period_start,period_end" })
     .select("id")
     .single();
   if (error) {

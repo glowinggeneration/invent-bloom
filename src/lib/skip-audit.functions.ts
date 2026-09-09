@@ -3,6 +3,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveWorkspaceId } from "./workspace.server";
 
 export type SkipAuditEntry = {
   id: string;
@@ -19,14 +20,12 @@ export type SkipAuditEntry = {
 export const listSkipAudit = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<SkipAuditEntry[]> => {
-    // Audit rows are owner-scoped at the database level; the federation
-    // workspace shares them, so read with the privileged client after the
-    // caller has been authenticated by the middleware above.
-    void context;
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (supabaseAdmin as any)
       .from("campaign_skip_audit")
       .select("id, source, handle, persona_name, reason, detail, campaign_id, job_id, created_at")
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);

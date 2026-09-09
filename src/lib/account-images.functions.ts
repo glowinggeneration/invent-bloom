@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { assertAdmin } from "./access";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveWorkspaceId } from "./workspace.server";
 
 /**
  * Fetch abstract Unsplash artwork for connected X accounts that don't have a
@@ -21,6 +22,7 @@ export const syncAccountImages = createServerFn({ method: "POST" })
   .handler(
     async ({ data, context }): Promise<{ updated: number; remaining: number; error?: string }> => {
       assertAdmin(context as any);
+      const workspaceId = await resolveWorkspaceId(context);
       const { portraitQuery, searchUnsplash } = await import("./unsplash.server");
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const admin = supabaseAdmin as any;
@@ -28,7 +30,7 @@ export const syncAccountImages = createServerFn({ method: "POST" })
       const { data: rows, error } = await admin
         .from("x_accounts")
         .select("id, handle, display_name, persona_label, avatar_url, background_url")
-
+        .eq("workspace_id", workspaceId)
         .order("handle");
       if (error) throw new Error(error.message);
 

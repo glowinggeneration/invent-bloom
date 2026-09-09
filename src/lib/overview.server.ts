@@ -655,7 +655,7 @@ export async function getIntel(force: boolean, workspaceId: string): Promise<Ove
       .from("overview_intel")
       .upsert(
         { workspace_id: workspaceId, key: INTEL_KEY, payload, generated_at: payload.generatedAt },
-        { onConflict: "key" },
+        { onConflict: "workspace_id,key" },
       );
   } else {
     return { ...(cached.payload as OverviewIntel), generatedAt: cached.generated_at };

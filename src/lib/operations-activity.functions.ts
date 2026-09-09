@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
+import { resolveWorkspaceId } from "./workspace.server";
 
 export type OperationsActivityItem = {
   id: string;
@@ -28,6 +29,7 @@ export const getOperationsActivity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<OperationsActivityItem[]> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
 
@@ -37,11 +39,13 @@ export const getOperationsActivity = createServerFn({ method: "POST" })
         .select(
           "id, mode, tweet_text, comment_text, objective_mode, objective_text, status, created_at",
         )
+        .eq("workspace_id", workspaceId)
         .order("created_at", { ascending: false })
         .limit(120),
       admin
         .from("campaign_replies")
         .select("id, campaign_id, handle, reply_text, status, result_tweet_id, created_at")
+        .eq("workspace_id", workspaceId)
         .order("created_at", { ascending: false })
         .limit(180),
       admin
@@ -49,11 +53,13 @@ export const getOperationsActivity = createServerFn({ method: "POST" })
         .select(
           "id, content, status, result_tweet_id, published_at, created_at, x_accounts(handle)",
         )
+        .eq("workspace_id", workspaceId)
         .order("created_at", { ascending: false })
         .limit(120),
       admin
         .from("threads")
         .select("id, title, updated_at, created_at")
+        .eq("workspace_id", workspaceId)
         .order("updated_at", { ascending: false })
         .limit(120),
     ]);

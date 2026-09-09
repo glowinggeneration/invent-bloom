@@ -41,7 +41,9 @@ export async function storeXMentions(mentions: BrandMention[]): Promise<number> 
     collected_at: new Date().toISOString(),
   }));
 
-  const { error } = await admin.from("x_mentions").upsert(rows, { onConflict: "tweet_id" });
+  const { error } = await admin
+    .from("x_mentions")
+    .upsert(rows, { onConflict: "workspace_id,tweet_id" });
   if (error) {
     console.error(`Storing X mentions failed: ${error.message}`);
     return 0;

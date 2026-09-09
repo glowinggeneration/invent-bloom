@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { INTERNAL_ACCOUNT_BUDGETS, type XCampaignAction } from "./x-compliance";
+import { resolveWorkspaceId } from "./workspace.server";
 
 export type XAccountHealthRow = {
   id: string;
@@ -26,9 +27,10 @@ function pct(count: number, max: number) {
 
 export const getXAccountHealth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<{ generatedAt: string; rows: XAccountHealthRow[] }> => {
+  .handler(async ({ context }): Promise<{ generatedAt: string; rows: XAccountHealthRow[] }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as any;
+    const workspaceId = await resolveWorkspaceId(context);
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const [{ data: accounts, error: accountError }, { data: actions, error: actionError }] =
@@ -36,10 +38,12 @@ export const getXAccountHealth = createServerFn({ method: "POST" })
         db
           .from("x_accounts")
           .select("id, handle, display_name, is_active, suspended, auth_token")
+          .eq("workspace_id", workspaceId)
           .order("handle"),
         db
           .from("scheduled_actions")
           .select("account_id, action_type, status, run_at, error")
+          .eq("workspace_id", workspaceId)
           .gte("run_at", since)
           .order("run_at", { ascending: false })
           .limit(10000),

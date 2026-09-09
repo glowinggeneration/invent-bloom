@@ -125,7 +125,7 @@ async function recordStatus(result: SweepSourceResult): Promise<void> {
       last_run_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "source_key" },
+    { onConflict: "workspace_id,source_key" },
   );
 }
 
@@ -210,7 +210,7 @@ async function storeMentions(items: RawMention[]): Promise<{ relevant: number; s
 
   const { error } = await admin
     .from("apify_mentions")
-    .upsert(rows, { onConflict: "platform,external_id", ignoreDuplicates: true });
+    .upsert(rows, { onConflict: "workspace_id,platform,external_id", ignoreDuplicates: true });
   if (error) throw new Error(error.message);
 
   return { relevant: unique.length, stored: rows.length };
@@ -498,7 +498,7 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
 
   const { error } = await admin
     .from("apify_profiles")
-    .upsert(merged, { onConflict: "platform,handle" });
+    .upsert(merged, { onConflict: "workspace_id,platform,handle" });
   if (error) throw new Error(error.message);
 
   return { stored: merged.length, failed };

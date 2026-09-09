@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "./access";
+import { resolveWorkspaceId } from "./workspace.server";
 
 export type HealthState = "healthy" | "attention" | "stale" | "unknown";
 
@@ -69,6 +70,7 @@ export const getOperationsHealth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<OperationsHealth> => {
     assertAdmin(context as any);
+    const workspaceId = await resolveWorkspaceId(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
     const since = new Date(Date.now() - 24 * 3600000).toISOString();
@@ -88,44 +90,55 @@ export const getOperationsHealth = createServerFn({ method: "POST" })
       admin
         .from("apify_source_status")
         .select("source_key, label, status, message, last_run_at, stored_last_run")
+        .eq("workspace_id", workspaceId)
         .order("label"),
       admin
         .from("x_mentions")
         .select("collected_at, posted_at")
+        .eq("workspace_id", workspaceId)
         .order("collected_at", { ascending: false })
         .limit(1),
       admin
         .from("news_articles")
         .select("pub_date, provider")
+        .eq("workspace_id", workspaceId)
         .order("pub_date", { ascending: false })
         .limit(1),
       admin
         .from("apify_mentions")
         .select("published_at, platform")
+        .eq("workspace_id", workspaceId)
         .order("published_at", { ascending: false })
         .limit(1),
-      admin.from("x_accounts").select("id, is_active, suspended, auth_token"),
+      admin
+        .from("x_accounts")
+        .select("id, is_active, suspended, auth_token")
+        .eq("workspace_id", workspaceId),
       admin
         .from("scheduled_actions")
         .select("id, run_at, source, status")
+        .eq("workspace_id", workspaceId)
         .eq("status", "pending")
         .order("run_at", { ascending: true })
         .limit(2000),
       admin
         .from("publish_actions")
         .select("status, created_at")
+        .eq("workspace_id", workspaceId)
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(2000),
       admin
         .from("campaign_replies")
         .select("status, created_at")
+        .eq("workspace_id", workspaceId)
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(2000),
       admin
         .from("persona_daily_posts")
         .select("status, created_at")
+        .eq("workspace_id", workspaceId)
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(2000),
