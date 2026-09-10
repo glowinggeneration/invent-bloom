@@ -492,6 +492,13 @@ function ProfilePage() {
                             </p>
                             <h3 className="mt-1 type-card font-semibold capitalize">
                               {workspaceOverview.data.limits.label}
+                              <span className="ml-2 type-meta font-normal normal-case text-muted-foreground">
+                                {workspaceOverview.data.limits.monthlyPriceUsd === null
+                                  ? "Custom pricing"
+                                  : workspaceOverview.data.limits.monthlyPriceUsd === 0
+                                    ? "Free"
+                                    : `$${workspaceOverview.data.limits.monthlyPriceUsd}/mo`}
+                              </span>
                             </h3>
                             <p className="mt-1 type-meta text-muted-foreground">
                               {workspaceOverview.data.name}

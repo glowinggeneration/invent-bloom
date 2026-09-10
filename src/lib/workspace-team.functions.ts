@@ -34,6 +34,8 @@ export type WorkspacePlanLimits = {
   maxSeats: number;
   maxKeywords: number;
   maxAiCallsMonth: number;
+  /** null means custom/"contact us" pricing, not zero. */
+  monthlyPriceUsd: number | null;
 };
 
 export type WorkspaceOverview = {
@@ -120,6 +122,7 @@ export const getWorkspaceOverview = createServerFn({ method: "POST" })
       max_seats: 0,
       max_keywords: 0,
       max_ai_calls_month: 0,
+      monthly_price_usd: null,
     };
 
     return {
@@ -143,8 +146,42 @@ export const getWorkspaceOverview = createServerFn({ method: "POST" })
         maxSeats: limits.max_seats,
         maxKeywords: limits.max_keywords,
         maxAiCallsMonth: limits.max_ai_calls_month,
+        monthlyPriceUsd: limits.monthly_price_usd,
       },
     };
+  });
+
+export type PlanTier = {
+  tier: string;
+  label: string;
+  monthlyPriceUsd: number | null;
+  maxAccounts: number;
+  maxSeats: number;
+  maxKeywords: number;
+  maxAiCallsMonth: number;
+  costNote: string;
+};
+
+/** The three plan tiers, for the plan picker and the SaaS-owner workspace list. */
+export const listPlanTiers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<PlanTier[]> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as any)
+      .from("plan_limits")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as any[]).map((row) => ({
+      tier: row.tier,
+      label: row.label,
+      monthlyPriceUsd: row.monthly_price_usd,
+      maxAccounts: row.max_accounts,
+      maxSeats: row.max_seats,
+      maxKeywords: row.max_keywords,
+      maxAiCallsMonth: row.max_ai_calls_month,
+      costNote: row.cost_note,
+    }));
   });
 
 /**

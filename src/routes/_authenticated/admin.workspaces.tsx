@@ -15,6 +15,7 @@ import {
   updateWorkspacePlan,
   type AdminWorkspace,
 } from "@/lib/admin-users.functions";
+import { listPlanTiers, type PlanTier } from "@/lib/workspace-team.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/workspaces")({
   head: () => ({
@@ -40,6 +41,7 @@ function AdminWorkspacesPage() {
   const { data: profile, isLoading: profileLoading } = useProfile();
   const isAdmin = isAdminEmail(profile?.email);
   const load = useServerFn(listAllWorkspaces);
+  const loadPlans = useServerFn(listPlanTiers);
   const changePlan = useServerFn(updateWorkspacePlan);
   const queryClient = useQueryClient();
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -49,6 +51,20 @@ function AdminWorkspacesPage() {
     queryFn: () => load(),
     enabled: !profileLoading && isAdmin,
   });
+
+  const plans = useQuery({
+    queryKey: ["plan-tiers"],
+    queryFn: () => loadPlans(),
+    enabled: !profileLoading && isAdmin,
+  });
+  const planByTier = new Map((plans.data ?? []).map((p) => [p.tier, p]));
+
+  function priceLabel(tier: PlanTier | undefined): string {
+    if (!tier) return "";
+    if (tier.monthlyPriceUsd === null) return "custom";
+    if (tier.monthlyPriceUsd === 0) return "free";
+    return `$${tier.monthlyPriceUsd}/mo`;
+  }
 
   const updatePlan = useMutation({
     mutationFn: (input: { workspaceId: string; planTier: (typeof PLAN_TIERS)[number] }) =>
@@ -89,6 +105,28 @@ function AdminWorkspacesPage() {
       >
         All Workspaces
       </PageTitle>
+
+      {plans.data ? (
+        <Card className="mt-6 p-0">
+          <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            {plans.data.map((tier) => (
+              <div key={tier.tier} className="p-5">
+                <p className="type-meta font-semibold uppercase tracking-wide text-muted-foreground">
+                  {tier.label}
+                </p>
+                <p className="mt-1 type-card font-semibold">{priceLabel(tier)}</p>
+                <p className="mt-2 type-meta text-muted-foreground">
+                  {tier.maxAccounts} accounts · {tier.maxSeats} seats · {tier.maxKeywords} keywords
+                  · {tier.maxAiCallsMonth.toLocaleString()} AI calls/mo
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  {tier.costNote}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       {workspaces.isLoading ? (
         <Card className="mt-6 flex items-center gap-2 p-6 type-body text-muted-foreground">
@@ -146,7 +184,7 @@ function AdminWorkspacesPage() {
                       >
                         {PLAN_TIERS.map((tier) => (
                           <option key={tier} value={tier}>
-                            {tier}
+                            {tier} · {priceLabel(planByTier.get(tier))}
                           </option>
                         ))}
                       </select>
