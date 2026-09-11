@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CornerButton } from "@/components/vengeance/corner-button";
 import {
   dismissFirstRun,
   resetFirstRun,
@@ -298,21 +299,17 @@ export function FirstRunChecklist({
 
       {draft && onRunAnalysis && !state.analysis && (
         <div className="mt-4">
-          <Button
-            size="sm"
-            className="w-full"
+          <CornerButton
+            wrapperClassName="w-full flex justify-center"
+            className="w-full justify-center"
+            accentColor="var(--primary)"
+            icon={analysisPending ? <Loader2 className="size-4 animate-spin" /> : undefined}
             onClick={onRunAnalysis}
             disabled={!canRun}
             aria-describedby={blockers.length ? "run-analysis-hints" : undefined}
           >
-            {analysisPending ? (
-              <>
-                <Loader2 className="size-4 animate-spin" /> Running analysis…
-              </>
-            ) : (
-              "Run analysis"
-            )}
-          </Button>
+            {analysisPending ? "Running analysis…" : "Run analysis"}
+          </CornerButton>
           <p
             id="run-analysis-hints"
             className="mt-1.5 text-center text-xs text-muted-foreground"

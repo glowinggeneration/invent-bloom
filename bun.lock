@@ -92,6 +92,9 @@
       },
     },
   },
+  "overrides": {
+    "entities": "4.5.0",
+  },
   "packages": {
     "@apify/consts": ["@apify/consts@2.57.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@apify/consts/-/consts-2.57.0.tgz", {}, "sha512-kyD+pq72+RxpPUUikk5pWyGRcbehoQSkTIgd3kqE/MCy+MGPTYBbMb4lb2C92+Zh8K5eYyTrfobHKrpqyHAWMQ=="],
 

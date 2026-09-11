@@ -40,6 +40,9 @@ import {
   inviteWorkspaceMember,
   removeWorkspaceMember,
 } from "@/lib/workspace-team.functions";
+import { GlowBorderCard } from "@/components/vengeance/glow-border-card";
+import { AnimatedTooltip } from "@/components/vengeance/animated-tooltip";
+import { RadialGlowButton } from "@/components/vengeance/radial-glow-button";
 import { cn } from "@/lib/utils";
 
 type SectionId = "profile" | "preferences" | "plan" | "security";
@@ -484,59 +487,66 @@ function ProfilePage() {
                 ) : workspaceOverview.data ? (
                   <>
                     <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-                      <article className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-5">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <p className="type-meta font-semibold uppercase tracking-[0.08em] text-primary">
-                              Current plan
-                            </p>
-                            <h3 className="mt-1 type-card font-semibold capitalize">
-                              {workspaceOverview.data.limits.label}
-                              <span className="ml-2 type-meta font-normal normal-case text-muted-foreground">
-                                {workspaceOverview.data.limits.monthlyPriceUsd === null
-                                  ? "Custom pricing"
-                                  : workspaceOverview.data.limits.monthlyPriceUsd === 0
-                                    ? "Free"
-                                    : `$${workspaceOverview.data.limits.monthlyPriceUsd}/mo`}
-                              </span>
-                            </h3>
-                            <p className="mt-1 type-meta text-muted-foreground">
-                              {workspaceOverview.data.name}
-                            </p>
+                      <GlowBorderCard
+                        width="100%"
+                        aspectRatio="auto"
+                        borderRadius="1rem"
+                        animationDuration={8}
+                      >
+                        <article className="rounded-2xl p-5">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="type-meta font-semibold uppercase tracking-[0.08em] text-primary">
+                                Current plan
+                              </p>
+                              <h3 className="mt-1 type-card font-semibold capitalize">
+                                {workspaceOverview.data.limits.label}
+                                <span className="ml-2 type-meta font-normal normal-case text-muted-foreground">
+                                  {workspaceOverview.data.limits.monthlyPriceUsd === null
+                                    ? "Custom pricing"
+                                    : workspaceOverview.data.limits.monthlyPriceUsd === 0
+                                      ? "Free"
+                                      : `$${workspaceOverview.data.limits.monthlyPriceUsd}/mo`}
+                                </span>
+                              </h3>
+                              <p className="mt-1 type-meta text-muted-foreground">
+                                {workspaceOverview.data.name}
+                              </p>
+                            </div>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 type-meta font-semibold capitalize text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                              <BadgeCheck className="size-3.5" aria-hidden="true" />
+                              {workspaceOverview.data.status}
+                            </span>
                           </div>
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 type-meta font-semibold capitalize text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                            <BadgeCheck className="size-3.5" aria-hidden="true" />
-                            {workspaceOverview.data.status}
-                          </span>
-                        </div>
 
-                        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                          <UsageStat
-                            icon={<UserPlus className="size-4" />}
-                            label="Seats"
-                            used={workspaceOverview.data.usage.seats}
-                            limit={workspaceOverview.data.limits.maxSeats}
-                          />
-                          <UsageStat
-                            icon={<Building2 className="size-4" />}
-                            label="Linked accounts"
-                            used={workspaceOverview.data.usage.accounts}
-                            limit={workspaceOverview.data.limits.maxAccounts}
-                          />
-                          <UsageStat
-                            icon={<Sparkles className="size-4" />}
-                            label="Monitored keywords"
-                            used={workspaceOverview.data.usage.keywords}
-                            limit={workspaceOverview.data.limits.maxKeywords}
-                          />
-                          <UsageStat
-                            icon={<Megaphone className="size-4" />}
-                            label="AI calls this month"
-                            used={workspaceOverview.data.usage.aiCallsThisMonth}
-                            limit={workspaceOverview.data.limits.maxAiCallsMonth}
-                          />
-                        </div>
-                      </article>
+                          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                            <UsageStat
+                              icon={<UserPlus className="size-4" />}
+                              label="Seats"
+                              used={workspaceOverview.data.usage.seats}
+                              limit={workspaceOverview.data.limits.maxSeats}
+                            />
+                            <UsageStat
+                              icon={<Building2 className="size-4" />}
+                              label="Linked accounts"
+                              used={workspaceOverview.data.usage.accounts}
+                              limit={workspaceOverview.data.limits.maxAccounts}
+                            />
+                            <UsageStat
+                              icon={<Sparkles className="size-4" />}
+                              label="Monitored keywords"
+                              used={workspaceOverview.data.usage.keywords}
+                              limit={workspaceOverview.data.limits.maxKeywords}
+                            />
+                            <UsageStat
+                              icon={<Megaphone className="size-4" />}
+                              label="AI calls this month"
+                              used={workspaceOverview.data.usage.aiCallsThisMonth}
+                              limit={workspaceOverview.data.limits.maxAiCallsMonth}
+                            />
+                          </div>
+                        </article>
+                      </GlowBorderCard>
 
                       <article className="rounded-2xl border border-border p-5">
                         <div className="flex items-center gap-2">
@@ -567,9 +577,20 @@ function ProfilePage() {
                             className="flex items-center justify-between gap-3 py-3"
                           >
                             <div className="min-w-0">
-                              <p className="truncate type-body font-medium">
+                              <AnimatedTooltip
+                                variant="sadoc"
+                                className="block max-w-full truncate type-body font-medium"
+                                content={
+                                  <span className="capitalize">
+                                    {member.role} · joined{" "}
+                                    {new Date(member.joinedAt).toLocaleDateString("en-KE", {
+                                      dateStyle: "medium",
+                                    })}
+                                  </span>
+                                }
+                              >
                                 {member.fullName || member.email}
-                              </p>
+                              </AnimatedTooltip>
                               <p className="truncate type-meta text-muted-foreground">
                                 {member.email}
                               </p>
@@ -630,13 +651,12 @@ function ProfilePage() {
                             <option value="member">Member</option>
                             <option value="admin">Admin</option>
                           </select>
-                          <Button
+                          <RadialGlowButton
                             type="submit"
                             disabled={inviteMutation.isPending || !inviteEmail.trim()}
-                            className="h-11 rounded-xl"
                           >
                             {inviteMutation.isPending ? "Adding…" : "Add"}
-                          </Button>
+                          </RadialGlowButton>
                         </form>
                       ) : null}
                     </div>

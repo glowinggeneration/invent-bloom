@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui-kit";
 import { ProgressStepper } from "@/components/smait/primitives/progress-stepper";
+import AnimatedButton from "@/components/vengeance/animated-button";
+import { PopButton } from "@/components/vengeance/pop-button";
+import StaggerText from "@/components/vengeance/stagger-text";
+import { KineticTextLoader } from "@/components/vengeance/kinetic-text-loader";
 import { getSetupStatus, saveSetup, skipSetup } from "@/lib/onboarding.functions";
 import { EMPTY_SOCIALS, SOCIAL_FIELDS, cleanHandle, type SetupSocials } from "@/lib/onboarding";
 import { friendlyError } from "@/lib/friendly-errors";
@@ -152,7 +156,7 @@ function SetupPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40">
-        <p className="type-meta text-muted-foreground">Loading your setup…</p>
+        <KineticTextLoader />
       </div>
     );
   }
@@ -162,7 +166,9 @@ function SetupPage() {
       <div className="mx-auto w-full max-w-2xl">
         <div className="flex flex-col items-center text-center">
           <img src="/smait-logo.svg" alt="SMAIT logo" className="h-9 w-auto" />
-          <h1 className="type-section mt-4">Set up your workspace</h1>
+          <h1 className="type-section mt-4">
+            <StaggerText>Set up your workspace</StaggerText>
+          </h1>
         </div>
 
         <Card className="mt-6">
@@ -238,9 +244,13 @@ function SetupPage() {
                       placeholder="e.g. Jane Doe"
                       aria-label="Add a key figure"
                     />
-                    <Button type="button" variant="outline" onClick={() => addKeyFigure()}>
+                    <PopButton
+                      type="button"
+                      onClick={() => addKeyFigure()}
+                      className="!px-4 !py-2 shrink-0 gap-1 normal-case"
+                    >
                       <Plus className="size-4" /> Add
-                    </Button>
+                    </PopButton>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {keyFigures.map((name) => (
@@ -285,9 +295,13 @@ function SetupPage() {
                     placeholder="e.g. your product name"
                     aria-label="Add a monitoring term"
                   />
-                  <Button type="button" variant="outline" onClick={() => addKeyword()}>
+                  <PopButton
+                    type="button"
+                    onClick={() => addKeyword()}
+                    className="!px-4 !py-2 shrink-0 gap-1 normal-case"
+                  >
                     <Plus className="size-4" /> Add
-                  </Button>
+                  </PopButton>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {keywords.length === 0 && (
@@ -353,13 +367,13 @@ function SetupPage() {
                   Continue
                 </Button>
               ) : (
-                <Button
+                <AnimatedButton
                   type="button"
                   onClick={() => finish.mutate()}
                   disabled={finish.isPending || !fullName.trim() || keywords.length === 0}
                 >
                   {finish.isPending ? "Saving…" : "Finish setup"}
-                </Button>
+                </AnimatedButton>
               )}
             </div>
           </div>
