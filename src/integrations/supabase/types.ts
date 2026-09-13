@@ -1693,6 +1693,42 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_settings: {
+        Row: {
+          context_terms: string[]
+          key_figures: string[]
+          org_aliases: string[]
+          org_handle: string
+          org_name: string
+          singleton: boolean
+          updated_at: string
+          updated_by: string | null
+          workspace_email_domain: string | null
+        }
+        Insert: {
+          context_terms?: string[]
+          key_figures?: string[]
+          org_aliases?: string[]
+          org_handle?: string
+          org_name?: string
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          workspace_email_domain?: string | null
+        }
+        Update: {
+          context_terms?: string[]
+          key_figures?: string[]
+          org_aliases?: string[]
+          org_handle?: string
+          org_name?: string
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          workspace_email_domain?: string | null
+        }
+        Relationships: []
+      }
       x_accounts: {
         Row: {
           always_on: boolean
