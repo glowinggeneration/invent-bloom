@@ -58,7 +58,7 @@ import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-errors";
 import { FileUploadProgressList } from "@/components/application/file-upload/file-upload-progress";
 import { useMediaUploadQueue } from "@/components/application/file-upload/use-media-upload-queue";
-import { Slider } from "@/components/base/slider/slider";
+import { Knob } from "@/components/base/knob/knob";
 
 /**
  * /campaign/post — publish original posts from selected personas, either as
@@ -518,10 +518,8 @@ export function PostCampaign() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium" htmlFor="post-intensity">
-                      Intensity
-                    </label>
-                    <Slider
+                    <span className="text-xs font-medium">Intensity</span>
+                    <Knob
                       id="post-intensity"
                       min={INTENSITY_MIN}
                       max={INTENSITY_MAX}

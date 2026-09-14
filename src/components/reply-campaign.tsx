@@ -74,7 +74,7 @@ import {
 } from "@/lib/voice-controls";
 import { FileUploadProgressList } from "@/components/application/file-upload/file-upload-progress";
 import { useMediaUploadQueue } from "@/components/application/file-upload/use-media-upload-queue";
-import { Slider } from "@/components/base/slider/slider";
+import { Knob } from "@/components/base/knob/knob";
 
 type MediaItem = { url: string; name: string; kind: string };
 
@@ -899,27 +899,20 @@ export function ReplyCampaign() {
                     <p className="text-[11px] text-muted-foreground">{toneOption(tone).hint}</p>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-medium" htmlFor="reply-intensity">
-                        Intensity
-                      </label>
-                      <span className="text-[11px] text-muted-foreground">
-                        {intensityLabel(intensity)}
-                      </span>
-                    </div>
-                    <Slider
-                      id="reply-intensity"
-                      min={INTENSITY_MIN}
-                      max={INTENSITY_MAX}
-                      step={1}
-                      value={intensity}
-                      onValueChange={(next) => setIntensity(clampIntensity(next))}
-                      formatValue={intensityLabel}
-                      aria-label="Reply intensity"
-                    />
-                    <div className="flex justify-between text-[11px] text-muted-foreground">
-                      <span>Subtle</span>
-                      <span>Full</span>
+                    <span className="text-xs font-medium">Intensity</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] text-muted-foreground">Subtle</span>
+                      <Knob
+                        id="reply-intensity"
+                        min={INTENSITY_MIN}
+                        max={INTENSITY_MAX}
+                        step={1}
+                        value={intensity}
+                        onValueChange={(next) => setIntensity(clampIntensity(next))}
+                        formatValue={intensityLabel}
+                        aria-label="Reply intensity"
+                      />
+                      <span className="text-[11px] text-muted-foreground">Full</span>
                     </div>
                   </div>
                 </div>

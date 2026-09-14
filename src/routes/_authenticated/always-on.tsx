@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageTitle, StatCard, LockScreen, EmptyState, PageToolbar } from "@/components/ui-kit";
 import { CATEGORY_LABELS } from "@/lib/always-on";
-import { listAlwaysOnPublished } from "@/lib/always-on.functions";
+import { listAlwaysOnPlans, listAlwaysOnPublished } from "@/lib/always-on.functions";
+import { DailyTimetable } from "@/components/daily-timetable";
 
 export const Route = createFileRoute("/_authenticated/always-on")({
   head: () => ({
@@ -49,11 +50,19 @@ function AlwaysOnPage() {
   const { data: profile, isLoading: profileLoading } = useProfile();
   const isAdmin = isAdminEmail(profile?.email);
   const loadFeed = useServerFn(listAlwaysOnPublished);
+  const loadPlans = useServerFn(listAlwaysOnPlans);
   const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["always-on-feed"],
     queryFn: () => loadFeed({ data: {} }),
+    enabled: isAdmin,
+    refetchInterval: 2 * 60 * 1000,
+  });
+
+  const { data: todaysPlans } = useQuery({
+    queryKey: ["always-on-plans-today"],
+    queryFn: () => loadPlans({ data: {} }),
     enabled: isAdmin,
     refetchInterval: 2 * 60 * 1000,
   });
@@ -101,6 +110,12 @@ function AlwaysOnPage() {
         <StatCard label="Published in total" value={data?.total ?? 0} />
         <StatCard label="Accounts represented" value={data?.accounts ?? 0} />
       </div>
+
+      {todaysPlans && todaysPlans.length > 0 ? (
+        <div className="mt-5">
+          <DailyTimetable plans={todaysPlans} />
+        </div>
+      ) : null}
 
       <PageToolbar className="mt-5">
         <SearchToolbar onSearch={setSearch} placeholder="Search published content or account…" />
