@@ -239,18 +239,24 @@ export const saveSetup = createServerFn({ method: "POST" })
     }
 
     let pagesAdded = 0;
-    if (entries.length) {
-      const { data: existingWatch } = await db
-        .from("monitoring_watchlist")
-        .select("kind, platform, value")
-        .eq("workspace_id", workspaceId);
+    {
       const keyOf = (kind: string, platform: string | null, value: string) =>
         `${kind}:${String(platform ?? "").toLowerCase()}:${value.trim().toLowerCase()}`;
-      const seen = new Set(
-        ((existingWatch ?? []) as { kind: string; platform: string | null; value: string }[]).map(
-          (r) => keyOf(r.kind, r.platform, r.value),
-        ),
-      );
+      const { data: existingWatch } = await db
+        .from("monitoring_watchlist")
+        .select("id, kind, platform, value, is_active")
+        .eq("workspace_id", workspaceId)
+        .in("kind", ["account", "hashtag", "topic"]);
+      const current = (existingWatch ?? []) as {
+        id: string;
+        kind: string;
+        platform: string | null;
+        value: string;
+        is_active: boolean;
+      }[];
+      const wantedKeys = new Set(entries.map((a) => keyOf(a.kind, a.platform, a.value)));
+      const seen = new Set(current.map((r) => keyOf(r.kind, r.platform, r.value)));
+
       const rows = entries
         .filter((a) => !seen.has(keyOf(a.kind, a.platform, a.value)))
         .map((a) => ({
@@ -268,6 +274,20 @@ export const saveSetup = createServerFn({ method: "POST" })
       if (rows.length) {
         await db.from("monitoring_watchlist").insert(rows);
         pagesAdded = rows.length;
+      }
+
+      const reactivate = current
+        .filter((r) => !r.is_active && wantedKeys.has(keyOf(r.kind, r.platform, r.value)))
+        .map((r) => r.id);
+      if (reactivate.length) {
+        await db.from("monitoring_watchlist").update({ is_active: true }).in("id", reactivate);
+      }
+      // Entries removed in the wizard drop off the watchlist so the saved view matches.
+      const deactivate = current
+        .filter((r) => r.is_active && !wantedKeys.has(keyOf(r.kind, r.platform, r.value)))
+        .map((r) => r.id);
+      if (deactivate.length) {
+        await db.from("monitoring_watchlist").update({ is_active: false }).in("id", deactivate);
       }
     }
 
