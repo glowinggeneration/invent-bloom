@@ -468,7 +468,7 @@ function SetupPage() {
                     otherPlaceholder="Enter your team or department"
                   />
                 </Field>
-                <Field label="Phone" hint="Optional — used for urgent alerts only">
+                <Field label="Phone">
                   <div className="flex gap-2">
                     <Select
                       value={phoneDial === OTHER || PHONE_COUNTRIES.every((c) => c.dial !== phoneDial) ? OTHER : phoneDial}
