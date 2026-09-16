@@ -595,7 +595,6 @@ function SetupPage() {
                   organisation.
                 </p>
                 <Field label="Website">
-
                   <Input
                     value={orgWebsite}
                     onChange={(e) => setOrgWebsite(e.target.value)}
@@ -603,7 +602,7 @@ function SetupPage() {
                     inputMode="url"
                   />
                 </Field>
-                <Field label="Address" hint="Optional">
+                <Field label="Address">
                   <Textarea
                     value={orgAddress}
                     onChange={(e) => setOrgAddress(e.target.value)}
