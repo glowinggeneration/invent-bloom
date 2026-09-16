@@ -276,13 +276,53 @@ export function PostCampaign() {
     [jobsQuery.data],
   );
 
+  // Launching is never a dead click either: name the missing requirement and
+  // send the operator straight to it.
+  const attemptRun = (now: boolean) => {
+    if (runMutation.isPending) return;
+    const goTo = (id: string) =>
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!tweetText.trim()) {
+      setError("Write the message or objective before launching.");
+      goTo("post-details");
+      return;
+    }
+    if (overLimit) {
+      setError(`Trim the message to ${TWEET_LIMIT} characters before launching.`);
+      goTo("post-details");
+      return;
+    }
+    if (!campaignName.trim()) {
+      setError("Name the campaign so you can find this run later.");
+      goTo("post-campaign-name");
+      return;
+    }
+    if (personas.selected.length === 0) {
+      setError("Choose at least one persona account before launching.");
+      goTo("post-personas");
+      return;
+    }
+    if (variations.length === 0) {
+      setError("Generate the persona versions first, then review them.");
+      goTo("post-review");
+      return;
+    }
+    if (!previewApproved) {
+      setError("Tick 'Reviewed and approved' once you have read every version.");
+      goTo("post-review");
+      return;
+    }
+    setError(null);
+    runMutation.mutate({ now });
+  };
+
   const runButton = (
     <LaunchActions
       scheduled={scheduled}
       busy={runMutation.isPending}
-      disabled={!canRun}
-      onLaunch={() => runMutation.mutate({ now: true })}
-      onQueue={() => runMutation.mutate({ now: false })}
+      disabled={false}
+      onLaunch={() => attemptRun(true)}
+      onQueue={() => attemptRun(false)}
       launchLabel="Post now"
       queueLabel="Queue posts"
     />
