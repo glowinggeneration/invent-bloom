@@ -1,31 +1,34 @@
-import { ApifyClient } from "apify-client";
-
 /**
- * Server-only Apify service. The token is read from the backend environment
- * and never leaves this module.
+ * Server-only Apify service. Calls are routed through the Lovable connector
+ * gateway, so the provider credential never lives in this codebase.
  */
-export function getApifyToken(): string {
-  const token = process.env["APIFY_API_TOKEN"];
-  if (!token) throw new Error("APIFY_API_TOKEN is not configured");
-  return token;
+
+export const APIFY_GATEWAY_URL = "https://connector-gateway.lovable.dev/apify";
+
+/** Headers required by the connector gateway for every Apify request. */
+export function getApifyHeaders(): Record<string, string> {
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  if (!lovableKey) throw new Error("LOVABLE_API_KEY is not configured");
+  const connectionKey = process.env["APIFY_API_KEY"];
+  if (!connectionKey) throw new Error("APIFY_API_KEY is not configured");
+  return {
+    Authorization: `Bearer ${lovableKey}`,
+    "X-Connection-Api-Key": connectionKey,
+  };
 }
 
-export function getApifyClient(): ApifyClient {
-  return new ApifyClient({ token: getApifyToken() });
-}
-
-/** Makes a real authenticated request to Apify to verify the token. */
+/** Makes a real authenticated request to Apify to verify the connection. */
 export async function checkApifyConnection(): Promise<{
   connected: boolean;
   message: string;
 }> {
   try {
-    const token = getApifyToken();
-    const response = await fetch("https://api.apify.com/v2/users/me", {
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await fetch(`${APIFY_GATEWAY_URL}/users/me`, {
+      headers: getApifyHeaders(),
     });
     if (!response.ok) {
-      console.error(`Apify verification failed [${response.status}]`);
+      const body = await response.text();
+      console.error(`Apify verification failed [${response.status}]: ${body}`);
       return { connected: false, message: "Apify connection failed" };
     }
     await response.json();
