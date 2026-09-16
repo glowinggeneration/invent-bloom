@@ -199,8 +199,9 @@ function SetupPage() {
   const [jobTitle, setJobTitle] = useState("");
   const [team, setTeam] = useState("");
   const [phoneDial, setPhoneDial] = useState<string>(DEFAULT_DIAL);
-  const phone = ((phoneDial === OTHER ? phoneCustomDial : phoneDial) + phoneNational).trim();
+  const [phoneCustomDial, setPhoneCustomDial] = useState("");
   const [phoneNational, setPhoneNational] = useState("");
+  const phone = ((phoneDial === OTHER ? phoneCustomDial : phoneDial) + phoneNational).trim();
   const [brandName, setBrandName] = useState("");
   const [brandHandle, setBrandHandle] = useState("");
   const [keyFigures, setKeyFigures] = useState<string[]>([]);
