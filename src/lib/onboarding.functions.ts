@@ -161,14 +161,21 @@ export const saveSetup = createServerFn({ method: "POST" })
     // Monitoring keywords — the listening pipeline reads this list every run.
     const { data: existingKeywords } = await db
       .from("mention_keywords")
-      .select("term")
+      .select("term, is_active")
       .eq("workspace_id", workspaceId);
-    const known = new Set(
-      ((existingKeywords ?? []) as { term: string }[]).map((r) => r.term.trim().toLowerCase()),
-    );
+    const existing = (existingKeywords ?? []) as { term: string; is_active: boolean }[];
+    const wanted = new Map(data.keywords.map((t) => [t.trim().toLowerCase(), t.trim()]));
+    const known = new Set<string>();
+    const toReactivate: string[] = [];
+    const toDeactivate: string[] = [];
+    for (const row of existing) {
+      const key = row.term.trim().toLowerCase();
+      known.add(key);
+      if (wanted.has(key) && !row.is_active) toReactivate.push(row.term);
+      if (!wanted.has(key) && row.is_active) toDeactivate.push(row.term);
+    }
     const fresh: string[] = [];
-    for (const term of data.keywords) {
-      const key = term.toLowerCase();
+    for (const [key, term] of wanted) {
       if (!term || known.has(key)) continue;
       known.add(key);
       fresh.push(term);
@@ -183,6 +190,22 @@ export const saveSetup = createServerFn({ method: "POST" })
           last_refreshed_at: new Date().toISOString(),
         })),
       );
+    }
+    if (toReactivate.length) {
+      await db
+        .from("mention_keywords")
+        .update({ is_active: true })
+        .eq("workspace_id", workspaceId)
+        .in("term", toReactivate);
+    }
+    // Terms the person removed in the wizard stop being collected, so re-opening
+    // setup shows exactly what they last saved.
+    if (toDeactivate.length) {
+      await db
+        .from("mention_keywords")
+        .update({ is_active: false })
+        .eq("workspace_id", workspaceId)
+        .in("term", toDeactivate);
     }
 
     // Optional accounts, hashtags and topics to watch, including the brand's own X handle.
