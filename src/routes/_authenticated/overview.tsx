@@ -171,6 +171,9 @@ function OverviewPage() {
           void intel.refetch();
           if (isAdmin) void sourcesQuery.refetch();
         }}
+        onCollect={() => collect.mutate()}
+        collecting={collect.isPending}
+
       >
         {overview.data ? (
           <div className="grid gap-5">
