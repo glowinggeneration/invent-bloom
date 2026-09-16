@@ -129,7 +129,7 @@ export const saveSetup = createServerFn({ method: "POST" })
         team: data.team,
         phone: data.phone,
         phone_whatsapp: data.phoneWhatsapp,
-        onboarding_completed_at: new Date().toISOString(),
+        ...(data.partial ? {} : { onboarding_completed_at: new Date().toISOString() }),
         onboarding_skipped_at: null,
       })
       .eq("id", context.userId);
