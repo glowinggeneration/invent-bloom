@@ -26,7 +26,21 @@ export const refreshBrandProfiles = createServerFn({ method: "POST" })
     const errors: string[] = [];
     const workspaceId = await resolveWorkspaceId(context);
     const settings = await getWorkspaceSettings(workspaceId);
-    for (const handle of brandHandles(settings)) {
+
+    // The organisation's own handle plus every X account the workspace has
+    // added to its watchlist, so all tracked accounts get a live card.
+    const { data: watched } = await context.supabase
+      .from("monitoring_watchlist")
+      .select("value, platform, kind, is_active")
+      .eq("kind", "account")
+      .eq("is_active", true);
+    const watchedHandles = (watched ?? [])
+      .filter((r: any) => !r.platform || String(r.platform).toLowerCase() === "x")
+      .map((r: any) => String(r.value ?? "").trim().replace(/^@/, ""))
+      .filter(Boolean);
+
+    const handles = [...new Set([...brandHandles(settings), ...watchedHandles])];
+    for (const handle of handles) {
       const { profile, error } = await fetchXProfile(handle);
       if (!profile) {
         errors.push(`${handle}: ${error ?? "not found"}`);
