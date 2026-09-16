@@ -467,28 +467,18 @@ function SetupPage() {
                     Leadership or spokespeople whose mentions should be tracked separately from the
                     organisation.
                   </p>
-                  <div className="flex gap-2">
-                    <Input
-                      value={keyFigureDraft}
-                      onChange={(e) => setKeyFigureDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addKeyFigure();
-                        }
-                      }}
-                      placeholder="e.g. Jane Doe"
-                      aria-label="Add a key figure"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => addKeyFigure()}
-                      className="shrink-0"
-                    >
-                      Add
-                    </Button>
-                  </div>
+                  <Input
+                    value={keyFigureDraft}
+                    onChange={(e) => setKeyFigureDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addKeyFigure();
+                      }
+                    }}
+                    placeholder="e.g. Jane Doe — press Enter to add"
+                    aria-label="Add a key figure"
+                  />
                   <div className="flex flex-wrap gap-2">
                     {keyFigures.map((name) => (
                       <span
@@ -519,7 +509,6 @@ function SetupPage() {
                     nicknames, leaders, competitions and issues people talk about.
                   </p>
                 </div>
-                <div className="flex gap-2">
                   <Input
                     value={keywordDraft}
                     onChange={(e) => setKeywordDraft(e.target.value)}
@@ -529,18 +518,9 @@ function SetupPage() {
                         addKeyword();
                       }
                     }}
-                    placeholder="e.g. your product name"
+                    placeholder="e.g. your product name — press Enter to add"
                     aria-label="Add a monitoring term"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => addKeyword()}
-                    className="shrink-0"
-                  >
-                    Add
-                  </Button>
-                </div>
                 <div className="flex flex-wrap gap-2">
                   {keywords.length === 0 && (
                     <p className="type-meta text-muted-foreground">No terms yet.</p>
