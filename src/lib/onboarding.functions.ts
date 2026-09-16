@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { EMPTY_SOCIALS, cleanHandle, type SetupStatus } from "./onboarding";
+import { EMPTY_SOCIALS, cleanHandle, cleanHashtag, type SetupStatus } from "./onboarding";
 import { resolveWorkspaceId } from "./workspace.server";
 
 const socialsSchema = z.object({
@@ -26,6 +26,8 @@ const setupSchema = z.object({
   orgProfileName: z.string().trim().max(200).default(""),
   keyFigures: z.array(z.string().trim().min(2).max(80)).max(10).default([]),
   keywords: z.array(z.string().trim().min(2).max(80)).min(1).max(25),
+  hashtags: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
+  topics: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
   socials: socialsSchema.default(EMPTY_SOCIALS),
 });
 
@@ -66,19 +68,27 @@ export const getSetupStatus = createServerFn({ method: "POST" })
 
     const { data: watchRows } = await db
       .from("monitoring_watchlist")
-      .select("platform, value")
+      .select("kind, platform, value")
       .eq("workspace_id", workspaceId)
-      .eq("kind", "account")
+      .in("kind", ["account", "hashtag", "topic"])
       .eq("is_active", true)
-      .limit(60);
+      .limit(120);
+
+    const allWatch = (watchRows ?? []) as {
+      kind: string;
+      platform: string | null;
+      value: string;
+    }[];
 
     const socials = { ...EMPTY_SOCIALS };
-    for (const row of (watchRows ?? []) as { platform: string | null; value: string }[]) {
+    for (const row of allWatch.filter((r) => r.kind === "account")) {
       const key = String(row.platform ?? "").toLowerCase();
       if (key in socials && !socials[key as keyof typeof socials]) {
         socials[key as keyof typeof socials] = row.value;
       }
     }
+    const hashtags = allWatch.filter((r) => r.kind === "hashtag").map((r) => r.value);
+    const topics = allWatch.filter((r) => r.kind === "topic").map((r) => r.value);
 
     return {
       needsSetup: !data?.onboarding_completed_at && !data?.onboarding_skipped_at,
@@ -96,6 +106,8 @@ export const getSetupStatus = createServerFn({ method: "POST" })
       orgProfileName: orgExtras["org_profile_name"] ?? "",
       keyFigures: settings.keyFigures,
       keywords: ((keywordRows ?? []) as { term: string }[]).map((r) => r.term).filter(Boolean),
+      hashtags,
+      topics,
       socials,
     };
   });
@@ -171,10 +183,12 @@ export const saveSetup = createServerFn({ method: "POST" })
       );
     }
 
-    // Optional accounts to watch, including the brand's own X handle.
-    const accounts: { platform: string; value: string; label: string }[] = [];
+    // Optional accounts, hashtags and topics to watch, including the brand's own X handle.
+    type WatchEntry = { kind: string; platform: string | null; value: string; label: string };
+    const entries: WatchEntry[] = [];
     if (brandHandle) {
-      accounts.push({
+      entries.push({
+        kind: "account",
         platform: "x",
         value: brandHandle,
         label: data.brandName || `@${brandHandle}`,
@@ -183,25 +197,40 @@ export const saveSetup = createServerFn({ method: "POST" })
     for (const [platform, raw] of Object.entries(data.socials)) {
       const value = cleanHandle(String(raw ?? ""));
       if (value)
-        accounts.push({ platform, value, label: `${data.brandName || value} (${platform})` });
+        entries.push({
+          kind: "account",
+          platform,
+          value,
+          label: `${data.brandName || value} (${platform})`,
+        });
+    }
+    for (const raw of data.hashtags) {
+      const value = cleanHashtag(raw);
+      if (value) entries.push({ kind: "hashtag", platform: null, value, label: `#${value}` });
+    }
+    for (const raw of data.topics) {
+      const value = raw.trim();
+      if (value) entries.push({ kind: "topic", platform: null, value, label: value });
     }
 
     let pagesAdded = 0;
-    if (accounts.length) {
+    if (entries.length) {
       const { data: existingWatch } = await db
         .from("monitoring_watchlist")
-        .select("platform, value")
+        .select("kind, platform, value")
         .eq("workspace_id", workspaceId);
+      const keyOf = (kind: string, platform: string | null, value: string) =>
+        `${kind}:${String(platform ?? "").toLowerCase()}:${value.trim().toLowerCase()}`;
       const seen = new Set(
-        ((existingWatch ?? []) as { platform: string | null; value: string }[]).map(
-          (r) => `${String(r.platform ?? "").toLowerCase()}:${r.value.trim().toLowerCase()}`,
+        ((existingWatch ?? []) as { kind: string; platform: string | null; value: string }[]).map(
+          (r) => keyOf(r.kind, r.platform, r.value),
         ),
       );
-      const rows = accounts
-        .filter((a) => !seen.has(`${a.platform}:${a.value.toLowerCase()}`))
+      const rows = entries
+        .filter((a) => !seen.has(keyOf(a.kind, a.platform, a.value)))
         .map((a) => ({
           workspace_id: workspaceId,
-          kind: "account",
+          kind: a.kind,
           label: a.label.slice(0, 120),
           value: a.value,
           platform: a.platform,

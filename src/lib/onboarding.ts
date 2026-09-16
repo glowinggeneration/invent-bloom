@@ -23,8 +23,17 @@ export type SetupStatus = {
   /** Named individuals to track alongside the organisation (leadership, spokespeople). */
   keyFigures: string[];
   keywords: string[];
+  /** Hashtags to follow, stored without the leading #. */
+  hashtags: string[];
+  /** Broader topics or issues to follow. */
+  topics: string[];
   socials: SetupSocials;
 };
+
+/** Normalise a hashtag for storage: strip leading #, spaces and punctuation. */
+export function cleanHashtag(raw: string): string {
+  return raw.trim().replace(/^#+/, "").replace(/\s+/g, "").trim();
+}
 
 export type SetupSocials = {
   facebook: string;
