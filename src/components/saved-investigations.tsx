@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { BookmarkPlus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui-kit";
 import { SaveToggle } from "@/components/core/save-toggle";
 import { readWithLegacyKey } from "@/lib/legacy-storage";
+import { getSetupStatus } from "@/lib/onboarding.functions";
 
 const STORAGE_KEY = "smait:saved-investigations:v1";
 const LEGACY_STORAGE_KEY = "fkf-commsiq:saved-investigations:v1";
@@ -34,6 +37,28 @@ export function SavedInvestigations({ currentTopic }: { currentTopic?: string })
   const [saved, setSaved] = useState<SavedInvestigation[]>([]);
   const [name, setName] = useState("");
   const [query, setQuery] = useState(currentTopic ?? "");
+
+  const fetchSetup = useServerFn(getSetupStatus);
+  const { data: setup } = useQuery({ queryKey: ["setup-status"], queryFn: fetchSetup });
+
+  /** Monitoring words, hashtags and topics saved during profile setup. */
+  const setupTerms = useMemo(() => {
+    if (!setup) return [];
+    const list: { key: string; label: string; query: string }[] = [];
+    for (const term of setup.keywords) {
+      const value = term.trim();
+      if (value) list.push({ key: `kw:${value.toLowerCase()}`, label: value, query: value });
+    }
+    for (const tag of setup.hashtags) {
+      const value = tag.trim().replace(/^#/, "");
+      if (value) list.push({ key: `ht:${value.toLowerCase()}`, label: `#${value}`, query: `#${value}` });
+    }
+    for (const topic of setup.topics) {
+      const value = topic.trim();
+      if (value) list.push({ key: `tp:${value.toLowerCase()}`, label: value, query: value });
+    }
+    return list;
+  }, [setup]);
 
   useEffect(() => setSaved(readSaved()), []);
   useEffect(() => {
@@ -87,6 +112,31 @@ export function SavedInvestigations({ currentTopic }: { currentTopic?: string })
           Save reusable topic filters for the content already collected in Mentions. This does not
           create another monitoring feed or API request.
         </p>
+
+        {setupTerms.length ? (
+          <div className="mt-4 rounded-xl border border-border bg-muted/40 p-3">
+            <p className="type-meta font-semibold">Words we watch from your setup</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {setupTerms.map((term) => (
+                <Link
+                  key={term.key}
+                  to="/mentions"
+                  search={{ topic: term.query }}
+                  className="rounded-full border border-border bg-card px-3 py-1 type-meta transition-colors hover:bg-muted"
+                >
+                  {term.label}
+                </Link>
+              ))}
+            </div>
+            <Link
+              to="/setup"
+              search={{ edit: true }}
+              className="type-meta mt-2 inline-block text-primary underline-offset-2 hover:underline"
+            >
+              Edit in setup
+            </Link>
+          </div>
+        ) : null}
 
         <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
           <Input
