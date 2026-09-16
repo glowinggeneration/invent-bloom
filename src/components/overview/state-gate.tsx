@@ -194,7 +194,7 @@ function RangeSelector({
 }) {
   return (
     <div
-      className="rounded-full border border-border bg-card p-1"
+      className="inline-flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-card p-1"
       role="group"
       aria-label="Overview time range"
     >
@@ -213,7 +213,7 @@ function RangeSelector({
             data-id={option.value}
             aria-pressed={value === option.value}
             className={cn(
-              "relative z-10 min-h-10 rounded-full px-4 type-meta font-medium transition-colors",
+              "relative z-10 inline-flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 type-meta font-medium transition-colors",
               value === option.value
                 ? "text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",
