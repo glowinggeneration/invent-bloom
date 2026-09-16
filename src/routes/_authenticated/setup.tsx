@@ -26,6 +26,7 @@ import { KineticTextLoader } from "@/components/vengeance/kinetic-text-loader";
 import { getSetupStatus, saveSetup, skipSetup } from "@/lib/onboarding.functions";
 import { EMPTY_SOCIALS, SOCIAL_FIELDS, cleanHandle, type SetupSocials } from "@/lib/onboarding";
 import { friendlyError } from "@/lib/friendly-errors";
+import { RequestChannelDialog } from "@/components/setup/request-channel-dialog";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({
