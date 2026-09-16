@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -415,7 +415,7 @@ function SetupPage() {
                   <li key={s.id}>
                     <button
                       type="button"
-                      onClick={() => setStep(i)}
+                      onClick={() => goToStep(i)}
                       aria-current={current ? "step" : undefined}
                       className={cn(
                         "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
@@ -753,7 +753,7 @@ function SetupPage() {
           <div className="mx-auto mt-auto flex w-full max-w-xl flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-border pt-6">
             <div className="flex items-center gap-2">
               {step > 0 && (
-                <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
+                <Button type="button" variant="outline" onClick={() => goToStep(step - 1)}>
                   <ChevronLeft className="size-4" /> Previous
                 </Button>
               )}
@@ -773,7 +773,7 @@ function SetupPage() {
             </p>
 
             {step < STEPS.length - 1 ? (
-              <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canContinue}>
+              <Button type="button" onClick={() => goToStep(step + 1)} disabled={!canContinue}>
                 Next <ChevronRight className="size-4" />
               </Button>
             ) : (
