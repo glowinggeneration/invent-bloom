@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { BrandMentions } from "@/components/brand-mentions";
 import { BrandAccounts } from "@/components/brand-accounts";
-import { SocialProfiles } from "@/components/social-profiles";
 import { MentionInvestigation } from "@/components/mention-investigation";
 import { SavedInvestigations } from "@/components/saved-investigations";
 
@@ -48,7 +47,6 @@ function MentionsPage() {
         Mentions
       </PageTitle>
       <BrandAccounts />
-      <SocialProfiles />
       <SavedInvestigations currentTopic={search.topic ?? ""} />
 
       {search.topic ? (
