@@ -26,6 +26,7 @@ import { KineticTextLoader } from "@/components/vengeance/kinetic-text-loader";
 import { getSetupStatus, saveSetup, skipSetup } from "@/lib/onboarding.functions";
 import { EMPTY_SOCIALS, SOCIAL_FIELDS, cleanHandle, type SetupSocials } from "@/lib/onboarding";
 import { friendlyError } from "@/lib/friendly-errors";
+import { RequestChannelDialog } from "@/components/setup/request-channel-dialog";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({
@@ -688,6 +689,12 @@ function SetupPage() {
                     />
                   </Field>
                 ))}
+                <div className="rounded-lg border border-dashed border-border p-4">
+                  <p className="type-meta mb-3 text-muted-foreground">
+                    Need somewhere else watched? Ask us to add it.
+                  </p>
+                  <RequestChannelDialog />
+                </div>
               </>
             )}
           </div>

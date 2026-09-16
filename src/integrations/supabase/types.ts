@@ -535,6 +535,50 @@ export type Database = {
           },
         ]
       }
+      channel_requests: {
+        Row: {
+          channel: string
+          created_at: string
+          handle: string
+          id: string
+          notes: string
+          requested_by: string
+          status: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          handle?: string
+          id?: string
+          notes?: string
+          requested_by: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          handle?: string
+          id?: string
+          notes?: string
+          requested_by?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_log: {
         Row: {
           created_at: string
