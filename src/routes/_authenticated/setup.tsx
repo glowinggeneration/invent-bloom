@@ -6,6 +6,7 @@ import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -201,6 +202,7 @@ function SetupPage() {
   const [phoneDial, setPhoneDial] = useState<string>(DEFAULT_DIAL);
   const [phoneCustomDial, setPhoneCustomDial] = useState("");
   const [phoneNational, setPhoneNational] = useState("");
+  const [phoneWhatsapp, setPhoneWhatsapp] = useState(false);
   const phone = ((phoneDial === OTHER ? phoneCustomDial : phoneDial) + phoneNational).trim();
   const [brandName, setBrandName] = useState("");
   const [brandHandle, setBrandHandle] = useState("");
@@ -223,6 +225,7 @@ function SetupPage() {
     setPhoneDial(parsed.dial);
     setPhoneCustomDial(parsed.customDial);
     setPhoneNational(parsed.national);
+    setPhoneWhatsapp(status.phoneWhatsapp);
     setBrandName(status.brandName);
     setBrandHandle(status.brandHandle);
     setKeyFigures(status.keyFigures);
@@ -238,6 +241,7 @@ function SetupPage() {
           jobTitle,
           team,
           phone,
+          phoneWhatsapp,
           brandName,
           brandHandle,
           keyFigures,
@@ -436,6 +440,16 @@ function SetupPage() {
                       inputMode="tel"
                     />
                   )}
+                  <label className="mt-1 flex cursor-pointer items-center gap-2.5">
+                    <Checkbox
+                      checked={phoneWhatsapp}
+                      onCheckedChange={(checked) => setPhoneWhatsapp(checked === true)}
+                      aria-label="This number is on WhatsApp"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      This number is on WhatsApp
+                    </span>
+                  </label>
                 </Field>
               </>
             )}
