@@ -272,6 +272,8 @@ function SetupPage() {
           orgProfileName,
           keyFigures,
           keywords,
+          hashtags,
+          topics,
           socials,
         },
       }),
