@@ -186,9 +186,9 @@ function SelectWithOther({
 const STEPS = [
   { id: "you", label: "About you", description: "Name and role" },
   { id: "brand", label: "Organisation", description: "Who you speak for" },
-  { id: "details", label: "Organisation details", description: "Optional" },
-  { id: "monitor", label: "Monitoring", description: "Required" },
-  { id: "channels", label: "Other channels", description: "Optional" },
+  { id: "details", label: "Organisation details", description: "" },
+  { id: "monitor", label: "Monitoring", description: "" },
+  { id: "channels", label: "Other channels", description: "" },
 ];
 
 function SetupPage() {
@@ -441,7 +441,9 @@ function SetupPage() {
             <h1 className="type-section mt-4">
               <StaggerText key={active.id}>{active.label}</StaggerText>
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
+            {active.description ? (
+              <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
+            ) : null}
           </div>
 
           <div className="mx-auto mt-8 w-full max-w-xl space-y-5 pb-10">
