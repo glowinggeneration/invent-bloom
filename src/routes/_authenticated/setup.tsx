@@ -750,7 +750,7 @@ function SetupPage() {
             )}
           </div>
 
-          <div className="mx-auto mt-auto flex w-full max-w-xl flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-border pt-6">
+          <div className="mx-auto mt-auto flex w-full max-w-2xl items-center justify-between gap-x-4 gap-y-3 border-t border-border pt-6">
             <div className="flex items-center gap-2">
               {step > 0 && (
                 <Button type="button" variant="outline" onClick={() => goToStep(step - 1)}>
@@ -767,24 +767,26 @@ function SetupPage() {
               </Button>
             </div>
 
-            <p className="type-meta hidden text-muted-foreground sm:block">
-              Step {step + 1} of {STEPS.length} · {keywords.length} monitoring term
-              {keywords.length === 1 ? "" : "s"}
-            </p>
+            <div className="flex items-center gap-x-4">
+              <p className="type-meta hidden text-muted-foreground sm:block">
+                Step {step + 1} of {STEPS.length} · {keywords.length} monitoring term
+                {keywords.length === 1 ? "" : "s"}
+              </p>
 
-            {step < STEPS.length - 1 ? (
-              <Button type="button" onClick={() => goToStep(step + 1)} disabled={!canContinue}>
-                Next <ChevronRight className="size-4" />
-              </Button>
-            ) : (
-              <AnimatedButton
-                type="button"
-                onClick={() => finish.mutate()}
-                disabled={finish.isPending || !fullName.trim() || keywords.length === 0}
-              >
-                {finish.isPending ? "Saving…" : "Finish setup"}
-              </AnimatedButton>
-            )}
+              {step < STEPS.length - 1 ? (
+                <Button type="button" onClick={() => goToStep(step + 1)} disabled={!canContinue}>
+                  Next <ChevronRight className="size-4" />
+                </Button>
+              ) : (
+                <AnimatedButton
+                  type="button"
+                  onClick={() => finish.mutate()}
+                  disabled={finish.isPending || !fullName.trim() || keywords.length === 0}
+                >
+                  {finish.isPending ? "Saving…" : "Finish setup"}
+                </AnimatedButton>
+              )}
+            </div>
           </div>
         </div>
       </div>
