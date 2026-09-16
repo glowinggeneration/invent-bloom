@@ -184,7 +184,7 @@ function SelectWithOther({
 }
 
 const STEPS = [
-  { id: "you", label: "About you", description: "Name and role" },
+  { id: "you", label: "About you", description: "" },
   { id: "brand", label: "Organisation", description: "Who you speak for" },
   { id: "details", label: "Organisation details", description: "" },
   { id: "monitor", label: "Monitoring", description: "" },
