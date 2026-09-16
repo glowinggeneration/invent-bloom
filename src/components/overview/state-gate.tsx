@@ -158,6 +158,9 @@ export function OverviewStateGate({
               range={range}
               onRangeChange={onRangeChange}
               onViewMentions={onViewMentions}
+              onCollect={onCollect}
+              collecting={collecting}
+
             />
           ) : null}
 
