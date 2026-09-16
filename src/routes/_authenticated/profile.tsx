@@ -235,6 +235,8 @@ function ProfilePage() {
               </p>
             </section>
 
+            <MonitoringSetupCard />
+
             <label htmlFor="profile-settings-section" className="sr-only">
               Profile settings section
             </label>
