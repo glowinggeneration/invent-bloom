@@ -36,6 +36,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { updateProfileName } from "@/lib/smait.functions";
+import { getSetupStatus } from "@/lib/onboarding.functions";
 import {
   getWorkspaceOverview,
   inviteWorkspaceMember,
