@@ -689,8 +689,8 @@ function SetupPage() {
                     />
                   </Field>
                 ))}
-                <div className="rounded-lg border border-dashed border-border p-4">
-                  <p className="type-meta mb-3 text-muted-foreground">
+                <div className="mt-2 rounded-xl border border-dashed border-border p-5">
+                  <p className="type-meta mb-4 text-muted-foreground">
                     Need somewhere else watched? Ask us to add it.
                   </p>
                   <RequestChannelDialog />
