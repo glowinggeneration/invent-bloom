@@ -308,6 +308,24 @@ function SetupPage() {
     setKeywordDraft("");
   }
 
+  function addHashtag() {
+    const tag = cleanHashtag(hashtagDraft);
+    if (tag.length < 2 || hashtags.length >= 25) return;
+    setHashtags((list) =>
+      list.some((t) => t.toLowerCase() === tag.toLowerCase()) ? list : [...list, tag],
+    );
+    setHashtagDraft("");
+  }
+
+  function addTopic() {
+    const topic = topicDraft.trim();
+    if (topic.length < 2 || topics.length >= 25) return;
+    setTopics((list) =>
+      list.some((t) => t.toLowerCase() === topic.toLowerCase()) ? list : [...list, topic],
+    );
+    setTopicDraft("");
+  }
+
   function addKeyFigure(raw?: string) {
     const name = (raw ?? keyFigureDraft).trim();
     if (name.length < 2 || keyFigures.length >= 10) return;
