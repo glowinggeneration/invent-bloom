@@ -259,10 +259,14 @@ function OverviewEmptyWindow({
   range,
   onRangeChange,
   onViewMentions,
+  onCollect,
+  collecting,
 }: {
   range: OverviewWindow;
   onRangeChange: (range: OverviewWindow) => void;
   onViewMentions: () => void;
+  onCollect?: (() => void) | undefined;
+  collecting?: boolean | undefined;
 }) {
   const nextRangeValue = getNextOverviewWindow(range);
   const nextRange = OVERVIEW_WINDOWS.find((option) => option.value === nextRangeValue);
@@ -272,14 +276,33 @@ function OverviewEmptyWindow({
     <StateSurface
       icon={<Radar className="size-6" aria-hidden="true" />}
       title={`No conversation data in the last ${rangeLabel}`}
-      description="SMAIT is listening, but no qualifying mentions were collected for this period."
+      description="SMAIT is listening, but no qualifying mentions were collected for this period. Pull the latest posts from X to check again now."
       actions={
         <>
+          {onCollect ? (
+            <button
+              type="button"
+              onClick={onCollect}
+              disabled={collecting}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 type-body font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+            >
+              <RefreshCw
+                className={cn("size-4", collecting && "animate-spin")}
+                aria-hidden="true"
+              />
+              {collecting ? "Pulling from X…" : "Pull latest from X"}
+            </button>
+          ) : null}
           {nextRange ? (
             <button
               type="button"
               onClick={() => onRangeChange(nextRange.value)}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 type-body font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className={cn(
+                "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 type-body font-medium transition-colors",
+                onCollect
+                  ? "border border-border bg-card text-foreground hover:bg-muted"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90",
+              )}
             >
               Try {nextRange.label}
             </button>
@@ -289,7 +312,7 @@ function OverviewEmptyWindow({
             onClick={onViewMentions}
             className={cn(
               "inline-flex min-h-11 items-center justify-center rounded-xl px-5 type-body font-medium transition-colors",
-              nextRange
+              nextRange || onCollect
                 ? "border border-border bg-card text-foreground hover:bg-muted"
                 : "bg-primary text-primary-foreground hover:bg-primary/90",
             )}
@@ -301,6 +324,7 @@ function OverviewEmptyWindow({
     />
   );
 }
+
 
 function OverviewNoSources({
   isAdmin,
