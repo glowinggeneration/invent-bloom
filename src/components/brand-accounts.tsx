@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useLocation } from "@tanstack/react-router";
 import { Loader2, RefreshCw, Users } from "lucide-react";
 import { toast } from "sonner";
-import { InlineAction } from "@/components/core/inline-action";
+import { cn } from "@/lib/utils";
 import { SectionTitle } from "@/components/ui-kit";
 import { OverviewActions } from "@/components/overview-actions";
 import { OverviewIntelligencePanel } from "@/components/overview-intelligence";
@@ -89,22 +89,28 @@ export function BrandAccounts() {
         <OverviewActions data={overviewData} rangeLabel={dashboardRange.label} />
       ) : null}
       {onDashboard ? <OverviewIntelligencePanel /> : null}
-      <section className="mt-6 rounded-2xl border border-border bg-card p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <SectionTitle>Brand accounts on X</SectionTitle>
-            <p className="type-meta mt-1 text-muted-foreground">
-              Live followers and activity pulled straight from X.
-            </p>
-          </div>
-          <InlineAction
-            label="Check for updates"
-            icon={<RefreshCw className="size-4" aria-hidden="true" />}
-            actionText="Refresh"
-            onAction={() => refresh.mutateAsync().then(() => undefined)}
-            className="w-auto max-w-none"
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          onClick={() => refresh.mutateAsync().then(() => undefined)}
+          disabled={refresh.isPending}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+        >
+          <RefreshCw
+            className={cn("size-3.5", refresh.isPending && "animate-spin")}
+            aria-hidden="true"
           />
+          {refresh.isPending ? "Refreshing…" : "Check for updates"}
+        </button>
+      </div>
+      <section className="mt-2 rounded-2xl border border-border bg-card p-6">
+        <div>
+          <SectionTitle>Brand accounts on X</SectionTitle>
+          <p className="type-meta mt-1 text-muted-foreground">
+            Live followers and activity pulled straight from X.
+          </p>
         </div>
+
 
         {isPending ? (
           <p className="type-meta mt-4 flex items-center gap-2 text-muted-foreground">
