@@ -37,6 +37,28 @@ export function SavedInvestigations({ currentTopic }: { currentTopic?: string })
   const [name, setName] = useState("");
   const [query, setQuery] = useState(currentTopic ?? "");
 
+  const fetchSetup = useServerFn(getSetupStatus);
+  const { data: setup } = useQuery({ queryKey: ["setup-status"], queryFn: fetchSetup });
+
+  /** Monitoring words, hashtags and topics saved during profile setup. */
+  const setupTerms = useMemo(() => {
+    if (!setup) return [];
+    const list: { key: string; label: string; query: string }[] = [];
+    for (const term of setup.keywords) {
+      const value = term.trim();
+      if (value) list.push({ key: `kw:${value.toLowerCase()}`, label: value, query: value });
+    }
+    for (const tag of setup.hashtags) {
+      const value = tag.trim().replace(/^#/, "");
+      if (value) list.push({ key: `ht:${value.toLowerCase()}`, label: `#${value}`, query: `#${value}` });
+    }
+    for (const topic of setup.topics) {
+      const value = topic.trim();
+      if (value) list.push({ key: `tp:${value.toLowerCase()}`, label: value, query: value });
+    }
+    return list;
+  }, [setup]);
+
   useEffect(() => setSaved(readSaved()), []);
   useEffect(() => {
     if (currentTopic) setQuery(currentTopic);
