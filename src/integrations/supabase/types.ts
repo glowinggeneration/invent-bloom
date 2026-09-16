@@ -1454,6 +1454,7 @@ export type Database = {
           onboarding_skipped_at: string | null
           org: string
           phone: string
+          phone_whatsapp: boolean
           team: string
           updated_at: string
           workspace_id: string | null
@@ -1470,6 +1471,7 @@ export type Database = {
           onboarding_skipped_at?: string | null
           org?: string
           phone?: string
+          phone_whatsapp?: boolean
           team?: string
           updated_at?: string
           workspace_id?: string | null
@@ -1486,6 +1488,7 @@ export type Database = {
           onboarding_skipped_at?: string | null
           org?: string
           phone?: string
+          phone_whatsapp?: boolean
           team?: string
           updated_at?: string
           workspace_id?: string | null
