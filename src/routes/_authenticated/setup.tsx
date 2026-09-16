@@ -402,37 +402,43 @@ function SetupPage() {
             )}
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => skipAll.mutate()}
-              disabled={skipAll.isPending || finish.isPending}
-            >
-              Skip for now
-            </Button>
-            <div className="flex gap-2">
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+            <div className="flex items-center gap-2">
               {step > 0 && (
                 <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
-                  Back
+                  <ChevronLeft className="size-4" /> Previous
                 </Button>
               )}
-              {step < STEPS.length - 1 ? (
-                <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canContinue}>
-                  Continue
-                </Button>
-              ) : (
-                <AnimatedButton
-                  type="button"
-                  onClick={() => finish.mutate()}
-                  disabled={finish.isPending || !fullName.trim() || keywords.length === 0}
-                >
-                  {finish.isPending ? "Saving…" : "Finish setup"}
-                </AnimatedButton>
-              )}
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => skipAll.mutate()}
+                disabled={skipAll.isPending || finish.isPending}
+              >
+                Skip for now
+              </Button>
             </div>
+
+            <p className="type-meta hidden text-muted-foreground sm:block">
+              Step {step + 1} of {STEPS.length} · {keywords.length} monitoring term
+              {keywords.length === 1 ? "" : "s"}
+            </p>
+
+            {step < STEPS.length - 1 ? (
+              <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canContinue}>
+                Next <ChevronRight className="size-4" />
+              </Button>
+            ) : (
+              <AnimatedButton
+                type="button"
+                onClick={() => finish.mutate()}
+                disabled={finish.isPending || !fullName.trim() || keywords.length === 0}
+              >
+                {finish.isPending ? "Saving…" : "Finish setup"}
+              </AnimatedButton>
+            )}
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );
