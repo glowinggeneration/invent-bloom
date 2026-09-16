@@ -412,7 +412,7 @@ function SetupPage() {
             <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
           </div>
 
-          <div className="mx-auto mt-8 w-full max-w-xl space-y-4">
+          <div className="mx-auto mt-8 w-full max-w-xl space-y-5 pb-10">
             {step === 0 && (
               <>
                 <Field label="Full name" required>
