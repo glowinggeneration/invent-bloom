@@ -742,6 +742,92 @@ function ProfilePage() {
   );
 }
 
+/**
+ * Shows what this workspace is set up to listen for, and lets anyone finish
+ * or change it without hunting for the one-time guided flow.
+ */
+function MonitoringSetupCard() {
+  const fetchStatus = useServerFn(getSetupStatus);
+  const { data, isLoading } = useQuery({
+    queryKey: ["setup-status"],
+    queryFn: () => fetchStatus(),
+  });
+
+  if (isLoading || !data) return null;
+
+  const keywords = data.keywords ?? [];
+  const incomplete = data.needsSetup || keywords.length === 0 || !data.brandName;
+
+  return (
+    <section
+      aria-label="Monitoring setup"
+      className="mb-5 rounded-[18px] border border-border bg-card p-5 shadow-sm sm:p-7"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 type-card font-semibold">
+            <Target className="size-4 text-primary" aria-hidden="true" /> Workspace &amp; monitoring
+          </h2>
+          <p className="mt-1 type-body text-muted-foreground">
+            {incomplete
+              ? "Tell us who you speak for and which words to watch so mentions and alerts are relevant."
+              : "What this workspace listens for. You can change this at any time."}
+          </p>
+        </div>
+        <Button asChild className="min-h-11 shrink-0 rounded-xl px-5">
+          <Link to="/setup" search={{ edit: true }}>
+            {incomplete ? "Set up monitoring" : "Edit setup"}
+          </Link>
+        </Button>
+      </div>
+
+      {incomplete ? null : (
+        <dl className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div>
+            <dt className="type-meta text-muted-foreground">Organisation</dt>
+            <dd className="mt-1 type-body font-medium">
+              {data.brandName || "Not set"}
+              {data.brandHandle ? (
+                <span className="text-muted-foreground"> @{data.brandHandle}</span>
+              ) : null}
+            </dd>
+          </div>
+          <div>
+            <dt className="type-meta text-muted-foreground">People tracked</dt>
+            <dd className="mt-1 type-body font-medium">
+              {data.keyFigures.length ? data.keyFigures.join(", ") : "None"}
+            </dd>
+          </div>
+          <div>
+            <dt className="type-meta text-muted-foreground">Words watched</dt>
+            <dd className="mt-1 type-body font-medium">{keywords.length}</dd>
+          </div>
+          {keywords.length ? (
+            <div className="sm:col-span-3">
+              <dt className="sr-only">Keywords</dt>
+              <dd className="flex flex-wrap gap-1.5">
+                {keywords.slice(0, 12).map((term) => (
+                  <span
+                    key={term}
+                    className="rounded-full bg-muted px-2.5 py-1 type-meta text-muted-foreground"
+                  >
+                    {term}
+                  </span>
+                ))}
+                {keywords.length > 12 ? (
+                  <span className="type-meta text-muted-foreground">
+                    +{keywords.length - 12} more
+                  </span>
+                ) : null}
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+      )}
+    </section>
+  );
+}
+
 function PanelHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="border-b border-border pb-5">
