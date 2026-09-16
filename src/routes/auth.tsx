@@ -50,7 +50,8 @@ const SOFTWARE_APPLICATION_JSON_LD = JSON.stringify({
 function AuthPage() {
   const navigate = useNavigate();
   const { next } = Route.useSearch();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
+  const [resetSent, setResetSent] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -151,6 +152,21 @@ function AuthPage() {
     }
     // Email confirmation is required before a session exists.
     setAwaitingConfirmation(true);
+  }
+
+  async function onRequestReset(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const cleanEmail = email.trim().toLowerCase();
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error("We couldn't send that reset link just now. Try again in a moment.");
+      return;
+    }
+    setResetSent(true);
   }
 
   async function onVerifyMfa(e: React.FormEvent) {
@@ -257,6 +273,55 @@ function AuthPage() {
               Back to sign in
             </button>
           </div>
+        ) : mode === "forgot" ? (
+          <form onSubmit={onRequestReset} className="mt-8 space-y-4">
+            {resetSent ? (
+              <div className="space-y-4 text-center">
+                <p className="type-meta text-foreground">
+                  If an account exists for <span className="font-medium">{email}</span>, a reset
+                  link is on its way.
+                </p>
+                <p className="type-meta text-muted-foreground">
+                  Open the link to choose a new password. It expires after a short while.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="type-meta text-muted-foreground">
+                  Enter your email address and we'll send you a link to set a new password.
+                </p>
+                <div className="space-y-1">
+                  <Label htmlFor="reset-email">Email address</Label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@yourorganisation.org"
+                      className="h-11 pl-9"
+                    />
+                  </div>
+                </div>
+                <Button type="submit" className="h-11 w-full" disabled={busy}>
+                  {busy ? "Sending…" : "Send reset link"}
+                </Button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signin");
+                setResetSent(false);
+              }}
+              className="w-full type-meta font-medium text-positive hover:underline"
+            >
+              Back to sign in
+            </button>
+          </form>
         ) : mode === "signup" ? (
           <form onSubmit={onSignUp} className="mt-8 space-y-4">
             <div className="space-y-1">
@@ -405,9 +470,10 @@ function AuthPage() {
               <button
                 type="button"
                 className="type-meta font-medium text-positive hover:underline"
-                onClick={() =>
-                  toast.info("Password resets are issued by your workspace administrator.")
-                }
+                onClick={() => {
+                  setResetSent(false);
+                  setMode("forgot");
+                }}
               >
                 Forgot password?
               </button>
