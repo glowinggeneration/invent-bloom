@@ -106,6 +106,8 @@ export const getSetupStatus = createServerFn({ method: "POST" })
       orgProfileName: orgExtras["org_profile_name"] ?? "",
       keyFigures: settings.keyFigures,
       keywords: ((keywordRows ?? []) as { term: string }[]).map((r) => r.term).filter(Boolean),
+      hashtags,
+      topics,
       socials,
     };
   });
