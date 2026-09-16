@@ -480,13 +480,14 @@ function SetupPage() {
                       placeholder="e.g. Jane Doe"
                       aria-label="Add a key figure"
                     />
-                    <PopButton
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={() => addKeyFigure()}
-                      className="!px-4 !py-2 shrink-0 gap-1 normal-case"
+                      className="shrink-0"
                     >
-                      <Plus className="size-4" /> Add
-                    </PopButton>
+                      Add
+                    </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {keyFigures.map((name) => (
@@ -531,13 +532,14 @@ function SetupPage() {
                     placeholder="e.g. your product name"
                     aria-label="Add a monitoring term"
                   />
-                  <PopButton
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => addKeyword()}
-                    className="!px-4 !py-2 shrink-0 gap-1 normal-case"
+                    className="shrink-0"
                   >
-                    <Plus className="size-4" /> Add
-                  </PopButton>
+                    Add
+                  </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {keywords.length === 0 && (
