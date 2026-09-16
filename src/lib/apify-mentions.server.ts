@@ -18,7 +18,6 @@ import {
 } from "./apify-collect.server";
 import type { ApifyPlatform } from "./apify-sources";
 import {
-  WATCHED_PROFILES,
   classifyEntities,
   isRelevant,
   matchKeywords,
@@ -292,16 +291,55 @@ const s = (v: unknown): string | null => {
   return value ? value : null;
 };
 
-/**
- * Pulls the workspace's own watched public page on each platform. Platforms
- * that cannot be read are skipped silently — the card simply does not appear.
- */
-export async function refreshApifyProfiles(): Promise<{ stored: number; failed: string[] }> {
+/** Where each platform's public page lives for a given handle. */
+const PROFILE_URLS: Record<string, (handle: string) => string> = {
+  facebook: (h) => `https://www.facebook.com/${h}`,
+  instagram: (h) => `https://www.instagram.com/${h}/`,
+  tiktok: (h) => `https://www.tiktok.com/@${h}`,
+  youtube: (h) => `https://www.youtube.com/@${h}`,
+  threads: (h) => `https://www.threads.net/@${h}`,
+};
+
+export async function refreshApifyProfiles(
+  workspaceId?: string,
+): Promise<{ stored: number; failed: string[] }> {
   const rows: ProfileRow[] = [];
   const failed: string[] = [];
   const now = new Date().toISOString();
 
-  for (const target of WATCHED_PROFILES) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const admin = supabaseAdmin as any;
+  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
+  const { getWorkspaceSettings } = await import("./entity-config.server");
+  const wid = workspaceId ?? LEGACY_SINGLE_WORKSPACE_ID;
+  const settings = await getWorkspaceSettings(wid);
+
+  // Which public pages belong to the monitored subject: every platform handle
+  // captured during setup, plus the brand's own handle tried on each platform
+  // so their other profiles are found automatically. Pages that come back thin
+  // (a look-alike or an unused handle) are dropped by the follower guard below.
+  const { data: watchRows } = await admin
+    .from("monitoring_watchlist")
+    .select("platform, value")
+    .eq("kind", "account")
+    .eq("is_active", true);
+  const configured = new Map<string, string>();
+  for (const row of (watchRows ?? []) as Record<string, any>[]) {
+    const platform = String(row["platform"] ?? "").toLowerCase();
+    if (!(platform in PROFILE_URLS)) continue;
+    const value = String(row["value"] ?? "").trim().replace(/^@/, "");
+    if (value && !configured.has(platform)) configured.set(platform, value);
+  }
+  const baseHandle = (settings.orgHandle || configured.get("x") || "").replace(/^@/, "");
+
+  const targets = (Object.keys(PROFILE_URLS) as ApifyPlatform[])
+    .map((platform) => {
+      const handle = configured.get(platform) || baseHandle;
+      return handle ? { platform, handle, url: PROFILE_URLS[platform]!(handle) } : null;
+    })
+    .filter((t): t is { platform: ApifyPlatform; handle: string; url: string } => t !== null);
+
+  for (const target of targets) {
     try {
       if (target.platform === "instagram") {
         const [item] = await runActor(
@@ -442,18 +480,12 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
   // nothing rather than a card with fake numbers.
   const real = rows.filter((r) => (r.followers ?? 0) >= 100 || (r.likes_count ?? 0) >= 100);
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const admin = supabaseAdmin as any;
-  // TODO(Phase 3): shared background sweep, not a single request's context -
-  // see workspace.server.ts.
-  const { LEGACY_SINGLE_WORKSPACE_ID } = await import("./workspace.server");
-
   // Drop pages we no longer watch, so retired cards disappear.
-  const watched = WATCHED_PROFILES.map((p) => p.platform);
+  const watched = targets.map((t) => t.platform);
   await admin
     .from("apify_profiles")
     .delete()
-    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID)
+    .eq("workspace_id", wid)
     .not("platform", "in", `(${watched.join(",")})`);
 
   if (!real.length) return { stored: 0, failed };
@@ -465,7 +497,7 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
     .select(
       "platform, handle, display_name, description, avatar_url, banner_url, followers, following, posts_count, likes_count",
     )
-    .eq("workspace_id", LEGACY_SINGLE_WORKSPACE_ID);
+    .eq("workspace_id", wid);
   const known = new Map<string, Record<string, any>>(
     ((existing ?? []) as Record<string, any>[]).map((r) => [`${r["platform"]}:${r["handle"]}`, r]),
   );
@@ -491,14 +523,14 @@ export async function refreshApifyProfiles(): Promise<{ stored: number; failed: 
     // picture from the scraper.
     return {
       ...base,
-      workspace_id: LEGACY_SINGLE_WORKSPACE_ID,
+      workspace_id: wid,
       avatar_url: base.avatar_url ?? "/smait-logo.png",
     };
   });
 
   const { error } = await admin
     .from("apify_profiles")
-    .upsert(merged, { onConflict: "workspace_id,platform,handle" });
+    .upsert(merged, { onConflict: "platform,handle" });
   if (error) throw new Error(error.message);
 
   return { stored: merged.length, failed };

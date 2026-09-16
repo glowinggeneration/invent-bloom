@@ -170,10 +170,12 @@ export const refreshSocialMentions = createServerFn({ method: "POST" })
 /** Refreshes the official page profiles shown above the feed. */
 export const refreshSocialProfiles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const { refreshApifyProfiles } = await import("./apify-mentions.server");
+    const { resolveWorkspaceId } = await import("./workspace.server");
     try {
-      return await refreshApifyProfiles();
+      const workspaceId = await resolveWorkspaceId(context);
+      return await refreshApifyProfiles(workspaceId);
     } catch (err) {
       console.error("Apify profile refresh failed", err);
       return { stored: 0, failed: [] as string[] };
