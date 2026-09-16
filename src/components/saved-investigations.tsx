@@ -112,6 +112,31 @@ export function SavedInvestigations({ currentTopic }: { currentTopic?: string })
           create another monitoring feed or API request.
         </p>
 
+        {setupTerms.length ? (
+          <div className="mt-4 rounded-xl border border-border bg-muted/40 p-3">
+            <p className="type-meta font-semibold">Words we watch from your setup</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {setupTerms.map((term) => (
+                <Link
+                  key={term.key}
+                  to="/mentions"
+                  search={{ topic: term.query }}
+                  className="rounded-full border border-border bg-card px-3 py-1 type-meta transition-colors hover:bg-muted"
+                >
+                  {term.label}
+                </Link>
+              ))}
+            </div>
+            <Link
+              to="/setup"
+              search={{ edit: true }}
+              className="type-meta mt-2 inline-block text-primary underline-offset-2 hover:underline"
+            >
+              Edit in setup
+            </Link>
+          </div>
+        ) : null}
+
         <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
           <Input
             value={name}
