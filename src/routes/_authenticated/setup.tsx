@@ -593,7 +593,7 @@ function SetupPage() {
             {step === 2 && (
               <>
                 <p className="type-meta text-muted-foreground">
-                  Optional. These details appear in reports and help drafted replies sound like your
+                  These details appear in reports and help drafted replies sound like your
                   organisation.
                 </p>
                 <Field label="Website">
