@@ -205,18 +205,22 @@ export function PostCampaign() {
 
   // Generating versions is never a dead click: if something is missing we say
   // what, and jump to the step that needs it.
+  // The banner lives at the bottom of the page, so also toast the reason:
+  // the operator sees it wherever they are before we scroll them to the step.
+  const blockStep = (message: string, id: string) => {
+    setError(message);
+    toast.error(message);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const runPreview = () => {
     if (previewMutation.isPending) return;
-    const goTo = (id: string) =>
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     if (!tweetText.trim()) {
-      setError("Write the message or objective first, then generate the versions.");
-      goTo("post-details");
+      blockStep("Write the message or objective first, then generate the versions.", "post-details");
       return;
     }
     if (personas.selected.length === 0) {
-      setError("Choose at least one persona account, then generate the versions.");
-      goTo("post-personas");
+      blockStep("Choose at least one persona account, then generate the versions.", "post-personas");
       return;
     }
     setError(null);
@@ -280,36 +284,28 @@ export function PostCampaign() {
   // send the operator straight to it.
   const attemptRun = (now: boolean) => {
     if (runMutation.isPending) return;
-    const goTo = (id: string) =>
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     if (!tweetText.trim()) {
-      setError("Write the message or objective before launching.");
-      goTo("post-details");
+      blockStep("Write the message or objective before launching.", "post-details");
       return;
     }
     if (overLimit) {
-      setError(`Trim the message to ${TWEET_LIMIT} characters before launching.`);
-      goTo("post-details");
+      blockStep(`Trim the message to ${TWEET_LIMIT} characters before launching.`, "post-details");
       return;
     }
     if (!campaignName.trim()) {
-      setError("Name the campaign so you can find this run later.");
-      goTo("post-campaign-name");
+      blockStep("Name the campaign so you can find this run later.", "post-campaign-name");
       return;
     }
     if (personas.selected.length === 0) {
-      setError("Choose at least one persona account before launching.");
-      goTo("post-personas");
+      blockStep("Choose at least one persona account before launching.", "post-personas");
       return;
     }
     if (variations.length === 0) {
-      setError("Generate the persona versions first, then review them.");
-      goTo("post-review");
+      blockStep("Generate the persona versions first, then review them.", "post-review");
       return;
     }
     if (!previewApproved) {
-      setError("Tick 'Reviewed and approved' once you have read every version.");
-      goTo("post-review");
+      blockStep("Tick 'Reviewed and approved' once you have read every version.", "post-review");
       return;
     }
     setError(null);
