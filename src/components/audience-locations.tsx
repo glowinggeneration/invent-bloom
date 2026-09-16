@@ -298,7 +298,7 @@ export function AudienceInfluencersCard({ handles }: { handles: string[] }) {
         <TooltipTrigger asChild>
           <div className="flex cursor-default items-center gap-2">
             <Star className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
-            <h3 className="text-sm font-semibold leading-tight">Top influencers & sources</h3>
+            <h3 className="text-sm font-semibold leading-tight">Top Sources</h3>
           </div>
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-64">
