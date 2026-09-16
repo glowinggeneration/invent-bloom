@@ -8,6 +8,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import AnimatedButton from "@/components/vengeance/animated-button";
 import { PopButton } from "@/components/vengeance/pop-button";
@@ -39,6 +46,94 @@ export const Route = createFileRoute("/_authenticated/setup")({
     s["edit"] ? { edit: true } : {},
   component: SetupPage,
 });
+
+const JOB_TITLES = [
+  "Communications Manager",
+  "Communications Officer",
+  "Head of Communications",
+  "Press Officer",
+  "Social Media Manager",
+  "Digital Marketing Manager",
+  "Marketing Manager",
+  "Public Relations Officer",
+  "Brand Manager",
+  "Content Producer",
+  "Media Analyst",
+  "Executive / Director",
+];
+
+const TEAMS = [
+  "Communications",
+  "Marketing",
+  "Public Relations",
+  "Digital / Social Media",
+  "Media Monitoring",
+  "Brand",
+  "Content",
+  "Government Relations",
+  "Executive Office",
+  "Customer Experience",
+];
+
+const OTHER = "__other__";
+
+function SelectWithOther({
+  options,
+  value,
+  onChange,
+  placeholder,
+  otherPlaceholder,
+}: {
+  options: string[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  otherPlaceholder: string;
+}) {
+  const isListed = options.includes(value);
+  const [custom, setCustom] = useState(!isListed && value.length > 0);
+
+  useEffect(() => {
+    if (value.length > 0 && !options.includes(value)) setCustom(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <div className="space-y-2">
+      <Select
+        value={custom ? OTHER : isListed ? value : ""}
+        onValueChange={(next) => {
+          if (next === OTHER) {
+            setCustom(true);
+            onChange("");
+            return;
+          }
+          setCustom(false);
+          onChange(next);
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
+          <SelectItem value={OTHER}>Other…</SelectItem>
+        </SelectContent>
+      </Select>
+      {custom && (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={otherPlaceholder}
+        />
+      )}
+    </div>
+  );
+}
 
 const STEPS = [
   { id: "you", label: "About you", description: "Name and role" },
@@ -235,17 +330,21 @@ function SetupPage() {
                   <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
                 </Field>
                 <Field label="Job title" hint="Optional">
-                  <Input
+                  <SelectWithOther
+                    options={JOB_TITLES}
                     value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="Communications Manager"
+                    onChange={setJobTitle}
+                    placeholder="Select a job title"
+                    otherPlaceholder="Enter your job title"
                   />
                 </Field>
                 <Field label="Team or department" hint="Optional">
-                  <Input
+                  <SelectWithOther
+                    options={TEAMS}
                     value={team}
-                    onChange={(e) => setTeam(e.target.value)}
-                    placeholder="Communications"
+                    onChange={setTeam}
+                    placeholder="Select a team or department"
+                    otherPlaceholder="Enter your team or department"
                   />
                 </Field>
                 <Field label="Phone" hint="Optional — used for urgent alerts only">
