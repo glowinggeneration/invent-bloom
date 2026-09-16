@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useServerFn } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BookmarkPlus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
