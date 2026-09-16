@@ -77,6 +77,44 @@ const TEAMS = [
 
 const OTHER = "__other__";
 
+/** Dial codes offered on the phone field; South Africa (+27) is the default. */
+const PHONE_COUNTRIES = [
+  { code: "ZA", name: "South Africa", dial: "+27" },
+  { code: "KE", name: "Kenya", dial: "+254" },
+  { code: "NA", name: "Namibia", dial: "+264" },
+  { code: "BW", name: "Botswana", dial: "+267" },
+  { code: "ZW", name: "Zimbabwe", dial: "+263" },
+  { code: "ZM", name: "Zambia", dial: "+260" },
+  { code: "MZ", name: "Mozambique", dial: "+258" },
+  { code: "LS", name: "Lesotho", dial: "+266" },
+  { code: "SZ", name: "Eswatini", dial: "+268" },
+  { code: "NG", name: "Nigeria", dial: "+234" },
+  { code: "GH", name: "Ghana", dial: "+233" },
+  { code: "TZ", name: "Tanzania", dial: "+255" },
+  { code: "UG", name: "Uganda", dial: "+256" },
+  { code: "RW", name: "Rwanda", dial: "+250" },
+  { code: "EG", name: "Egypt", dial: "+20" },
+  { code: "AE", name: "United Arab Emirates", dial: "+971" },
+  { code: "GB", name: "United Kingdom", dial: "+44" },
+  { code: "US", name: "United States", dial: "+1" },
+] as const;
+
+const DEFAULT_DIAL = "+27";
+
+/** Splits a stored phone like "+27 82 123 4567" into dial code and national part. */
+function parsePhone(raw: string): { dial: string; customDial: string; national: string } {
+  const value = raw.trim();
+  if (!value) return { dial: DEFAULT_DIAL, customDial: "", national: "" };
+  const match = value.match(/^(\+\d{1,4})\s*(.*)$/);
+  if (match) {
+    const known = PHONE_COUNTRIES.some((c) => c.dial === match[1]);
+    return known
+      ? { dial: match[1]!, customDial: "", national: match[2]! }
+      : { dial: OTHER, customDial: match[1]!, national: match[2]! };
+  }
+  return { dial: DEFAULT_DIAL, customDial: "", national: value };
+}
+
 function SelectWithOther({
   options,
   value,
