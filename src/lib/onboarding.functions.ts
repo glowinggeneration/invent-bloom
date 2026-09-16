@@ -16,6 +16,7 @@ const setupSchema = z.object({
   jobTitle: z.string().trim().max(120).default(""),
   team: z.string().trim().max(120).default(""),
   phone: z.string().trim().max(40).default(""),
+  phoneWhatsapp: z.boolean().default(false),
   brandName: z.string().trim().max(120).default(""),
   brandHandle: z.string().trim().max(60).default(""),
   keyFigures: z.array(z.string().trim().min(2).max(80)).max(10).default([]),
@@ -29,7 +30,9 @@ export const getSetupStatus = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<SetupStatus> => {
     const { data, error } = await context.supabase
       .from("profiles")
-      .select("full_name, job_title, team, phone, onboarding_completed_at, onboarding_skipped_at")
+      .select(
+        "full_name, job_title, team, phone, phone_whatsapp, onboarding_completed_at, onboarding_skipped_at",
+      )
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -71,6 +74,7 @@ export const getSetupStatus = createServerFn({ method: "POST" })
       jobTitle: data?.job_title ?? "",
       team: data?.team ?? "",
       phone: data?.phone ?? "",
+      phoneWhatsapp: data?.phone_whatsapp ?? false,
       brandName: settings.orgName,
       brandHandle: settings.orgHandle,
       keyFigures: settings.keyFigures,
@@ -93,6 +97,7 @@ export const saveSetup = createServerFn({ method: "POST" })
         job_title: data.jobTitle,
         team: data.team,
         phone: data.phone,
+        phone_whatsapp: data.phoneWhatsapp,
         onboarding_completed_at: new Date().toISOString(),
         onboarding_skipped_at: null,
       })

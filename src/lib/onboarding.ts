@@ -6,6 +6,8 @@ export type SetupStatus = {
   jobTitle: string;
   team: string;
   phone: string;
+  /** Whether the saved phone number is on WhatsApp (urgent alerts). */
+  phoneWhatsapp: boolean;
   brandName: string;
   brandHandle: string;
   /** Named individuals to track alongside the organisation (leadership, spokespeople). */
