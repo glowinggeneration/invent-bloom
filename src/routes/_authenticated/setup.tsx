@@ -235,17 +235,21 @@ function SetupPage() {
                   <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
                 </Field>
                 <Field label="Job title" hint="Optional">
-                  <Input
+                  <SelectWithOther
+                    options={JOB_TITLES}
                     value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="Communications Manager"
+                    onChange={setJobTitle}
+                    placeholder="Select a job title"
+                    otherPlaceholder="Enter your job title"
                   />
                 </Field>
                 <Field label="Team or department" hint="Optional">
-                  <Input
+                  <SelectWithOther
+                    options={TEAMS}
                     value={team}
-                    onChange={(e) => setTeam(e.target.value)}
-                    placeholder="Communications"
+                    onChange={setTeam}
+                    placeholder="Select a team or department"
+                    otherPlaceholder="Enter your team or department"
                   />
                 </Field>
                 <Field label="Phone" hint="Optional — used for urgent alerts only">
