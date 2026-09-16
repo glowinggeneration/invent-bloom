@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useLocation } from "@tanstack/react-router";
 import { Loader2, RefreshCw, Users } from "lucide-react";
 import { toast } from "sonner";
-import { InlineAction } from "@/components/core/inline-action";
+import { cn } from "@/lib/utils";
 import { SectionTitle } from "@/components/ui-kit";
 import { OverviewActions } from "@/components/overview-actions";
 import { OverviewIntelligencePanel } from "@/components/overview-intelligence";
