@@ -37,6 +37,7 @@ export function MentionsSummary({
       accent: "bg-positive",
       chip: "bg-positive/10 text-positive dark:text-positive",
       dot: "var(--positive)",
+      dotClass: "bg-positive",
     },
     {
       key: "neutral" as const,
@@ -46,6 +47,7 @@ export function MentionsSummary({
       accent: "bg-info",
       chip: "bg-info/10 text-info dark:text-info",
       dot: "var(--info)",
+      dotClass: "bg-info",
     },
     {
       key: "negative" as const,
@@ -55,6 +57,7 @@ export function MentionsSummary({
       accent: "bg-negative",
       chip: "bg-negative/10 text-negative dark:text-negative",
       dot: "var(--negative)",
+      dotClass: "bg-negative",
     },
   ];
 
@@ -127,6 +130,7 @@ export function MentionsSummary({
               accent: "bg-primary",
               chip: "bg-primary/10 text-primary",
               dot: "hsl(var(--primary))",
+              dotClass: "bg-primary",
             },
           ].map((row) => {
             const Icon = row.icon;
@@ -147,7 +151,11 @@ export function MentionsSummary({
                         className="size-3.5 shrink-0 text-muted-foreground"
                         aria-hidden="true"
                       />
-                      <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                      <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-xs text-muted-foreground">
+                        <span
+                          className={`size-2 shrink-0 rounded-full ${row.dotClass}`}
+                          aria-hidden="true"
+                        />
                         {row.label}
                       </span>
                       <span className="shrink-0 text-xs font-semibold tabular-nums">
