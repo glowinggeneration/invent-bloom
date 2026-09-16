@@ -205,18 +205,22 @@ export function PostCampaign() {
 
   // Generating versions is never a dead click: if something is missing we say
   // what, and jump to the step that needs it.
+  // The banner lives at the bottom of the page, so also toast the reason:
+  // the operator sees it wherever they are before we scroll them to the step.
+  const blockStep = (message: string, id: string) => {
+    setError(message);
+    toast.error(message);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const runPreview = () => {
     if (previewMutation.isPending) return;
-    const goTo = (id: string) =>
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     if (!tweetText.trim()) {
-      setError("Write the message or objective first, then generate the versions.");
-      goTo("post-details");
+      blockStep("Write the message or objective first, then generate the versions.", "post-details");
       return;
     }
     if (personas.selected.length === 0) {
-      setError("Choose at least one persona account, then generate the versions.");
-      goTo("post-personas");
+      blockStep("Choose at least one persona account, then generate the versions.", "post-personas");
       return;
     }
     setError(null);
