@@ -161,20 +161,75 @@ function SetupPage() {
     );
   }
 
+  const active = STEPS[step]!;
+
   return (
-    <div className="min-h-screen bg-muted/40 px-4 py-10">
-      <div className="mx-auto w-full max-w-2xl">
-        <div className="flex flex-col items-center text-center">
-          <img src="/smait-logo.svg" alt="SMAIT logo" className="h-9 w-auto" />
-          <h1 className="type-section mt-4">
-            <StaggerText>Set up your workspace</StaggerText>
-          </h1>
-        </div>
+    <div className="min-h-screen bg-muted/40 p-4 sm:p-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-xl lg:min-h-[calc(100vh-4rem)] lg:flex-row">
+        {/* Step rail */}
+        <aside className="shrink-0 border-b border-border bg-muted/50 p-6 lg:w-72 lg:border-b-0 lg:border-r">
+          <img src="/smait-logo.svg" alt="SMAIT logo" className="h-7 w-auto" />
+          <p className="mt-6 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Setup steps
+          </p>
+          <nav className="mt-4">
+            <ol className="space-y-1">
+              {STEPS.map((s, i) => {
+                const done = i < step;
+                const current = i === step;
+                return (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => setStep(i)}
+                      aria-current={current ? "step" : undefined}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+                        current ? "bg-card shadow-sm" : "hover:bg-card/60",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold",
+                          done && "bg-emerald-500 text-white",
+                          current && "bg-primary text-primary-foreground",
+                          !done && !current && "bg-border/60 text-muted-foreground",
+                        )}
+                      >
+                        {done ? <Check className="size-3.5" /> : i + 1}
+                      </span>
+                      <span
+                        className={cn(
+                          "min-w-0 text-sm font-medium",
+                          current ? "text-foreground" : "text-muted-foreground",
+                        )}
+                      >
+                        {s.label}
+                      </span>
+                      {current && (
+                        <ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        </aside>
 
-        <Card className="mt-6">
-          <ProgressStepper steps={STEPS} currentIndex={step} onStepClick={(i) => setStep(i)} />
+        {/* Step content */}
+        <div className="flex min-w-0 flex-1 flex-col p-6 sm:p-10">
+          <div className="flex flex-col items-center text-center">
+            <span className="grid size-14 place-items-center rounded-full bg-foreground text-lg font-semibold text-background">
+              {step + 1}
+            </span>
+            <h1 className="type-section mt-4">
+              <StaggerText key={active.id}>{active.label}</StaggerText>
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
+          </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="mx-auto mt-8 w-full max-w-xl space-y-4">
             {step === 0 && (
               <>
                 <Field label="Full name" required>
