@@ -118,10 +118,29 @@ function OverviewPage() {
     [sourcesQuery.data],
   );
 
+  const fetchBrandMentions = useServerFn(listBrandMentions);
+  const collect = useMutation({
+    mutationFn: () => fetchBrandMentions({ data: {} }),
+    onSuccess: async (result) => {
+      if (result?.error) {
+        toast.error("Could not pull from X right now.");
+      } else {
+        toast.success(
+          result?.mentions?.length
+            ? `Pulled ${result.mentions.length} posts from X.`
+            : "Checked X — no new qualifying posts.",
+        );
+      }
+      await queryClient.invalidateQueries({ queryKey: ["overview"] });
+    },
+    onError: () => toast.error("Could not pull from X right now."),
+  });
+
   const refreshIntel = async () => {
     const fresh = await fetchIntel({ data: { refresh: true } });
     queryClient.setQueryData(["overview", "intel"], fresh);
   };
+
 
   const rangeLabel =
     OVERVIEW_WINDOWS.find((item) => item.value === window)?.label ?? "Current window";
