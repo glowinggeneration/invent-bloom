@@ -260,31 +260,48 @@ function SetupPage() {
     setHashtags(status.hashtags ?? []);
     setTopics(status.topics ?? []);
     setSocials(status.socials);
+    hydrated.current = true;
   }, [status, navigate, edit]);
 
+  /** Everything the wizard collects, ready to send to the server. */
+  function buildPayload(partial: boolean) {
+    return {
+      fullName,
+      jobTitle,
+      team,
+      phone,
+      phoneWhatsapp,
+      brandName,
+      brandHandle,
+      orgAddress,
+      orgWebsite,
+      orgDescription,
+      orgProfilePath,
+      orgProfileName,
+      keyFigures,
+      keywords,
+      hashtags,
+      topics,
+      socials,
+      partial,
+    };
+  }
+
+  /** Keeps answers saved while someone moves between steps, so nothing is retyped. */
+  const autosave = useMutation({
+    mutationFn: () => save({ data: buildPayload(true) }),
+    onError: () => {},
+  });
+
+  /** Saves the current step before showing another one. */
+  function goToStep(next: number) {
+    if (next === step) return;
+    if (hydrated.current && fullName.trim().length > 0) autosave.mutate();
+    setStep(next);
+  }
+
   const finish = useMutation({
-    mutationFn: () =>
-      save({
-        data: {
-          fullName,
-          jobTitle,
-          team,
-          phone,
-          phoneWhatsapp,
-          brandName,
-          brandHandle,
-          orgAddress,
-          orgWebsite,
-          orgDescription,
-          orgProfilePath,
-          orgProfileName,
-          keyFigures,
-          keywords,
-          hashtags,
-          topics,
-          socials,
-        },
-      }),
+    mutationFn: () => save({ data: buildPayload(false) }),
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ["profile"] });
       void queryClient.invalidateQueries({ queryKey: ["setup-status"] });
