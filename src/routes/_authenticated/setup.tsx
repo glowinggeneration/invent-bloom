@@ -450,7 +450,7 @@ function SetupPage() {
                 <Field label="Full name" required>
                   <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
                 </Field>
-                <Field label="Job title" hint="Optional">
+                <Field label="Job title">
                   <SelectWithOther
                     options={JOB_TITLES}
                     value={jobTitle}
@@ -459,7 +459,7 @@ function SetupPage() {
                     otherPlaceholder="Enter your job title"
                   />
                 </Field>
-                <Field label="Team or department" hint="Optional">
+                <Field label="Team or department">
                   <SelectWithOther
                     options={TEAMS}
                     value={team}
@@ -529,7 +529,7 @@ function SetupPage() {
 
             {step === 1 && (
               <>
-                <Field label="Organisation or brand name" hint="Optional">
+                <Field label="Organisation or brand name">
                   <Input
                     value={brandName}
                     onChange={(e) => setBrandName(e.target.value)}
