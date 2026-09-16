@@ -10,6 +10,16 @@ export type SetupStatus = {
   phoneWhatsapp: boolean;
   brandName: string;
   brandHandle: string;
+  /** Postal or street address of the organisation. */
+  orgAddress: string;
+  /** Public website address. */
+  orgWebsite: string;
+  /** Short description of what the organisation does. */
+  orgDescription: string;
+  /** Storage path of an uploaded company profile document ("" when none). */
+  orgProfilePath: string;
+  /** Original file name of the uploaded company profile document. */
+  orgProfileName: string;
   /** Named individuals to track alongside the organisation (leadership, spokespeople). */
   keyFigures: string[];
   keywords: string[];

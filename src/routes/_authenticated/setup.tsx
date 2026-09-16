@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import AnimatedButton from "@/components/vengeance/animated-button";
 
 import StaggerText from "@/components/vengeance/stagger-text";
@@ -177,6 +179,7 @@ function SelectWithOther({
 const STEPS = [
   { id: "you", label: "About you", description: "Name and role" },
   { id: "brand", label: "Organisation", description: "Who you speak for" },
+  { id: "details", label: "Organisation details", description: "Optional" },
   { id: "monitor", label: "Monitoring", description: "Required" },
   { id: "channels", label: "Other channels", description: "Optional" },
 ];
@@ -206,6 +209,12 @@ function SetupPage() {
   const phone = ((phoneDial === OTHER ? phoneCustomDial : phoneDial) + phoneNational).trim();
   const [brandName, setBrandName] = useState("");
   const [brandHandle, setBrandHandle] = useState("");
+  const [orgAddress, setOrgAddress] = useState("");
+  const [orgWebsite, setOrgWebsite] = useState("");
+  const [orgDescription, setOrgDescription] = useState("");
+  const [orgProfilePath, setOrgProfilePath] = useState("");
+  const [orgProfileName, setOrgProfileName] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [keyFigures, setKeyFigures] = useState<string[]>([]);
   const [keyFigureDraft, setKeyFigureDraft] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -228,6 +237,11 @@ function SetupPage() {
     setPhoneWhatsapp(status.phoneWhatsapp);
     setBrandName(status.brandName);
     setBrandHandle(status.brandHandle);
+    setOrgAddress(status.orgAddress);
+    setOrgWebsite(status.orgWebsite);
+    setOrgDescription(status.orgDescription);
+    setOrgProfilePath(status.orgProfilePath);
+    setOrgProfileName(status.orgProfileName);
     setKeyFigures(status.keyFigures);
     setKeywords(status.keywords);
     setSocials(status.socials);
@@ -244,6 +258,11 @@ function SetupPage() {
           phoneWhatsapp,
           brandName,
           brandHandle,
+          orgAddress,
+          orgWebsite,
+          orgDescription,
+          orgProfilePath,
+          orgProfileName,
           keyFigures,
           keywords,
           socials,
@@ -291,9 +310,30 @@ function SetupPage() {
 
   const canContinue = useMemo(() => {
     if (step === 0) return fullName.trim().length > 0;
-    if (step === 2) return keywords.length > 0;
+    if (step === 3) return keywords.length > 0;
     return true;
   }, [step, fullName, keywords.length]);
+
+  /** Stores the company profile document in the private organisation folder. */
+  async function uploadCompanyProfile(file: File) {
+    setUploading(true);
+    try {
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
+      const path = `${Date.now()}-${safeName}`;
+      const { error } = await supabase.storage.from("org-documents").upload(path, file, {
+        upsert: true,
+        contentType: file.type || "application/octet-stream",
+      });
+      if (error) throw new Error(error.message);
+      setOrgProfilePath(path);
+      setOrgProfileName(file.name);
+      toast.success("Company profile uploaded.");
+    } catch (e) {
+      toast.error(friendlyError(e as Error, { action: "upload the company profile" }));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -514,7 +554,80 @@ function SetupPage() {
               </>
             )}
 
+
             {step === 2 && (
+              <>
+                <p className="type-meta text-muted-foreground">
+                  Optional. These details appear in reports and help drafted replies sound like your
+                  organisation.
+                </p>
+                <Field label="Website" hint="Optional">
+                  <Input
+                    value={orgWebsite}
+                    onChange={(e) => setOrgWebsite(e.target.value)}
+                    placeholder="https://www.yourorganisation.org"
+                    inputMode="url"
+                  />
+                </Field>
+                <Field label="Address" hint="Optional">
+                  <Textarea
+                    value={orgAddress}
+                    onChange={(e) => setOrgAddress(e.target.value)}
+                    placeholder="Street, city, country"
+                    rows={2}
+                  />
+                </Field>
+                <Field label="About the organisation" hint="Optional — a short description">
+                  <Textarea
+                    value={orgDescription}
+                    onChange={(e) => setOrgDescription(e.target.value)}
+                    placeholder="What your organisation does, who it serves and the tone it uses."
+                    rows={4}
+                  />
+                </Field>
+                <div className="space-y-1.5">
+                  <Label>
+                    Company profile <span className="text-muted-foreground">(optional)</span>
+                  </Label>
+                  <p className="type-meta text-muted-foreground">
+                    Upload a PDF or document with your full company profile (max 20 MB).
+                  </p>
+                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border px-4 py-4 hover:bg-muted/50">
+                    <Upload className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {uploading
+                        ? "Uploading…"
+                        : orgProfileName || "Choose a file to upload"}
+                    </span>
+                    <input
+                      type="file"
+                      className="sr-only"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,application/pdf"
+                      disabled={uploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadCompanyProfile(file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {orgProfileName && !uploading && (
+                    <button
+                      type="button"
+                      className="type-meta text-muted-foreground underline"
+                      onClick={() => {
+                        setOrgProfileName("");
+                        setOrgProfilePath("");
+                      }}
+                    >
+                      Remove file
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {step === 3 && (
               <div className="space-y-3">
                 <div>
                   <Label>Words and phrases to monitor</Label>
@@ -558,7 +671,7 @@ function SetupPage() {
               </div>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <>
                 <p className="type-meta text-muted-foreground">
                   Optional. Add any official pages you want watched alongside X.
