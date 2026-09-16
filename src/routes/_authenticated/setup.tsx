@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import AnimatedButton from "@/components/vengeance/animated-button";
-import { PopButton } from "@/components/vengeance/pop-button";
+
 import StaggerText from "@/components/vengeance/stagger-text";
 import { KineticTextLoader } from "@/components/vengeance/kinetic-text-loader";
 import { getSetupStatus, saveSetup, skipSetup } from "@/lib/onboarding.functions";
@@ -480,13 +480,14 @@ function SetupPage() {
                       placeholder="e.g. Jane Doe"
                       aria-label="Add a key figure"
                     />
-                    <PopButton
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={() => addKeyFigure()}
-                      className="!px-4 !py-2 shrink-0 gap-1 normal-case"
+                      className="shrink-0"
                     >
-                      <Plus className="size-4" /> Add
-                    </PopButton>
+                      Add
+                    </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {keyFigures.map((name) => (
@@ -531,13 +532,14 @@ function SetupPage() {
                     placeholder="e.g. your product name"
                     aria-label="Add a monitoring term"
                   />
-                  <PopButton
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => addKeyword()}
-                    className="!px-4 !py-2 shrink-0 gap-1 normal-case"
+                    className="shrink-0"
                   >
-                    <Plus className="size-4" /> Add
-                  </PopButton>
+                    Add
+                  </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {keywords.length === 0 && (
