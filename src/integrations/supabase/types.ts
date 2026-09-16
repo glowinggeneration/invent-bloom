@@ -2091,9 +2091,14 @@ export type Database = {
         Row: {
           context_terms: string[]
           key_figures: string[]
+          org_address: string
           org_aliases: string[]
+          org_description: string
           org_handle: string
           org_name: string
+          org_profile_name: string
+          org_profile_path: string
+          org_website: string
           singleton: boolean
           updated_at: string
           updated_by: string | null
@@ -2103,9 +2108,14 @@ export type Database = {
         Insert: {
           context_terms?: string[]
           key_figures?: string[]
+          org_address?: string
           org_aliases?: string[]
+          org_description?: string
           org_handle?: string
           org_name?: string
+          org_profile_name?: string
+          org_profile_path?: string
+          org_website?: string
           singleton?: boolean
           updated_at?: string
           updated_by?: string | null
@@ -2115,9 +2125,14 @@ export type Database = {
         Update: {
           context_terms?: string[]
           key_figures?: string[]
+          org_address?: string
           org_aliases?: string[]
+          org_description?: string
           org_handle?: string
           org_name?: string
+          org_profile_name?: string
+          org_profile_path?: string
+          org_website?: string
           singleton?: boolean
           updated_at?: string
           updated_by?: string | null
