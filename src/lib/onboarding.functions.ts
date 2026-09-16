@@ -25,10 +25,12 @@ const setupSchema = z.object({
   orgProfilePath: z.string().trim().max(400).default(""),
   orgProfileName: z.string().trim().max(200).default(""),
   keyFigures: z.array(z.string().trim().min(2).max(80)).max(10).default([]),
-  keywords: z.array(z.string().trim().min(2).max(80)).min(1).max(25),
+  keywords: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
   hashtags: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
   topics: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
   socials: socialsSchema.default(EMPTY_SOCIALS),
+  /** True while the person is still moving between steps; keeps setup open. */
+  partial: z.boolean().default(false),
 });
 
 /** Current setup answers plus whether the guided flow still needs running. */
@@ -127,7 +129,7 @@ export const saveSetup = createServerFn({ method: "POST" })
         team: data.team,
         phone: data.phone,
         phone_whatsapp: data.phoneWhatsapp,
-        onboarding_completed_at: new Date().toISOString(),
+        ...(data.partial ? {} : { onboarding_completed_at: new Date().toISOString() }),
         onboarding_skipped_at: null,
       })
       .eq("id", context.userId);
@@ -159,14 +161,21 @@ export const saveSetup = createServerFn({ method: "POST" })
     // Monitoring keywords — the listening pipeline reads this list every run.
     const { data: existingKeywords } = await db
       .from("mention_keywords")
-      .select("term")
+      .select("term, is_active")
       .eq("workspace_id", workspaceId);
-    const known = new Set(
-      ((existingKeywords ?? []) as { term: string }[]).map((r) => r.term.trim().toLowerCase()),
-    );
+    const existing = (existingKeywords ?? []) as { term: string; is_active: boolean }[];
+    const wanted = new Map(data.keywords.map((t) => [t.trim().toLowerCase(), t.trim()]));
+    const known = new Set<string>();
+    const toReactivate: string[] = [];
+    const toDeactivate: string[] = [];
+    for (const row of existing) {
+      const key = row.term.trim().toLowerCase();
+      known.add(key);
+      if (wanted.has(key) && !row.is_active) toReactivate.push(row.term);
+      if (!wanted.has(key) && row.is_active) toDeactivate.push(row.term);
+    }
     const fresh: string[] = [];
-    for (const term of data.keywords) {
-      const key = term.toLowerCase();
+    for (const [key, term] of wanted) {
       if (!term || known.has(key)) continue;
       known.add(key);
       fresh.push(term);
@@ -181,6 +190,22 @@ export const saveSetup = createServerFn({ method: "POST" })
           last_refreshed_at: new Date().toISOString(),
         })),
       );
+    }
+    if (toReactivate.length) {
+      await db
+        .from("mention_keywords")
+        .update({ is_active: true })
+        .eq("workspace_id", workspaceId)
+        .in("term", toReactivate);
+    }
+    // Terms the person removed in the wizard stop being collected, so re-opening
+    // setup shows exactly what they last saved.
+    if (toDeactivate.length) {
+      await db
+        .from("mention_keywords")
+        .update({ is_active: false })
+        .eq("workspace_id", workspaceId)
+        .in("term", toDeactivate);
     }
 
     // Optional accounts, hashtags and topics to watch, including the brand's own X handle.
@@ -214,18 +239,24 @@ export const saveSetup = createServerFn({ method: "POST" })
     }
 
     let pagesAdded = 0;
-    if (entries.length) {
-      const { data: existingWatch } = await db
-        .from("monitoring_watchlist")
-        .select("kind, platform, value")
-        .eq("workspace_id", workspaceId);
+    {
       const keyOf = (kind: string, platform: string | null, value: string) =>
         `${kind}:${String(platform ?? "").toLowerCase()}:${value.trim().toLowerCase()}`;
-      const seen = new Set(
-        ((existingWatch ?? []) as { kind: string; platform: string | null; value: string }[]).map(
-          (r) => keyOf(r.kind, r.platform, r.value),
-        ),
-      );
+      const { data: existingWatch } = await db
+        .from("monitoring_watchlist")
+        .select("id, kind, platform, value, is_active")
+        .eq("workspace_id", workspaceId)
+        .in("kind", ["account", "hashtag", "topic"]);
+      const current = (existingWatch ?? []) as {
+        id: string;
+        kind: string;
+        platform: string | null;
+        value: string;
+        is_active: boolean;
+      }[];
+      const wantedKeys = new Set(entries.map((a) => keyOf(a.kind, a.platform, a.value)));
+      const seen = new Set(current.map((r) => keyOf(r.kind, r.platform, r.value)));
+
       const rows = entries
         .filter((a) => !seen.has(keyOf(a.kind, a.platform, a.value)))
         .map((a) => ({
@@ -243,6 +274,20 @@ export const saveSetup = createServerFn({ method: "POST" })
       if (rows.length) {
         await db.from("monitoring_watchlist").insert(rows);
         pagesAdded = rows.length;
+      }
+
+      const reactivate = current
+        .filter((r) => !r.is_active && wantedKeys.has(keyOf(r.kind, r.platform, r.value)))
+        .map((r) => r.id);
+      if (reactivate.length) {
+        await db.from("monitoring_watchlist").update({ is_active: true }).in("id", reactivate);
+      }
+      // Entries removed in the wizard drop off the watchlist so the saved view matches.
+      const deactivate = current
+        .filter((r) => r.is_active && !wantedKeys.has(keyOf(r.kind, r.platform, r.value)))
+        .map((r) => r.id);
+      if (deactivate.length) {
+        await db.from("monitoring_watchlist").update({ is_active: false }).in("id", deactivate);
       }
     }
 
