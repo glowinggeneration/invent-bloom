@@ -708,7 +708,7 @@ function SetupPage() {
                   Optional. Add any official pages you want watched alongside X.
                 </p>
                 {SOCIAL_FIELDS.map((field) => (
-                  <Field key={field.key} label={field.label} hint="Optional">
+                  <Field key={field.key} label={field.label}>
                     <Input
                       value={socials[field.key]}
                       onChange={(e) => setSocials((s) => ({ ...s, [field.key]: e.target.value }))}
