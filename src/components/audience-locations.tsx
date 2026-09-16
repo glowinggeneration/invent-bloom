@@ -130,7 +130,7 @@ export function AudienceGenderCard({ handles }: { handles: string[] }) {
       <div className="flex items-start gap-2">
         <Users className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold leading-tight">Gender split</h3>
+          <h3 className="text-sm font-semibold leading-tight">Gender</h3>
           <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
             Estimated from the names on these profiles.
           </p>
