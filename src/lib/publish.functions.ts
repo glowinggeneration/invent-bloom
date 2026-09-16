@@ -995,7 +995,7 @@ export const previewPersonaVariations = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        accountIds: z.array(z.string().uuid()).min(1).max(100),
+        accountIds: z.array(z.string().uuid()).min(1).max(500),
         tweetText: z.string().max(1000).default(""),
         commentText: z.string().max(1000).default(""),
         briefing: z.string().max(800).default(""),
