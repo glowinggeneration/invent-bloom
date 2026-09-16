@@ -40,6 +40,94 @@ export const Route = createFileRoute("/_authenticated/setup")({
   component: SetupPage,
 });
 
+const JOB_TITLES = [
+  "Communications Manager",
+  "Communications Officer",
+  "Head of Communications",
+  "Press Officer",
+  "Social Media Manager",
+  "Digital Marketing Manager",
+  "Marketing Manager",
+  "Public Relations Officer",
+  "Brand Manager",
+  "Content Producer",
+  "Media Analyst",
+  "Executive / Director",
+];
+
+const TEAMS = [
+  "Communications",
+  "Marketing",
+  "Public Relations",
+  "Digital / Social Media",
+  "Media Monitoring",
+  "Brand",
+  "Content",
+  "Government Relations",
+  "Executive Office",
+  "Customer Experience",
+];
+
+const OTHER = "__other__";
+
+function SelectWithOther({
+  options,
+  value,
+  onChange,
+  placeholder,
+  otherPlaceholder,
+}: {
+  options: string[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  otherPlaceholder: string;
+}) {
+  const isListed = options.includes(value);
+  const [custom, setCustom] = useState(!isListed && value.length > 0);
+
+  useEffect(() => {
+    if (value.length > 0 && !options.includes(value)) setCustom(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <div className="space-y-2">
+      <Select
+        value={custom ? OTHER : isListed ? value : ""}
+        onValueChange={(next) => {
+          if (next === OTHER) {
+            setCustom(true);
+            onChange("");
+            return;
+          }
+          setCustom(false);
+          onChange(next);
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
+          <SelectItem value={OTHER}>Other…</SelectItem>
+        </SelectContent>
+      </Select>
+      {custom && (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={otherPlaceholder}
+        />
+      )}
+    </div>
+  );
+}
+
 const STEPS = [
   { id: "you", label: "About you", description: "Name and role" },
   { id: "brand", label: "Organisation", description: "Who you speak for" },
