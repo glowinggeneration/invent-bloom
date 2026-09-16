@@ -26,6 +26,8 @@ const setupSchema = z.object({
   orgProfileName: z.string().trim().max(200).default(""),
   keyFigures: z.array(z.string().trim().min(2).max(80)).max(10).default([]),
   keywords: z.array(z.string().trim().min(2).max(80)).min(1).max(25),
+  hashtags: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
+  topics: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
   socials: socialsSchema.default(EMPTY_SOCIALS),
 });
 
