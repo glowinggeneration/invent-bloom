@@ -554,19 +554,23 @@ export function WorkspaceShell({
             >
               {actions}
               <GlobalCommandPalette />
-              {/* Desktop create lives in the sidebar as "New campaign"; this
-                  compact action stays for mobile/tablet where the sidebar is
-                  off-canvas. */}
+              <Button asChild className="hidden h-10 shrink-0 gap-1.5 lg:inline-flex">
+                <Link to="/publish" search={{ choose: true }} title="Create campaign">
+                  <Plus className="size-[18px]" aria-hidden="true" />
+                  Create campaign
+                </Link>
+              </Button>
               <Button
                 asChild
                 size="icon"
                 className="size-10 shrink-0 lg:hidden"
-                aria-label="New campaign"
+                aria-label="Create campaign"
               >
-                <Link to="/publish" search={{ choose: true }} title="New campaign">
+                <Link to="/publish" search={{ choose: true }} title="Create campaign">
                   <Plus className="size-[18px]" aria-hidden="true" />
                 </Link>
               </Button>
+
               <NotificationsBell />
               <Button
                 variant="ghost"
