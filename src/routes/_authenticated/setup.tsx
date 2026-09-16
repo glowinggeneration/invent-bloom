@@ -232,8 +232,10 @@ function SetupPage() {
   const [topicDraft, setTopicDraft] = useState("");
   const [socials, setSocials] = useState<SetupSocials>(EMPTY_SOCIALS);
 
+  const hydrated = useRef(false);
+
   useEffect(() => {
-    if (!status) return;
+    if (!status || hydrated.current) return;
     if (!status.needsSetup && !edit) {
       navigate({ to: "/mentions", replace: true });
       return;
