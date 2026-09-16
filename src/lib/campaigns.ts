@@ -101,7 +101,7 @@ export const campaignInputSchema = z.object({
   spreadHours: z.number().int().min(0).max(48).default(0),
   likeTarget: z.boolean().default(false),
   followAuthor: z.boolean().default(false),
-  accountIds: z.array(z.string().uuid()).max(100).default([]),
+  accountIds: z.array(z.string().uuid()).max(500).default([]),
 });
 
 export type CampaignInput = z.infer<typeof campaignInputSchema>;

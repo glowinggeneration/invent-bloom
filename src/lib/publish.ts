@@ -195,7 +195,7 @@ const rawPublishInputSchema = z.object({
   /** Client-generated once per submit attempt; resent unchanged on retry so a
    * duplicate submission returns the original result instead of posting twice. */
   idempotencyKey: z.string().trim().max(100).default(""),
-  accountIds: z.array(z.string().uuid()).min(1).max(100),
+  accountIds: z.array(z.string().uuid()).min(1).max(500),
   tweetText: z.string().trim().max(1000).default(""),
   commentText: z.string().trim().max(1000).default(""),
   briefing: z.string().trim().max(800).default(""),
