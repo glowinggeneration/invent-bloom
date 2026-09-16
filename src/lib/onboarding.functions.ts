@@ -68,19 +68,27 @@ export const getSetupStatus = createServerFn({ method: "POST" })
 
     const { data: watchRows } = await db
       .from("monitoring_watchlist")
-      .select("platform, value")
+      .select("kind, platform, value")
       .eq("workspace_id", workspaceId)
-      .eq("kind", "account")
+      .in("kind", ["account", "hashtag", "topic"])
       .eq("is_active", true)
-      .limit(60);
+      .limit(120);
+
+    const allWatch = (watchRows ?? []) as {
+      kind: string;
+      platform: string | null;
+      value: string;
+    }[];
 
     const socials = { ...EMPTY_SOCIALS };
-    for (const row of (watchRows ?? []) as { platform: string | null; value: string }[]) {
+    for (const row of allWatch.filter((r) => r.kind === "account")) {
       const key = String(row.platform ?? "").toLowerCase();
       if (key in socials && !socials[key as keyof typeof socials]) {
         socials[key as keyof typeof socials] = row.value;
       }
     }
+    const hashtags = allWatch.filter((r) => r.kind === "hashtag").map((r) => r.value);
+    const topics = allWatch.filter((r) => r.kind === "topic").map((r) => r.value);
 
     return {
       needsSetup: !data?.onboarding_completed_at && !data?.onboarding_skipped_at,
