@@ -101,7 +101,7 @@ export function MentionsSummary({
                     stroke="none"
                   >
                     {donut.map((d) => (
-                      <Cell key={d.name} style={{ fill: d.dot }} />
+                      <Cell key={d.name} fill={d.fill} />
                     ))}
                   </Pie>
                 </PieChart>
