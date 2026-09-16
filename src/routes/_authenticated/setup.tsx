@@ -666,7 +666,7 @@ function SetupPage() {
               <div className="space-y-7">
                 <TagField
                   label="Words and phrases to monitor"
-                  hint="Required. These drive every mention we collect — add the organisation name, nicknames, leaders, competitions and issues people talk about."
+                  hint="These drive every mention we collect — add the organisation name, nicknames, leaders, competitions and issues people talk about."
                   placeholder="e.g. your product name — press Enter to add"
                   ariaLabel="Add a monitoring term"
                   draft={keywordDraft}
