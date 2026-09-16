@@ -392,11 +392,50 @@ function SetupPage() {
                   />
                 </Field>
                 <Field label="Phone" hint="Optional — used for urgent alerts only">
-                  <Input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+254…"
-                  />
+                  <div className="flex gap-2">
+                    <Select
+                      value={phoneDial === OTHER || PHONE_COUNTRIES.every((c) => c.dial !== phoneDial) ? OTHER : phoneDial}
+                      onValueChange={(next) => {
+                        if (next === OTHER) {
+                          setPhoneDial(OTHER);
+                          if (!phoneCustomDial) setPhoneCustomDial("");
+                          return;
+                        }
+                        setPhoneDial(next);
+                      }}
+                    >
+                      <SelectTrigger className="w-[150px] shrink-0" aria-label="Country code">
+                        {phoneDial !== OTHER && PHONE_COUNTRIES.some((c) => c.dial === phoneDial) ? (
+                          <span>{phoneDial}</span>
+                        ) : (
+                          <SelectValue placeholder="Code" />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PHONE_COUNTRIES.map((c) => (
+                          <SelectItem key={c.code} value={c.dial}>
+                            {c.name} ({c.dial})
+                          </SelectItem>
+                        ))}
+                        <SelectItem value={OTHER}>Other…</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      value={phoneNational}
+                      onChange={(e) => setPhoneNational(e.target.value)}
+                      placeholder="82 123 4567"
+                      inputMode="tel"
+                    />
+                  </div>
+                  {phoneDial === OTHER && (
+                    <Input
+                      value={phoneCustomDial}
+                      onChange={(e) => setPhoneCustomDial(e.target.value)}
+                      placeholder="+44"
+                      className="mt-2"
+                      inputMode="tel"
+                    />
+                  )}
                 </Field>
               </>
             )}
