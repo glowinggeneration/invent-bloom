@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { EMPTY_SOCIALS, cleanHandle, type SetupStatus } from "./onboarding";
+import { EMPTY_SOCIALS, cleanHandle, cleanHashtag, type SetupStatus } from "./onboarding";
 import { resolveWorkspaceId } from "./workspace.server";
 
 const socialsSchema = z.object({
