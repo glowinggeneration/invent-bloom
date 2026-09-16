@@ -183,10 +183,12 @@ export const saveSetup = createServerFn({ method: "POST" })
       );
     }
 
-    // Optional accounts to watch, including the brand's own X handle.
-    const accounts: { platform: string; value: string; label: string }[] = [];
+    // Optional accounts, hashtags and topics to watch, including the brand's own X handle.
+    type WatchEntry = { kind: string; platform: string | null; value: string; label: string };
+    const entries: WatchEntry[] = [];
     if (brandHandle) {
-      accounts.push({
+      entries.push({
+        kind: "account",
         platform: "x",
         value: brandHandle,
         label: data.brandName || `@${brandHandle}`,
@@ -195,25 +197,40 @@ export const saveSetup = createServerFn({ method: "POST" })
     for (const [platform, raw] of Object.entries(data.socials)) {
       const value = cleanHandle(String(raw ?? ""));
       if (value)
-        accounts.push({ platform, value, label: `${data.brandName || value} (${platform})` });
+        entries.push({
+          kind: "account",
+          platform,
+          value,
+          label: `${data.brandName || value} (${platform})`,
+        });
+    }
+    for (const raw of data.hashtags) {
+      const value = cleanHashtag(raw);
+      if (value) entries.push({ kind: "hashtag", platform: null, value, label: `#${value}` });
+    }
+    for (const raw of data.topics) {
+      const value = raw.trim();
+      if (value) entries.push({ kind: "topic", platform: null, value, label: value });
     }
 
     let pagesAdded = 0;
-    if (accounts.length) {
+    if (entries.length) {
       const { data: existingWatch } = await db
         .from("monitoring_watchlist")
-        .select("platform, value")
+        .select("kind, platform, value")
         .eq("workspace_id", workspaceId);
+      const keyOf = (kind: string, platform: string | null, value: string) =>
+        `${kind}:${String(platform ?? "").toLowerCase()}:${value.trim().toLowerCase()}`;
       const seen = new Set(
-        ((existingWatch ?? []) as { platform: string | null; value: string }[]).map(
-          (r) => `${String(r.platform ?? "").toLowerCase()}:${r.value.trim().toLowerCase()}`,
+        ((existingWatch ?? []) as { kind: string; platform: string | null; value: string }[]).map(
+          (r) => keyOf(r.kind, r.platform, r.value),
         ),
       );
-      const rows = accounts
-        .filter((a) => !seen.has(`${a.platform}:${a.value.toLowerCase()}`))
+      const rows = entries
+        .filter((a) => !seen.has(keyOf(a.kind, a.platform, a.value)))
         .map((a) => ({
           workspace_id: workspaceId,
-          kind: "account",
+          kind: a.kind,
           label: a.label.slice(0, 120),
           value: a.value,
           platform: a.platform,
