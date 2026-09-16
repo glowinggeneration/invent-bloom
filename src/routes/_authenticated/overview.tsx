@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { listBrandMentions } from "@/lib/brand-mentions.functions";
+
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Card } from "@/components/ui-kit";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
@@ -118,10 +121,29 @@ function OverviewPage() {
     [sourcesQuery.data],
   );
 
+  const fetchBrandMentions = useServerFn(listBrandMentions);
+  const collect = useMutation({
+    mutationFn: () => fetchBrandMentions({ data: {} }),
+    onSuccess: async (result) => {
+      if (result?.error) {
+        toast.error("Could not pull from X right now.");
+      } else {
+        toast.success(
+          result?.mentions?.length
+            ? `Pulled ${result.mentions.length} posts from X.`
+            : "Checked X — no new qualifying posts.",
+        );
+      }
+      await queryClient.invalidateQueries({ queryKey: ["overview"] });
+    },
+    onError: () => toast.error("Could not pull from X right now."),
+  });
+
   const refreshIntel = async () => {
     const fresh = await fetchIntel({ data: { refresh: true } });
     queryClient.setQueryData(["overview", "intel"], fresh);
   };
+
 
   const rangeLabel =
     OVERVIEW_WINDOWS.find((item) => item.value === window)?.label ?? "Current window";
@@ -149,6 +171,9 @@ function OverviewPage() {
           void intel.refetch();
           if (isAdmin) void sourcesQuery.refetch();
         }}
+        onCollect={() => collect.mutate()}
+        collecting={collect.isPending}
+
       >
         {overview.data ? (
           <div className="grid gap-5">
