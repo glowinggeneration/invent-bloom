@@ -602,7 +602,7 @@ export function WorkspaceShell({
                     />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-72 p-0">
+                <DropdownMenuContent align="start" className="w-72 p-0">
                   <div className="border-b border-border px-4 py-3">
                     <AvatarLabelGroup
                       size="md"
