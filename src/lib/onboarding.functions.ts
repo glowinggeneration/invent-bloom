@@ -25,10 +25,12 @@ const setupSchema = z.object({
   orgProfilePath: z.string().trim().max(400).default(""),
   orgProfileName: z.string().trim().max(200).default(""),
   keyFigures: z.array(z.string().trim().min(2).max(80)).max(10).default([]),
-  keywords: z.array(z.string().trim().min(2).max(80)).min(1).max(25),
+  keywords: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
   hashtags: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
   topics: z.array(z.string().trim().min(2).max(80)).max(25).default([]),
   socials: socialsSchema.default(EMPTY_SOCIALS),
+  /** True while the person is still moving between steps; keeps setup open. */
+  partial: z.boolean().default(false),
 });
 
 /** Current setup answers plus whether the guided flow still needs running. */
