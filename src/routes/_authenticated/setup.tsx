@@ -412,7 +412,7 @@ function SetupPage() {
             <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
           </div>
 
-          <div className="mx-auto mt-8 w-full max-w-xl space-y-4">
+          <div className="mx-auto mt-8 w-full max-w-xl space-y-5 pb-10">
             {step === 0 && (
               <>
                 <Field label="Full name" required>
@@ -689,8 +689,8 @@ function SetupPage() {
                     />
                   </Field>
                 ))}
-                <div className="rounded-lg border border-dashed border-border p-4">
-                  <p className="type-meta mb-3 text-muted-foreground">
+                <div className="mt-2 rounded-xl border border-dashed border-border p-5">
+                  <p className="type-meta mb-4 text-muted-foreground">
                     Need somewhere else watched? Ask us to add it.
                   </p>
                   <RequestChannelDialog />
@@ -699,7 +699,7 @@ function SetupPage() {
             )}
           </div>
 
-          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+          <div className="mx-auto mt-auto flex w-full max-w-xl flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-border pt-6">
             <div className="flex items-center gap-2">
               {step > 0 && (
                 <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
