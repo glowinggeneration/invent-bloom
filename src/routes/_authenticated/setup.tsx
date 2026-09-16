@@ -24,7 +24,13 @@ import AnimatedButton from "@/components/vengeance/animated-button";
 import StaggerText from "@/components/vengeance/stagger-text";
 import { KineticTextLoader } from "@/components/vengeance/kinetic-text-loader";
 import { getSetupStatus, saveSetup, skipSetup } from "@/lib/onboarding.functions";
-import { EMPTY_SOCIALS, SOCIAL_FIELDS, cleanHandle, type SetupSocials } from "@/lib/onboarding";
+import {
+  EMPTY_SOCIALS,
+  SOCIAL_FIELDS,
+  cleanHandle,
+  cleanHashtag,
+  type SetupSocials,
+} from "@/lib/onboarding";
 import { friendlyError } from "@/lib/friendly-errors";
 import { RequestChannelDialog } from "@/components/setup/request-channel-dialog";
 
