@@ -220,6 +220,10 @@ function SetupPage() {
   const [keyFigureDraft, setKeyFigureDraft] = useState("");
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordDraft, setKeywordDraft] = useState("");
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [hashtagDraft, setHashtagDraft] = useState("");
+  const [topics, setTopics] = useState<string[]>([]);
+  const [topicDraft, setTopicDraft] = useState("");
   const [socials, setSocials] = useState<SetupSocials>(EMPTY_SOCIALS);
 
   useEffect(() => {
