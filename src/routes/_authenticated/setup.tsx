@@ -218,7 +218,10 @@ function SetupPage() {
     setFullName(status.fullName);
     setJobTitle(status.jobTitle);
     setTeam(status.team);
-    setPhone(status.phone);
+    const parsed = parsePhone(status.phone ?? "");
+    setPhoneDial(parsed.dial);
+    setPhoneCustomDial(parsed.customDial);
+    setPhoneNational(parsed.national);
     setBrandName(status.brandName);
     setBrandHandle(status.brandHandle);
     setKeyFigures(status.keyFigures);
