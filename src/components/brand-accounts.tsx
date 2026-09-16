@@ -124,6 +124,7 @@ export function BrandAccounts() {
   }, [socialStale]);
 
   const busy = refresh.isPending || socialRefresh.isPending;
+  const xCoverUrl = (data ?? []).find((profile) => profile.bannerUrl)?.bannerUrl;
   const checkAll = () => {
     refresh.mutate();
     socialRefresh.mutate();
@@ -241,7 +242,7 @@ export function BrandAccounts() {
                   className="overflow-hidden rounded-xl border border-border"
                 >
                   <img
-                    src={p.bannerUrl || X_DEFAULT_BANNER}
+                    src={p.bannerUrl || xCoverUrl || X_DEFAULT_BANNER}
                     alt={`${p.displayName ?? p.handle} cover`}
                     loading="lazy"
                     className="h-20 w-full object-cover"
