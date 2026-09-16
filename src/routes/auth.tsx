@@ -54,6 +54,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -122,6 +123,10 @@ function AuthPage() {
 
   async function onSignUp(e: React.FormEvent) {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error("Those two passwords don't match. Please retype them.");
+      return;
+    }
     setBusy(true);
     const cleanEmail = email.trim().toLowerCase();
     const { data, error } = await supabase.auth.signUp({
@@ -308,6 +313,26 @@ function AuthPage() {
                 </button>
               </div>
               <p className="type-meta text-muted-foreground">At least 8 characters.</p>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="confirm-password">Confirm password</Label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="confirm-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="h-11 px-9"
+                />
+              </div>
+              {confirmPassword.length > 0 && confirmPassword !== password ? (
+                <p className="type-meta text-destructive">Both passwords must match.</p>
+              ) : null}
             </div>
 
             <Button type="submit" className="h-11 w-full" disabled={busy}>
