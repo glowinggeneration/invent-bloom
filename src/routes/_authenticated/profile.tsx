@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  Target,
   UserMinus,
   UserPlus,
 } from "lucide-react";
