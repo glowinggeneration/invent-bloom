@@ -19,6 +19,11 @@ const setupSchema = z.object({
   phoneWhatsapp: z.boolean().default(false),
   brandName: z.string().trim().max(120).default(""),
   brandHandle: z.string().trim().max(60).default(""),
+  orgAddress: z.string().trim().max(300).default(""),
+  orgWebsite: z.string().trim().max(200).default(""),
+  orgDescription: z.string().trim().max(2000).default(""),
+  orgProfilePath: z.string().trim().max(400).default(""),
+  orgProfileName: z.string().trim().max(200).default(""),
   keyFigures: z.array(z.string().trim().min(2).max(80)).max(10).default([]),
   keywords: z.array(z.string().trim().min(2).max(80)).min(1).max(25),
   socials: socialsSchema.default(EMPTY_SOCIALS),
@@ -43,6 +48,13 @@ export const getSetupStatus = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = supabaseAdmin as any;
+
+    const { data: orgExtrasRow } = await db
+      .from("workspace_settings")
+      .select("org_address, org_website, org_description, org_profile_path, org_profile_name")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    const orgExtras = (orgExtrasRow ?? {}) as Record<string, string | null>;
 
     const { data: keywordRows } = await db
       .from("mention_keywords")
@@ -77,6 +89,11 @@ export const getSetupStatus = createServerFn({ method: "POST" })
       phoneWhatsapp: data?.phone_whatsapp ?? false,
       brandName: settings.orgName,
       brandHandle: settings.orgHandle,
+      orgAddress: orgExtras.org_address ?? "",
+      orgWebsite: orgExtras.org_website ?? "",
+      orgDescription: orgExtras.org_description ?? "",
+      orgProfilePath: orgExtras.org_profile_path ?? "",
+      orgProfileName: orgExtras.org_profile_name ?? "",
       keyFigures: settings.keyFigures,
       keywords: ((keywordRows ?? []) as { term: string }[]).map((r) => r.term).filter(Boolean),
       socials,
@@ -117,6 +134,11 @@ export const saveSetup = createServerFn({ method: "POST" })
         org_name: data.brandName,
         org_handle: brandHandle,
         key_figures: data.keyFigures,
+        org_address: data.orgAddress,
+        org_website: data.orgWebsite,
+        org_description: data.orgDescription,
+        org_profile_path: data.orgProfilePath,
+        org_profile_name: data.orgProfileName,
         updated_by: context.userId,
       })
       .eq("workspace_id", workspaceId);
