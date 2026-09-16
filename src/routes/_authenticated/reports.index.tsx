@@ -185,7 +185,10 @@ function ReportsPage() {
     queryFn: () => load({ data: { kind } }),
   });
 
-  const reports = data?.reports ?? [];
+  // Hide empty reports: nothing recorded for mentions, campaigns or engagement actions.
+  const reports = (data?.reports ?? []).filter(
+    (report) => report.mentions + report.campaigns + report.engagementActions > 0,
+  );
   const totals = reports.reduce(
     (acc, report) => ({
       mentions: acc.mentions + report.mentions,
