@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import AnimatedButton from "@/components/vengeance/animated-button";
-import { PopButton } from "@/components/vengeance/pop-button";
+
 import StaggerText from "@/components/vengeance/stagger-text";
 import { KineticTextLoader } from "@/components/vengeance/kinetic-text-loader";
 import { getSetupStatus, saveSetup, skipSetup } from "@/lib/onboarding.functions";
