@@ -79,6 +79,9 @@ type OverviewStateGateProps = OverviewStateInput & {
   onViewMentions: () => void;
   onOpenConnections: () => void;
   onRefresh: () => void;
+  /** Runs a live pull from the connected source (X) when the window is empty. */
+  onCollect?: (() => void) | undefined;
+  collecting?: boolean | undefined;
   children: ReactNode;
 };
 
@@ -95,8 +98,11 @@ export function OverviewStateGate({
   onViewMentions,
   onOpenConnections,
   onRefresh,
+  onCollect,
+  collecting,
   children,
 }: OverviewStateGateProps) {
+
   const mode = deriveOverviewMode({ loading, fatalQueryError, sourcesKnown, sources, empty });
   const failedSources = sources.filter((source) => source.status === "error");
   const isFocusedState =
