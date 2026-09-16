@@ -11,7 +11,7 @@
  * Stories without a session) return `unavailable` rather than fabricating
  * rows.
  */
-import { getApifyToken } from "./apify.server";
+import { APIFY_GATEWAY_URL, getApifyHeaders } from "./apify.server";
 import {
   sourceLabel,
   type ApifyContentType,
@@ -50,7 +50,7 @@ export type RawMention = {
   raw: Record<string, unknown>;
 };
 
-const APIFY_BASE = "https://api.apify.com/v2/acts";
+const APIFY_BASE = `${APIFY_GATEWAY_URL}/acts`;
 
 /** Actor ids, in `username~name` form. Swap an id here to change a lane. */
 export const ACTORS = {
@@ -77,12 +77,11 @@ export async function runActor(
   input: Record<string, unknown>,
   { limit = 60, timeoutSeconds = 240 }: { limit?: number; timeoutSeconds?: number } = {},
 ): Promise<Record<string, unknown>[]> {
-  const token = getApifyToken();
   const url = `${APIFY_BASE}/${actorId}/run-sync-get-dataset-items?timeout=${timeoutSeconds}&limit=${limit}`;
 
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: { "Content-Type": "application/json", ...getApifyHeaders() },
     body: JSON.stringify(input),
     signal: AbortSignal.timeout((timeoutSeconds + 30) * 1000),
   });
