@@ -203,6 +203,26 @@ export function PostCampaign() {
       ),
   });
 
+  // Generating versions is never a dead click: if something is missing we say
+  // what, and jump to the step that needs it.
+  const runPreview = () => {
+    if (previewMutation.isPending) return;
+    const goTo = (id: string) =>
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!tweetText.trim()) {
+      setError("Write the message or objective first, then generate the versions.");
+      goTo("post-details");
+      return;
+    }
+    if (personas.selected.length === 0) {
+      setError("Choose at least one persona account, then generate the versions.");
+      goTo("post-personas");
+      return;
+    }
+    setError(null);
+    previewMutation.mutate();
+  };
+
   const [result, setResult] = useState<PublishJobResult | null>(null);
   // Stable across retries of the same submit attempt so a network retry or
   // double-fire returns the original result instead of posting twice;
@@ -534,10 +554,8 @@ export function PostCampaign() {
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={
-                    !tweetText.trim() || personas.selected.length === 0 || previewMutation.isPending
-                  }
-                  onClick={() => previewMutation.mutate()}
+                  disabled={previewMutation.isPending}
+                  onClick={runPreview}
                 >
                   {previewMutation.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -638,12 +656,8 @@ export function PostCampaign() {
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={
-                        !tweetText.trim() ||
-                        personas.selected.length === 0 ||
-                        previewMutation.isPending
-                      }
-                      onClick={() => previewMutation.mutate()}
+                      disabled={previewMutation.isPending}
+                      onClick={runPreview}
                     >
                       {previewMutation.isPending ? (
                         <Loader2 className="size-4 animate-spin" />
