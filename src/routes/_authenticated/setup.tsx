@@ -661,46 +661,44 @@ function SetupPage() {
             )}
 
             {step === 3 && (
-              <div className="space-y-3">
-                <div>
-                  <Label>Words and phrases to monitor</Label>
-                  <p className="type-meta mt-1 text-muted-foreground">
-                    Required. These drive every mention we collect — add the organisation name,
-                    nicknames, leaders, competitions and issues people talk about.
-                  </p>
-                </div>
-                  <Input
-                    value={keywordDraft}
-                    onChange={(e) => setKeywordDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addKeyword();
-                      }
-                    }}
-                    placeholder="e.g. your product name — press Enter to add"
-                    aria-label="Add a monitoring term"
-                  />
-                <div className="flex flex-wrap gap-2">
-                  {keywords.length === 0 && (
-                    <p className="type-meta text-muted-foreground">No terms yet.</p>
-                  )}
-                  {keywords.map((term) => (
-                    <span
-                      key={term}
-                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 type-meta font-medium text-primary"
-                    >
-                      {term}
-                      <button
-                        type="button"
-                        aria-label={`Remove ${term}`}
-                        onClick={() => setKeywords((l) => l.filter((k) => k !== term))}
-                      >
-                        <X className="size-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
+              <div className="space-y-7">
+                <TagField
+                  label="Words and phrases to monitor"
+                  hint="Required. These drive every mention we collect — add the organisation name, nicknames, leaders, competitions and issues people talk about."
+                  placeholder="e.g. your product name — press Enter to add"
+                  ariaLabel="Add a monitoring term"
+                  draft={keywordDraft}
+                  setDraft={setKeywordDraft}
+                  onAdd={() => addKeyword()}
+                  items={keywords}
+                  onRemove={(v) => setKeywords((l) => l.filter((k) => k !== v))}
+                  emptyText="No terms yet."
+                />
+                <TagField
+                  label="Hashtags to follow"
+                  hint="Optional. Campaign, event or issue hashtags — the # is added for you."
+                  placeholder="e.g. YourCampaign2026 — press Enter to add"
+                  ariaLabel="Add a hashtag"
+                  draft={hashtagDraft}
+                  setDraft={setHashtagDraft}
+                  onAdd={addHashtag}
+                  items={hashtags}
+                  format={(t) => `#${t}`}
+                  onRemove={(v) => setHashtags((l) => l.filter((k) => k !== v))}
+                  emptyText="No hashtags yet."
+                />
+                <TagField
+                  label="Topics and issues"
+                  hint="Optional. Broader themes to follow, even when your name is not mentioned."
+                  placeholder="e.g. sponsorship deals — press Enter to add"
+                  ariaLabel="Add a topic"
+                  draft={topicDraft}
+                  setDraft={setTopicDraft}
+                  onAdd={addTopic}
+                  items={topics}
+                  onRemove={(v) => setTopics((l) => l.filter((k) => k !== v))}
+                  emptyText="No topics yet."
+                />
               </div>
             )}
 
