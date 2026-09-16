@@ -249,6 +249,8 @@ function SetupPage() {
     setOrgProfileName(status.orgProfileName);
     setKeyFigures(status.keyFigures);
     setKeywords(status.keywords);
+    setHashtags(status.hashtags ?? []);
+    setTopics(status.topics ?? []);
     setSocials(status.socials);
   }, [status, navigate, edit]);
 
