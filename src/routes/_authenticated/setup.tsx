@@ -793,3 +793,65 @@ function Field({
     </div>
   );
 }
+
+/** A labelled input that turns each entry into a removable tag. */
+function TagField({
+  label,
+  hint,
+  placeholder,
+  ariaLabel,
+  draft,
+  setDraft,
+  onAdd,
+  items,
+  onRemove,
+  emptyText,
+  format,
+}: {
+  label: string;
+  hint: string;
+  placeholder: string;
+  ariaLabel: string;
+  draft: string;
+  setDraft: (value: string) => void;
+  onAdd: () => void;
+  items: string[];
+  onRemove: (value: string) => void;
+  emptyText: string;
+  format?: (value: string) => string;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label>{label}</Label>
+        <p className="type-meta mt-1 text-muted-foreground">{hint}</p>
+      </div>
+      <Input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onAdd();
+          }
+        }}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+      />
+      <div className="flex flex-wrap gap-2">
+        {items.length === 0 && <p className="type-meta text-muted-foreground">{emptyText}</p>}
+        {items.map((item) => (
+          <span
+            key={item}
+            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 type-meta font-medium text-primary"
+          >
+            {format ? format(item) : item}
+            <button type="button" aria-label={`Remove ${item}`} onClick={() => onRemove(item)}>
+              <X className="size-3.5" />
+            </button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
