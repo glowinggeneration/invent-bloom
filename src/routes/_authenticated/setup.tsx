@@ -199,7 +199,7 @@ function SetupPage() {
   const [jobTitle, setJobTitle] = useState("");
   const [team, setTeam] = useState("");
   const [phoneDial, setPhoneDial] = useState<string>(DEFAULT_DIAL);
-  const [phoneCustomDial, setPhoneCustomDial] = useState("");
+  const phone = ((phoneDial === OTHER ? phoneCustomDial : phoneDial) + phoneNational).trim();
   const [phoneNational, setPhoneNational] = useState("");
   const [brandName, setBrandName] = useState("");
   const [brandHandle, setBrandHandle] = useState("");
