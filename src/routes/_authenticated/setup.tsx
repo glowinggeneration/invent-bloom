@@ -77,6 +77,44 @@ const TEAMS = [
 
 const OTHER = "__other__";
 
+/** Dial codes offered on the phone field; South Africa (+27) is the default. */
+const PHONE_COUNTRIES = [
+  { code: "ZA", name: "South Africa", dial: "+27" },
+  { code: "KE", name: "Kenya", dial: "+254" },
+  { code: "NA", name: "Namibia", dial: "+264" },
+  { code: "BW", name: "Botswana", dial: "+267" },
+  { code: "ZW", name: "Zimbabwe", dial: "+263" },
+  { code: "ZM", name: "Zambia", dial: "+260" },
+  { code: "MZ", name: "Mozambique", dial: "+258" },
+  { code: "LS", name: "Lesotho", dial: "+266" },
+  { code: "SZ", name: "Eswatini", dial: "+268" },
+  { code: "NG", name: "Nigeria", dial: "+234" },
+  { code: "GH", name: "Ghana", dial: "+233" },
+  { code: "TZ", name: "Tanzania", dial: "+255" },
+  { code: "UG", name: "Uganda", dial: "+256" },
+  { code: "RW", name: "Rwanda", dial: "+250" },
+  { code: "EG", name: "Egypt", dial: "+20" },
+  { code: "AE", name: "United Arab Emirates", dial: "+971" },
+  { code: "GB", name: "United Kingdom", dial: "+44" },
+  { code: "US", name: "United States", dial: "+1" },
+] as const;
+
+const DEFAULT_DIAL = "+27";
+
+/** Splits a stored phone like "+27 82 123 4567" into dial code and national part. */
+function parsePhone(raw: string): { dial: string; customDial: string; national: string } {
+  const value = raw.trim();
+  if (!value) return { dial: DEFAULT_DIAL, customDial: "", national: "" };
+  const match = value.match(/^(\+\d{1,4})\s*(.*)$/);
+  if (match) {
+    const known = PHONE_COUNTRIES.some((c) => c.dial === match[1]);
+    return known
+      ? { dial: match[1]!, customDial: "", national: match[2]! }
+      : { dial: OTHER, customDial: match[1]!, national: match[2]! };
+  }
+  return { dial: DEFAULT_DIAL, customDial: "", national: value };
+}
+
 function SelectWithOther({
   options,
   value,
@@ -160,7 +198,10 @@ function SetupPage() {
   const [fullName, setFullName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [team, setTeam] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneDial, setPhoneDial] = useState<string>(DEFAULT_DIAL);
+  const [phoneCustomDial, setPhoneCustomDial] = useState("");
+  const [phoneNational, setPhoneNational] = useState("");
+  const phone = ((phoneDial === OTHER ? phoneCustomDial : phoneDial) + phoneNational).trim();
   const [brandName, setBrandName] = useState("");
   const [brandHandle, setBrandHandle] = useState("");
   const [keyFigures, setKeyFigures] = useState<string[]>([]);
@@ -178,7 +219,10 @@ function SetupPage() {
     setFullName(status.fullName);
     setJobTitle(status.jobTitle);
     setTeam(status.team);
-    setPhone(status.phone);
+    const parsed = parsePhone(status.phone ?? "");
+    setPhoneDial(parsed.dial);
+    setPhoneCustomDial(parsed.customDial);
+    setPhoneNational(parsed.national);
     setBrandName(status.brandName);
     setBrandHandle(status.brandHandle);
     setKeyFigures(status.keyFigures);
@@ -348,11 +392,50 @@ function SetupPage() {
                   />
                 </Field>
                 <Field label="Phone" hint="Optional — used for urgent alerts only">
-                  <Input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+254…"
-                  />
+                  <div className="flex gap-2">
+                    <Select
+                      value={phoneDial === OTHER || PHONE_COUNTRIES.every((c) => c.dial !== phoneDial) ? OTHER : phoneDial}
+                      onValueChange={(next) => {
+                        if (next === OTHER) {
+                          setPhoneDial(OTHER);
+                          if (!phoneCustomDial) setPhoneCustomDial("");
+                          return;
+                        }
+                        setPhoneDial(next);
+                      }}
+                    >
+                      <SelectTrigger className="w-[150px] shrink-0" aria-label="Country code">
+                        {phoneDial !== OTHER && PHONE_COUNTRIES.some((c) => c.dial === phoneDial) ? (
+                          <span>{phoneDial}</span>
+                        ) : (
+                          <SelectValue placeholder="Code" />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PHONE_COUNTRIES.map((c) => (
+                          <SelectItem key={c.code} value={c.dial}>
+                            {c.name} ({c.dial})
+                          </SelectItem>
+                        ))}
+                        <SelectItem value={OTHER}>Other…</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      value={phoneNational}
+                      onChange={(e) => setPhoneNational(e.target.value)}
+                      placeholder="82 123 4567"
+                      inputMode="tel"
+                    />
+                  </div>
+                  {phoneDial === OTHER && (
+                    <Input
+                      value={phoneCustomDial}
+                      onChange={(e) => setPhoneCustomDial(e.target.value)}
+                      placeholder="+44"
+                      className="mt-2"
+                      inputMode="tel"
+                    />
+                  )}
                 </Field>
               </>
             )}
