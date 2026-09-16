@@ -699,7 +699,7 @@ function SetupPage() {
             )}
           </div>
 
-          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+          <div className="mx-auto mt-auto flex w-full max-w-xl flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-border pt-6">
             <div className="flex items-center gap-2">
               {step > 0 && (
                 <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
