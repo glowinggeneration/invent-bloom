@@ -594,7 +594,7 @@ function SetupPage() {
                   Optional. These details appear in reports and help drafted replies sound like your
                   organisation.
                 </p>
-                <Field label="Website" hint="Optional">
+                <Field label="Website">
                   <Input
                     value={orgWebsite}
                     onChange={(e) => setOrgWebsite(e.target.value)}
@@ -602,7 +602,7 @@ function SetupPage() {
                     inputMode="url"
                   />
                 </Field>
-                <Field label="Address" hint="Optional">
+                <Field label="Address">
                   <Textarea
                     value={orgAddress}
                     onChange={(e) => setOrgAddress(e.target.value)}
