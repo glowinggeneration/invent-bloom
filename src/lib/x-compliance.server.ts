@@ -4,6 +4,7 @@ import {
   firstBlockingMessage,
   reviewBatch,
   type ComplianceCandidate,
+  type CompliancePolicyOptions,
   type XCampaignAction,
 } from "./x-compliance";
 
@@ -35,12 +36,14 @@ function maxDate(a: number, b: number) {
 export async function planCompliantSchedule<T extends ComplianceCandidate & { runAt: string }>(
   admin: Admin,
   candidates: T[],
+  options: CompliancePolicyOptions = {},
 ): Promise<CompliancePlanRow<T>[]> {
   if (!candidates.length) return [];
 
-  const batchIssues = reviewBatch(candidates);
+  const batchIssues = reviewBatch(candidates, options);
   const batchBlock = firstBlockingMessage(batchIssues);
   if (batchBlock) throw new Error(`Campaign policy check failed. ${batchBlock}`);
+
 
   const accountIds = [...new Set(candidates.map((c) => c.accountId))];
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -60,7 +63,7 @@ export async function planCompliantSchedule<T extends ComplianceCandidate & { ru
   const targetIds = [
     ...new Set(candidates.map((c) => c.targetTweetId).filter(Boolean)),
   ] as string[];
-  if (targetIds.length) {
+  if (targetIds.length && !options.allowMultiAccountTarget) {
     const { data: collisions, error: collisionError } = await admin
       .from("scheduled_actions")
       .select("account_id, action_type, target_tweet_id, status")

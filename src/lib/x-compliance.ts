@@ -79,7 +79,21 @@ export function contentSimilarity(a: string, b: string) {
   return union > 0 ? intersection / union : 0;
 }
 
-export function reviewBatch(candidates: ComplianceCandidate[]): ComplianceIssue[] {
+/**
+ * Per-campaign relaxations, set explicitly by the campaign type that needs
+ * them. Defaults keep the conservative safeguards in place.
+ */
+export type CompliancePolicyOptions = {
+  /** Boost campaigns deliberately perform Likes and Bookmarks. */
+  allowAutomatedEngagement?: boolean;
+  /** Reply and Boost campaigns may use several accounts on one post. */
+  allowMultiAccountTarget?: boolean;
+};
+
+export function reviewBatch(
+  candidates: ComplianceCandidate[],
+  options: CompliancePolicyOptions = {},
+): ComplianceIssue[] {
   const issues: ComplianceIssue[] = [];
 
   const follows = candidates.filter((c) => c.actionType === "follow");
@@ -93,7 +107,7 @@ export function reviewBatch(candidates: ComplianceCandidate[]): ComplianceIssue[
   }
 
   const likes = candidates.filter((c) => c.actionType === "like");
-  if (likes.length) {
+  if (likes.length && !options.allowAutomatedEngagement) {
     issues.push({
       code: "AUTOMATED_LIKE",
       message: "Automated Likes are disabled. X's automation rules do not permit automated liking.",
@@ -102,7 +116,7 @@ export function reviewBatch(candidates: ComplianceCandidate[]): ComplianceIssue[
   }
 
   const bookmarks = candidates.filter((c) => c.actionType === "bookmark");
-  if (bookmarks.length) {
+  if (bookmarks.length && !options.allowAutomatedEngagement) {
     issues.push({
       code: "AUTOMATED_BOOKMARK",
       message:
@@ -133,7 +147,7 @@ export function reviewBatch(candidates: ComplianceCandidate[]): ComplianceIssue[
   }
   for (const [target, rows] of byTarget) {
     const accounts = [...new Set(rows.map((r) => r.accountId))];
-    if (accounts.length > 1) {
+    if (accounts.length > 1 && !options.allowMultiAccountTarget) {
       issues.push({
         code: "TARGET_COLLISION",
         message: `Multiple linked accounts are targeting the same X post (${target}). Use one account for that post, or switch the campaign to distinct original posts for different audiences.`,

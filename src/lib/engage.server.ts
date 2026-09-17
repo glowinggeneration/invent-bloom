@@ -208,6 +208,12 @@ export async function scheduleEngageActions(
     target_tweet_id: u.tweetId,
     run_at: times[i]!,
   }));
-  await enqueueScheduledActions(admin, rows);
+  // Boost campaigns are explicitly configured to perform Likes, Reposts and
+  // Bookmarks, and to amplify one post from several linked accounts, so the
+  // queued path applies the same allowances as the immediate path.
+  await enqueueScheduledActions(admin, rows, {
+    allowAutomatedEngagement: true,
+    allowMultiAccountTarget: true,
+  });
   return { scheduled: rows.length, jobId: (job?.id as string) ?? null };
 }

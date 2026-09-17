@@ -23,6 +23,7 @@ import {
   isRateLimitOrCapacityError,
   planCompliantSchedule,
 } from "./x-compliance.server";
+import type { CompliancePolicyOptions } from "./x-compliance";
 import { LEGACY_SINGLE_WORKSPACE_ID } from "./workspace.server";
 
 type Admin = SupabaseClient<any, any, any>;
@@ -159,6 +160,7 @@ async function reassignToHealthyAccount(
 export async function enqueueScheduledActions(
   admin: Admin,
   rows: ScheduledActionInsert[],
+  options: CompliancePolicyOptions = {},
 ): Promise<string[]> {
   if (!rows.length) return [];
 
@@ -174,6 +176,7 @@ export async function enqueueScheduledActions(
       targetHandle: row.target_handle ?? null,
       runAt: row.run_at,
     })),
+    options,
   );
 
   const { data, error } = await admin

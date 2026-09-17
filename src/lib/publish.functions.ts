@@ -867,7 +867,9 @@ export const runPublish = createServerFn({ method: "POST" })
               media_urls: unit.type === "tweet" || unit.type === "comment" ? data.imageUrls : [],
               run_at: runAt,
             },
-          ]);
+            // Reply campaigns deliberately send every chosen persona's reply to
+            // the same target post.
+          ], { allowMultiAccountTarget: true });
 
           scheduledResults.push({
             id: pendingRow?.id ?? `${unit.acc.id}-${unit.type}-${i}`,
