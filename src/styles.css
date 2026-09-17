@@ -478,6 +478,6 @@
   width: var(--sidebar-width-icon);
 }
 .sidebar-peek:hover > .peer > div:nth-child(2),
-.sidebar-peek:focus-within > .peer > div:nth-child(2) {
+.sidebar-peek:has(:focus-visible) > .peer > div:nth-child(2) {
   width: var(--sidebar-width);
 }
