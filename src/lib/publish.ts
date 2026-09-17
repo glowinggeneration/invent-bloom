@@ -255,7 +255,7 @@ const rawPublishInputSchema = z.object({
 export const publishInputSchema = rawPublishInputSchema
   .transform((v) => {
     const replyMode = v.mode !== "tweet";
-    const accountIds = replyMode ? v.accountIds.slice(0, 1) : v.accountIds;
+    const accountIds = v.accountIds;
     const completeVariationSet =
       v.variations.length > 0 &&
       accountIds.every((id) => v.variations.some((variation) => variation.accountId === id));
@@ -270,8 +270,8 @@ export const publishInputSchema = rawPublishInputSchema
       likeTarget: false,
       actions: {
         like: false,
-        // A single reviewed response may explicitly repost its supplied target;
-        // original-post batches never self-amplify through peer reposts.
+        // Reply campaigns may repost the supplied target; original-post batches
+        // never self-amplify through peer reposts.
         retweet: replyMode ? v.actions.retweet : false,
         bookmark: false,
         follow: false,
@@ -303,10 +303,6 @@ export const publishInputSchema = rawPublishInputSchema
     message: "Comment text is required for this mode.",
     path: ["commentText"],
   })
-  .refine((v) => v.mode === "tweet" || v.accountIds.length === 1, {
-    message: "Reply campaigns use one linked account per target post.",
-    path: ["accountIds"],
-  })
   .refine((v) => !v.actions.like && !v.likeTarget, {
     message: "Automated Likes are disabled.",
     path: ["actions", "like"],
@@ -323,10 +319,6 @@ export const publishInputSchema = rawPublishInputSchema
   .refine((v) => !v.targets.peer && !v.targets.watchlist, {
     message: "Automatic peer/watchlist engagement is disabled.",
     path: ["targets"],
-  })
-  .refine((v) => v.accountIds.length === 1 || !v.targets.author || !v.actions.retweet, {
-    message: "Multiple linked accounts cannot coordinate reposts on the same target post.",
-    path: ["accountIds"],
   });
 
 export function modeLabel(mode: PublishMode) {
