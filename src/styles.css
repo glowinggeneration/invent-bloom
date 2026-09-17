@@ -472,4 +472,12 @@
 }
 .sidebar-peek > .peer > div:nth-child(2) {
   box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
+  /* While the sidebar is only peeking, the floating panel must not sit on top
+     of the page: at full width it silently swallowed clicks in the left part
+     of every page. Keep it at rail width until it is hovered or focused. */
+  width: var(--sidebar-width-icon);
+}
+.sidebar-peek:hover > .peer > div:nth-child(2),
+.sidebar-peek:has(:focus-visible) > .peer > div:nth-child(2) {
+  width: var(--sidebar-width);
 }

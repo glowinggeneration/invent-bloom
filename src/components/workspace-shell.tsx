@@ -531,7 +531,13 @@ export function WorkspaceShell({
           className={pinned ? undefined : "sidebar-peek"}
           onMouseEnter={() => setPeeking(true)}
           onMouseLeave={() => setPeeking(false)}
-          onFocusCapture={() => setPeeking(true)}
+          // Only keyboard focus re-opens the panel. A mouse click on a nav link
+          // leaves focus inside the sidebar, and treating that as a peek left
+          // the expanded panel floating over the page, swallowing clicks.
+          onFocusCapture={(event) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.matches?.(":focus-visible")) setPeeking(true);
+          }}
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null))
               setPeeking(false);
