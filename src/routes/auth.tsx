@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -202,299 +202,342 @@ function AuthPage() {
     setPassword("");
   }
 
+  const cardCopy = mfaFactorId
+    ? { title: "Verify it's you", subtitle: "Enter the code from your authenticator app." }
+    : awaitingConfirmation
+      ? { title: "Check your inbox", subtitle: "Confirm your address to finish setting up." }
+      : mode === "forgot"
+        ? { title: "Reset your password", subtitle: "We'll email you a link to choose a new one." }
+        : mode === "signup"
+          ? { title: "Create your workspace", subtitle: "Set up SMAIT for your team in a minute." }
+          : { title: "Welcome back", subtitle: "Sign in to your SMAIT workspace." };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
+    <div className="flex min-h-screen bg-background">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: SOFTWARE_APPLICATION_JSON_LD }}
       />
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl">
-        <div className="flex flex-col items-center text-center">
-          <img src="/smait-logo.svg" alt="SMAIT logo" className="h-10 w-auto" />
-          <p className="type-section mt-4">
-            <span className="text-primary">SMAIT</span>
-          </p>
-          <p className="type-meta mt-1 text-muted-foreground">
-            Communications Intelligence Platform
+
+      {/* Decorative brand panel - hidden below lg, where the card carries the branding instead. */}
+      <div className="relative hidden w-full max-w-xl shrink-0 overflow-hidden bg-gradient-to-br from-primary via-primary to-brand-navy p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-white/10 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-32 -left-16 size-96 rounded-full bg-brand-navy/40 blur-3xl"
+        />
+
+        <Link to="/" className="relative block" aria-label="SMAIT home">
+          <img src="/smait-logo.svg" alt="SMAIT" className="h-7 w-auto brightness-0 invert" />
+        </Link>
+
+        <div className="relative max-w-md">
+          <h1 className="type-title text-4xl leading-tight text-white lg:text-5xl">
+            Stay ahead of the conversation.
+          </h1>
+          <p className="mt-4 type-body text-primary-foreground/85">
+            Monitoring, message testing and campaign operations for your organisation, all in one
+            authenticated workspace.
           </p>
         </div>
 
-        {mfaFactorId ? (
-          <form onSubmit={onVerifyMfa} className="mt-8 space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="mfa-code">Authentication code</Label>
-              <Input
-                id="mfa-code"
-                value={mfaCode}
-                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="123456"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                autoFocus
-                className="h-11"
-              />
-              <p className="type-meta text-muted-foreground">
-                Enter the 6-digit code from your authenticator app.
-              </p>
-            </div>
-            <Button
-              type="submit"
-              className="h-11 w-full"
-              disabled={busy || mfaCode.trim().length !== 6}
-            >
-              Verify
-            </Button>
-            <button
-              type="button"
-              onClick={onCancelMfa}
-              className="w-full type-meta font-medium text-muted-foreground hover:underline"
-            >
-              Use a different account
-            </button>
-          </form>
-        ) : awaitingConfirmation ? (
-          <div className="mt-8 space-y-4 text-center">
-            <p className="type-meta text-foreground">
-              We sent a confirmation link to <span className="font-medium">{email}</span>.
-            </p>
-            <p className="type-meta text-muted-foreground">
-              Open it to finish creating your workspace, then come back and sign in.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setAwaitingConfirmation(false);
-                setMode("signin");
-                setPassword("");
-              }}
-              className="type-meta font-medium text-positive hover:underline"
-            >
-              Back to sign in
-            </button>
+        <p className="relative type-meta text-primary-foreground/60">
+          Communications Intelligence Platform
+        </p>
+      </div>
+
+      {/* Form panel - the card overlaps the boundary on large screens, echoing the reference. */}
+      <div className="flex flex-1 items-center justify-center px-4 py-10 lg:-ml-14">
+        <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-8 shadow-xl lg:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35)]">
+          <div className="flex justify-center lg:hidden">
+            <img src="/smait-logo.svg" alt="SMAIT" className="h-9 w-auto" />
           </div>
-        ) : mode === "forgot" ? (
-          <form onSubmit={onRequestReset} className="mt-8 space-y-4">
-            {resetSent ? (
-              <div className="space-y-4 text-center">
-                <p className="type-meta text-foreground">
-                  If an account exists for <span className="font-medium">{email}</span>, a reset
-                  link is on its way.
-                </p>
+
+          <div className="text-center lg:text-left">
+            <p className="type-section mt-6 lg:mt-0">{cardCopy.title}</p>
+            <p className="type-meta mt-1 text-muted-foreground">{cardCopy.subtitle}</p>
+          </div>
+
+          {mfaFactorId ? (
+            <form onSubmit={onVerifyMfa} className="mt-8 space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="mfa-code">Authentication code</Label>
+                <Input
+                  id="mfa-code"
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="123456"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  autoFocus
+                  className="h-11"
+                />
                 <p className="type-meta text-muted-foreground">
-                  Open the link to choose a new password. It expires after a short while.
+                  Enter the 6-digit code from your authenticator app.
                 </p>
               </div>
-            ) : (
-              <>
-                <p className="type-meta text-muted-foreground">
-                  Enter your email address and we'll send you a link to set a new password.
-                </p>
-                <div className="space-y-1">
-                  <Label htmlFor="reset-email">Email address</Label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@yourorganisation.org"
-                      className="h-11 pl-9"
-                    />
-                  </div>
-                </div>
-                <Button type="submit" className="h-11 w-full" disabled={busy}>
-                  Send reset link
-                </Button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setMode("signin");
-                setResetSent(false);
-              }}
-              className="w-full type-meta font-medium text-positive hover:underline"
-            >
-              Back to sign in
-            </button>
-          </form>
-        ) : mode === "signup" ? (
-          <form onSubmit={onSignUp} className="mt-8 space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="full-name">Full name</Label>
-              <Input
-                id="full-name"
-                autoComplete="name"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Jane Doe"
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="signup-email">Email address</Label>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="signup-email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@yourorganisation.org"
-                  className="h-11 pl-9"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="signup-password">Password</Label>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="signup-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 px-9"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-              <p className="type-meta text-muted-foreground">At least 8 characters.</p>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="confirm-password">Confirm password</Label>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="confirm-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="h-11 px-9"
-                />
-              </div>
-              {confirmPassword.length > 0 && confirmPassword !== password ? (
-                <p className="type-meta text-destructive">Both passwords must match.</p>
-              ) : null}
-            </div>
-
-            <Button type="submit" className="h-11 w-full" disabled={busy}>
-              Create your workspace
-            </Button>
-
-            <p className="text-center type-meta text-muted-foreground">
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={() => setMode("signin")}
-                className="font-medium text-positive hover:underline"
+              <Button
+                type="submit"
+                className="h-11 w-full"
+                disabled={busy || mfaCode.trim().length !== 6}
               >
-                Sign in
-              </button>
-            </p>
-          </form>
-        ) : (
-          <form onSubmit={onSubmit} className="mt-8 space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="email">Email address</Label>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@yourorganisation.org"
-                  className="h-11 pl-9"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 px-9"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 type-meta text-muted-foreground">
-                <Checkbox
-                  checked={remember}
-                  onCheckedChange={(v) => setRemember(v === true)}
-                  aria-label="Remember me"
-                />
-                Remember me
-              </label>
+                Verify
+              </Button>
               <button
                 type="button"
-                className="type-meta font-medium text-positive hover:underline"
+                onClick={onCancelMfa}
+                className="w-full type-meta font-medium text-muted-foreground hover:underline"
+              >
+                Use a different account
+              </button>
+            </form>
+          ) : awaitingConfirmation ? (
+            <div className="mt-8 space-y-4 text-center">
+              <p className="type-meta text-foreground">
+                We sent a confirmation link to <span className="font-medium">{email}</span>.
+              </p>
+              <p className="type-meta text-muted-foreground">
+                Open it to finish creating your workspace, then come back and sign in.
+              </p>
+              <button
+                type="button"
                 onClick={() => {
-                  setResetSent(false);
-                  setMode("forgot");
+                  setAwaitingConfirmation(false);
+                  setMode("signin");
+                  setPassword("");
                 }}
+                className="type-meta font-medium text-positive hover:underline"
               >
-                Forgot password?
+                Back to sign in
               </button>
             </div>
-
-            <Button type="submit" className="h-11 w-full" disabled={busy}>
-              Sign in
-            </Button>
-
-            <p className="text-center type-meta text-muted-foreground">
-              New here?{" "}
+          ) : mode === "forgot" ? (
+            <form onSubmit={onRequestReset} className="mt-8 space-y-4">
+              {resetSent ? (
+                <div className="space-y-4 text-center">
+                  <p className="type-meta text-foreground">
+                    If an account exists for <span className="font-medium">{email}</span>, a reset
+                    link is on its way.
+                  </p>
+                  <p className="type-meta text-muted-foreground">
+                    Open the link to choose a new password. It expires after a short while.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="type-meta text-muted-foreground">
+                    Enter your email address and we'll send you a link to set a new password.
+                  </p>
+                  <div className="space-y-1">
+                    <Label htmlFor="reset-email">Email address</Label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@yourorganisation.org"
+                        className="h-11 pl-9"
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="h-11 w-full" disabled={busy}>
+                    Send reset link
+                  </Button>
+                </>
+              )}
               <button
                 type="button"
-                onClick={() => setMode("signup")}
-                className="font-medium text-positive hover:underline"
+                onClick={() => {
+                  setMode("signin");
+                  setResetSent(false);
+                }}
+                className="w-full type-meta font-medium text-positive hover:underline"
               >
-                Create your workspace
+                Back to sign in
               </button>
-            </p>
-          </form>
-        )}
+            </form>
+          ) : mode === "signup" ? (
+            <form onSubmit={onSignUp} className="mt-8 space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="full-name">Full name</Label>
+                <Input
+                  id="full-name"
+                  autoComplete="name"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Jane Doe"
+                  className="h-11"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="signup-email">Email address</Label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@yourorganisation.org"
+                    className="h-11 pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="signup-password">Password</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="signup-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 px-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
+                <p className="type-meta text-muted-foreground">At least 8 characters.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="confirm-password">Confirm password</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="confirm-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="h-11 px-9"
+                  />
+                </div>
+                {confirmPassword.length > 0 && confirmPassword !== password ? (
+                  <p className="type-meta text-destructive">Both passwords must match.</p>
+                ) : null}
+              </div>
+
+              <Button type="submit" className="h-11 w-full" disabled={busy}>
+                Create your workspace
+              </Button>
+
+              <p className="text-center type-meta text-muted-foreground">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => setMode("signin")}
+                  className="font-medium text-positive hover:underline"
+                >
+                  Sign in
+                </button>
+              </p>
+            </form>
+          ) : (
+            <form onSubmit={onSubmit} className="mt-8 space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="email">Email address</Label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@yourorganisation.org"
+                    className="h-11 pl-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 px-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 type-meta text-muted-foreground">
+                  <Checkbox
+                    checked={remember}
+                    onCheckedChange={(v) => setRemember(v === true)}
+                    aria-label="Remember me"
+                  />
+                  Remember me
+                </label>
+                <button
+                  type="button"
+                  className="type-meta font-medium text-positive hover:underline"
+                  onClick={() => {
+                    setResetSent(false);
+                    setMode("forgot");
+                  }}
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              <Button type="submit" className="h-11 w-full" disabled={busy}>
+                Sign in
+              </Button>
+
+              <p className="text-center type-meta text-muted-foreground">
+                New here?{" "}
+                <button
+                  type="button"
+                  onClick={() => setMode("signup")}
+                  className="font-medium text-positive hover:underline"
+                >
+                  Create your workspace
+                </button>
+              </p>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
