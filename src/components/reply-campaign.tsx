@@ -31,11 +31,14 @@ import { ExternalIdentity } from "@/components/external-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
 import { GoalSwitcher } from "@/components/publish-goals";
 import {
+  AccountHealthPanel,
   CampaignRunningDialog,
   LaunchActions,
   PersonaPicker,
   RunResults,
   usePersonaSelection,
+  useAccountHealth,
+  accountHealthBlocks,
 } from "@/components/campaign-kit";
 import { PublishProgress } from "@/components/publish-progress";
 import { WorkspaceShell } from "@/components/workspace-shell";
@@ -237,6 +240,7 @@ export function ReplyCampaign() {
 
   const groupTotal = personas.groupTotal;
   const selected = personas.selected;
+  const accountHealth = useAccountHealth(selected, ["comment"]);
 
   /* ---- draft autosave (same local store the composer already uses) ---- */
   const draftLoaded = useRef(false);
@@ -439,13 +443,15 @@ export function ReplyCampaign() {
 
   const remaining = TWEET_LIMIT - textLength(commentText);
   const reviewed = variations.length > 0 && previewApproved;
+  const unhealthySelection = accountHealthBlocks(accountHealth, selected);
   const canSubmit =
     reviewed &&
     campaignName.trim().length > 0 &&
     selected.length > 0 &&
     commentText.trim().length > 0 &&
     trimmedTarget.length > 0 &&
-    remaining >= 0;
+    remaining >= 0 &&
+    !unhealthySelection;
 
   // Stable across retries of the same submit attempt so a network retry or
   // double-fire returns the original result instead of posting twice;
@@ -867,6 +873,11 @@ export function ReplyCampaign() {
                   loading={accountsQuery.isLoading}
                   label="How many personas should respond?"
                 />
+                <AccountHealthPanel
+                  accounts={personas.selectedAccounts}
+                  health={accountHealth}
+                  requestedPerAccount={1}
+                />
               </Step>
             </div>
 
@@ -1021,7 +1032,9 @@ export function ReplyCampaign() {
                                 ? "Generate the persona replies."
                                 : !previewApproved
                                   ? "Confirm that every reply has been reviewed."
-                                  : "Ready for an authorised launch."}
+                                  : unhealthySelection
+                                    ? "Resolve account health warnings above."
+                                    : "Ready for an authorised launch."}
                   </span>
                   <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
                     {draftSavedAt && (

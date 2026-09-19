@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { AccountIdentity } from "@/components/account-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
 import {
+  AccountHealthPanel,
   CampaignHeader,
   LaunchActions,
   PersonaPicker,
@@ -30,7 +31,9 @@ import {
   TimingFields,
   timingLabel,
   usePersonaSelection,
+  useAccountHealth,
   useTiming,
+  accountHealthBlocks,
   CampaignRunningDialog,
 } from "@/components/campaign-kit";
 import { PublishProgress } from "@/components/publish-progress";
@@ -78,6 +81,7 @@ export function PostCampaign() {
 
   const personas = usePersonaSelection(accounts);
   const timing = useTiming(0);
+  const accountHealth = useAccountHealth(personas.selected, ["tweet"]);
 
   const [tweetText, setTweetText] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
@@ -170,12 +174,14 @@ export function PostCampaign() {
   const [campaignName, setCampaignName] = useState("");
   const [startedOpen, setStartedOpen] = useState(false);
   const reviewed = variations.length > 0 && previewApproved;
+  const unhealthySelection = accountHealthBlocks(accountHealth, personas.selected);
   const canRun =
     tweetText.trim().length > 0 &&
     personas.selected.length > 0 &&
     !overLimit &&
     reviewed &&
-    campaignName.trim().length > 0;
+    campaignName.trim().length > 0 &&
+    !unhealthySelection;
   const scheduled = timing.spreadHours > 0;
 
   const previewMutation = useMutation({
@@ -216,11 +222,17 @@ export function PostCampaign() {
   const runPreview = () => {
     if (previewMutation.isPending) return;
     if (!tweetText.trim()) {
-      blockStep("Write the message or objective first, then generate the versions.", "post-details");
+      blockStep(
+        "Write the message or objective first, then generate the versions.",
+        "post-details",
+      );
       return;
     }
     if (personas.selected.length === 0) {
-      blockStep("Choose at least one persona account, then generate the versions.", "post-personas");
+      blockStep(
+        "Choose at least one persona account, then generate the versions.",
+        "post-personas",
+      );
       return;
     }
     setError(null);
@@ -306,6 +318,13 @@ export function PostCampaign() {
     }
     if (!previewApproved) {
       blockStep("Tick 'Reviewed and approved' once you have read every version.", "post-review");
+      return;
+    }
+    if (accountHealthBlocks(accountHealth, personas.selected)) {
+      blockStep(
+        "One or more selected accounts are suspended, sessionless, or out of daily budget. Review account health before launching.",
+        "post-personas",
+      );
       return;
     }
     setError(null);
@@ -542,6 +561,11 @@ export function PostCampaign() {
                   loading={accountsQuery.isLoading}
                   label="How many personas should post?"
                 />
+                <AccountHealthPanel
+                  accounts={personas.selectedAccounts}
+                  health={accountHealth}
+                  requestedPerAccount={1}
+                />
               </Step>
             </div>
 
@@ -729,7 +753,9 @@ export function PostCampaign() {
                               ? "Name the campaign."
                               : variations.length === 0
                                 ? "Generate the persona versions first."
-                                : "Confirm that every post has been reviewed."}
+                                : !previewApproved
+                                  ? "Confirm that every post has been reviewed."
+                                  : "Resolve account health warnings above."}
                     </span>
                   ) : (
                     <span className="text-xs font-medium text-positive">

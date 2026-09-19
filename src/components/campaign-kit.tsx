@@ -4,7 +4,10 @@
  * timing controls so the modules feel like one product.
  */
 import { Link, useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
+  AlertTriangle,
   ArrowLeft,
   CalendarClock,
   CheckCircle2,
@@ -16,12 +19,14 @@ import {
   Plus,
   Search,
   Send,
+  ShieldAlert,
   TriangleAlert,
   Users,
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScheduleLauncher } from "@/components/ui/schedule-launcher";
 import { SlotPicker } from "@/components/ui/slot-picker";
 import { defaultSendDays, sendWindowSummary, type SendDay } from "@/lib/send-windows";
@@ -40,6 +45,8 @@ import { GoalSwitcher } from "@/components/publish-goals";
 import { clusterOf } from "@/lib/insights";
 import type { PublishJobResult, XAccount } from "@/lib/publish";
 import { SPREAD_OPTIONS, spreadLabel } from "@/lib/spread";
+import { getAccountHealth, type AccountHealthResult } from "@/lib/account-health.functions";
+import type { XCampaignAction } from "@/lib/x-compliance";
 
 export const ALL_GROUP = "__all__";
 
@@ -638,6 +645,158 @@ export function PersonaPicker({
         <span className="sr-only">{selected.length} personas selected</span>
       ) : null}
     </>
+  );
+}
+
+/**
+ * Action types `checkAccountHealth` understands. `follow` is excluded: it
+ * carries no rolling budget and is blocked outright before scheduling.
+ */
+export type AccountHealthActionType = Exclude<XCampaignAction, "follow">;
+
+/**
+ * Proactive account-health preflight, shared by every campaign builder.
+ * Queries the same rolling-24h budgets `planCompliantSchedule` enforces at
+ * enqueue time so remaining daily budget, cooldowns and suspended/no-session
+ * accounts surface in the UI before submit — not only as a thrown error
+ * afterward. Refetches whenever the account selection or action types change.
+ */
+export function useAccountHealth(accountIds: string[], actionTypes: AccountHealthActionType[]) {
+  const fetchHealth = useServerFn(getAccountHealth);
+  const ids = useMemo(() => [...new Set(accountIds)].sort(), [accountIds]);
+  const types = useMemo(() => [...new Set(actionTypes)].sort(), [actionTypes]);
+
+  const query = useQuery({
+    queryKey: ["account-health", ids, types],
+    queryFn: () => fetchHealth({ data: { accountIds: ids, actionTypes: types } }),
+    enabled: ids.length > 0 && types.length > 0,
+    staleTime: 30_000,
+  });
+
+  const byId = useMemo(() => {
+    const map = new Map<string, AccountHealthResult>();
+    for (const row of query.data ?? []) map.set(row.accountId, row);
+    return map;
+  }, [query.data]);
+
+  return { ...query, byId };
+}
+
+export type AccountHealth = ReturnType<typeof useAccountHealth>;
+
+/** True when at least one selected account is unhealthy, or would be pushed over its
+ * remaining daily budget by `requestedPerAccount` more actions of the checked type(s). */
+export function accountHealthBlocks(
+  health: AccountHealth,
+  accountIds: string[],
+  requestedPerAccount = 1,
+) {
+  if (!health.data) return false;
+  return accountIds.some((id) => {
+    const status = health.byId.get(id);
+    if (!status) return false;
+    if (!status.healthy) return true;
+    return status.actions.some((action) => action.remaining < requestedPerAccount);
+  });
+}
+
+/**
+ * Compact per-account health readout placed next to the persona picker.
+ * Shows nothing when every selected account is clear; otherwise lists which
+ * accounts are suspended, sessionless, or short on remaining daily budget.
+ */
+export function AccountHealthPanel({
+  accounts,
+  health,
+  requestedPerAccount = 1,
+}: {
+  accounts: { id: string; handle: string }[];
+  health: AccountHealth;
+  /** How many actions of the checked type(s) each account would be queued for. */
+  requestedPerAccount?: number;
+}) {
+  if (accounts.length === 0) return null;
+
+  if (health.isLoading) {
+    return (
+      <p className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+        Checking account health…
+      </p>
+    );
+  }
+
+  if (health.isError) {
+    return (
+      <p className="text-[11px] text-muted-foreground">
+        Couldn't check account health right now. The launch is still checked for compliance before
+        anything is queued.
+      </p>
+    );
+  }
+
+  const rows = accounts.map((account) => ({
+    account,
+    status: health.byId.get(account.id) ?? null,
+  }));
+  const problems = rows.filter(({ status }) => {
+    if (!status) return false;
+    if (!status.healthy) return true;
+    return status.actions.some((action) => action.remaining < requestedPerAccount);
+  });
+
+  if (problems.length === 0) {
+    return (
+      <p className="flex items-center gap-1.5 text-[11px] text-positive">
+        <CheckCircle2 className="size-3.5" aria-hidden="true" />
+        All selected accounts have budget available today.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
+      <p className="flex items-center gap-2 text-xs font-medium text-amber-700 dark:text-amber-400">
+        <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
+        {problems.length} of {accounts.length} selected account{accounts.length === 1 ? "" : "s"}{" "}
+        need attention before you launch
+      </p>
+      <ul className="space-y-1.5">
+        {problems.slice(0, 8).map(({ account, status }) => (
+          <li
+            key={account.id}
+            className="flex flex-wrap items-center justify-between gap-1.5 text-[11px]"
+          >
+            <span className="min-w-0 truncate font-medium">@{account.handle}</span>
+            <span className="flex flex-wrap items-center gap-1.5">
+              {status && !status.healthy ? (
+                <Badge variant="destructive" className="rounded-full text-[10px]">
+                  {status.reason}
+                </Badge>
+              ) : (
+                (status?.actions ?? [])
+                  .filter((action) => action.remaining < requestedPerAccount)
+                  .map((action) => (
+                    <Badge
+                      key={action.actionType}
+                      variant="outline"
+                      className="rounded-full border-amber-500/50 text-[10px] text-amber-700 dark:text-amber-400"
+                    >
+                      {action.remaining} of {action.budget} {action.actionType} left today
+                    </Badge>
+                  ))
+              )}
+            </span>
+          </li>
+        ))}
+        {problems.length > 8 ? (
+          <li className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />+{problems.length - 8}{" "}
+            more account(s) need attention
+          </li>
+        ) : null}
+      </ul>
+    </div>
   );
 }
 

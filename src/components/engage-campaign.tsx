@@ -25,7 +25,14 @@ import { AccountIdentity } from "@/components/account-identity";
 import { ExternalIdentity } from "@/components/external-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
 import { GoalSwitcher } from "@/components/publish-goals";
-import { CampaignRunningDialog, LaunchActions } from "@/components/campaign-kit";
+import {
+  AccountHealthPanel,
+  CampaignRunningDialog,
+  LaunchActions,
+  useAccountHealth,
+  accountHealthBlocks,
+  type AccountHealthActionType,
+} from "@/components/campaign-kit";
 import { PublishProgress } from "@/components/publish-progress";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Button } from "@/components/ui/button";
@@ -195,6 +202,10 @@ export function EngageCampaign() {
     () => groupAccounts.slice(0, Math.min(personaCount, groupTotal)).map((a) => a.id),
     [groupAccounts, personaCount, groupTotal],
   );
+  const selectedAccountObjects = useMemo(
+    () => groupAccounts.filter((a) => selected.includes(a.id)),
+    [groupAccounts, selected],
+  );
 
   /* ---- actions & timing ---- */
   const [actions, setActions] = useState<Record<ActionKey, boolean>>({
@@ -203,6 +214,14 @@ export function EngageCampaign() {
     bookmark: false,
   });
   const activeActions = ACTION_CARDS.filter((a) => actions[a.key]);
+  const activeActionTypes = useMemo(
+    () => activeActions.map((a) => a.key) as AccountHealthActionType[],
+    [activeActions],
+  );
+  const accountHealth = useAccountHealth(selected, activeActionTypes);
+  // Each active action type queues one action per queued link, per account.
+  const requestedPerAccount = Math.max(1, links.length);
+  const unhealthySelection = accountHealthBlocks(accountHealth, selected, requestedPerAccount);
   const [spreadHours, setSpreadHours] = useState(0);
   const [delaySeconds, setDelaySeconds] = useState(60);
   const [smartDelay, setSmartDelay] = useState(true);
@@ -228,7 +247,8 @@ export function EngageCampaign() {
     links.length > 0 &&
     selected.length > 0 &&
     activeActions.length > 0 &&
-    campaignName.trim().length > 0;
+    campaignName.trim().length > 0 &&
+    !unhealthySelection;
 
   /* ---- execution ---- */
   const scheduleMutation = useMutation({
@@ -610,6 +630,13 @@ export function EngageCampaign() {
                     No persona accounts are linked yet.
                   </p>
                 )}
+                {activeActionTypes.length > 0 ? (
+                  <AccountHealthPanel
+                    accounts={selectedAccountObjects}
+                    health={accountHealth}
+                    requestedPerAccount={requestedPerAccount}
+                  />
+                ) : null}
               </Step>
             </div>
 
@@ -766,7 +793,9 @@ export function EngageCampaign() {
                             ? "Choose at least one action."
                             : !pacingConfigured
                               ? "Choose a pacing option."
-                              : "Ready to queue safely or run immediately."}
+                              : unhealthySelection
+                                ? "Resolve account health warnings in the Personas step above."
+                                : "Ready to queue safely or run immediately."}
                   </span>
                 </div>
               </Step>
