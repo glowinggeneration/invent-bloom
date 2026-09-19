@@ -62,6 +62,10 @@ function AuthPage() {
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  // Phone-only entry gate: a full "Welcome to SMAIT" screen before the form,
+  // matching the reference's onboarding flow. Irrelevant at lg+, where the
+  // split-screen layout always shows the form directly.
+  const [mobileStep, setMobileStep] = useState<"welcome" | "form">("welcome");
 
   function proceed() {
     if (next) window.location.replace(next);
@@ -249,8 +253,31 @@ function AuthPage() {
         </p>
       </div>
 
+      {/* Phone-only welcome gate: shown before the form, matching the reference's onboarding flow. */}
+      {mobileStep === "welcome" ? (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background px-8 py-10 text-center lg:hidden">
+          <img src="/smait-logo.svg" alt="SMAIT" className="h-10 w-auto" />
+          <h1 className="type-title mt-8 text-3xl">
+            Welcome to <span className="text-primary">SMAIT</span>
+          </h1>
+          <p className="mt-3 max-w-xs type-body text-muted-foreground">
+            Communications intelligence and campaign operations for your organisation.
+          </p>
+          <Button
+            className="mt-10 h-12 w-full max-w-xs rounded-full"
+            onClick={() => setMobileStep("form")}
+          >
+            Get started
+          </Button>
+        </div>
+      ) : null}
+
       {/* Form panel - the card overlaps the boundary on large screens, echoing the reference. */}
-      <div className="flex flex-1 items-center justify-center px-4 py-10 lg:-ml-14">
+      <div
+        className={`flex-1 items-center justify-center px-4 py-10 lg:-ml-14 lg:flex ${
+          mobileStep === "welcome" ? "hidden" : "flex"
+        }`}
+      >
         <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-8 shadow-xl lg:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35)]">
           <div className="flex justify-center lg:hidden">
             <img src="/smait-logo.svg" alt="SMAIT" className="h-9 w-auto" />

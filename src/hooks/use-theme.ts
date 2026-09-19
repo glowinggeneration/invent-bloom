@@ -11,11 +11,14 @@ function apply(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("light");
+  // Dark is the product default; a stored "light" choice is the only thing
+  // that overrides it. Kept in sync with the pre-hydration script in
+  // __root.tsx so there's no flash of the wrong theme on first paint.
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
     const stored = readWithLegacyKey(KEY, LEGACY_KEY);
-    const next: Theme = stored === "dark" ? "dark" : "light";
+    const next: Theme = stored === "light" ? "light" : "dark";
     setThemeState(next);
     apply(next);
   }, []);

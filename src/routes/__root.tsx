@@ -125,10 +125,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// Runs before hydration so the page paints in the right theme the first
+// time - dark by default, unless the visitor has explicitly chosen light.
+// Kept in sync with the fallback logic in src/hooks/use-theme.ts.
+const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem("smait-theme")||localStorage.getItem("fkf-commsiq-theme");document.documentElement.classList.toggle("dark",s!=="light");}catch(e){document.documentElement.classList.add("dark");}})();`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
