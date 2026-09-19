@@ -243,7 +243,7 @@ function AuthPage() {
               className="h-11 w-full"
               disabled={busy || mfaCode.trim().length !== 6}
             >
-              {busy ? "Verifying…" : "Verify"}
+              Verify
             </Button>
             <button
               type="button"
@@ -307,7 +307,7 @@ function AuthPage() {
                   </div>
                 </div>
                 <Button type="submit" className="h-11 w-full" disabled={busy}>
-                  {busy ? "Sending…" : "Send reset link"}
+                  Send reset link
                 </Button>
               </>
             )}
@@ -401,7 +401,7 @@ function AuthPage() {
             </div>
 
             <Button type="submit" className="h-11 w-full" disabled={busy}>
-              {busy ? "Creating your workspace…" : "Create your workspace"}
+              Create your workspace
             </Button>
 
             <p className="text-center type-meta text-muted-foreground">
@@ -480,7 +480,7 @@ function AuthPage() {
             </div>
 
             <Button type="submit" className="h-11 w-full" disabled={busy}>
-              {busy ? "Signing in…" : "Sign in"}
+              Sign in
             </Button>
 
             <p className="text-center type-meta text-muted-foreground">
