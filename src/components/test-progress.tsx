@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 
+import { PersonaReactionFeed } from "@/components/persona-reaction-feed";
+
 type Stage = { label: string; detail: string; weight: number };
 
 export type TestPhase = "analysis" | "recommendations";
@@ -114,6 +116,10 @@ export function TestProgress({ label, phase = "analysis" }: { label?: string; ph
             <span className="tabular-nums">{Math.round(progress)}%</span>
           </div>
         </div>
+
+        {phase === "analysis" && STAGES[active]?.label === "Collecting persona reactions" ? (
+          <PersonaReactionFeed />
+        ) : null}
       </div>
 
       <ul className="mx-auto mt-8 w-full max-w-md space-y-2.5">
