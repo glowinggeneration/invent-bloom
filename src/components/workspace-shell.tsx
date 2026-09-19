@@ -36,6 +36,7 @@ import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { AboutPopover } from "@/components/core/about-popover";
 import { OfficialPostAlert } from "@/components/official-post-alert";
 import { IdleSessionGuard } from "@/components/idle-session-guard";
+import { QuickAccessDock } from "@/components/quick-access-dock";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 import { useTheme } from "@/hooks/use-theme";
@@ -703,6 +704,7 @@ export function WorkspaceShell({
         </div>
         <OfficialPostAlert />
         <IdleSessionGuard />
+        <QuickAccessDock />
       </div>
     </SidebarProvider>
   );
