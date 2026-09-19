@@ -135,10 +135,11 @@ function CampaignCalendarPage() {
       <PageTitle
         description="Every scheduled post across campaigns, laid out by day, so you can plan timing around X's rate limits."
         actions={
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
+              className="rounded-full"
               aria-label="Previous month"
               onClick={() => {
                 setCursor((c) => addMonths(c, -1));
@@ -149,6 +150,7 @@ function CampaignCalendarPage() {
             </Button>
             <Button
               variant="outline"
+              className="rounded-full"
               onClick={() => {
                 setCursor(startOfMonth(new Date()));
                 setSelectedDay(null);
@@ -159,6 +161,7 @@ function CampaignCalendarPage() {
             <Button
               variant="outline"
               size="icon"
+              className="rounded-full"
               aria-label="Next month"
               onClick={() => {
                 setCursor((c) => addMonths(c, 1));
@@ -195,29 +198,33 @@ function CampaignCalendarPage() {
       ) : null}
 
       {!isError && isLoading ? (
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-2 rounded-3xl border border-border bg-card p-4">
           {Array.from({ length: 35 }, (_, i) => (
-            <Skeleton key={i} className="h-24 rounded-lg" />
+            <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
       ) : null}
 
       {!isError && !isLoading ? (
-        <div className="overflow-hidden rounded-xl border border-border">
-          <div className="grid grid-cols-7 border-b border-border bg-muted/30 text-center text-[11px] font-medium text-muted-foreground">
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-[0_30px_80px_-30px_rgba(0,0,0,0.45)]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-primary/20 via-primary/5 to-transparent"
+          />
+
+          <div className="relative grid grid-cols-7 border-b border-border/60 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-              <div key={d} className="py-2">
-                {d}
-              </div>
+              <div key={d}>{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7">
+          <div className="relative grid grid-cols-7 gap-1 p-3">
             {days.map((day) => {
               const key = format(day, "yyyy-MM-dd");
               const dayActions = byDay.get(key) ?? [];
               const inMonth = isSameMonth(day, cursor);
               const pressure = budgetPressure(dayActions);
               const selected = selectedDay ? isSameDay(day, selectedDay) : false;
+              const today = isToday(day);
               const counts = new Map<CampaignActionKind, number>();
               for (const action of dayActions) {
                 counts.set(action.actionType, (counts.get(action.actionType) ?? 0) + 1);
@@ -228,17 +235,17 @@ function CampaignCalendarPage() {
                   type="button"
                   onClick={() => setSelectedDay(day)}
                   className={cn(
-                    "flex min-h-24 flex-col items-stretch gap-1 border-b border-r border-border p-2 text-left transition-colors last:border-r-0 hover:bg-muted/40",
-                    !inMonth && "bg-muted/10 text-muted-foreground/50",
-                    selected && "bg-primary/10 ring-1 ring-inset ring-primary",
+                    "flex min-h-24 flex-col items-stretch gap-1 rounded-2xl p-2 text-left transition-colors hover:bg-muted/50",
+                    !inMonth && "text-muted-foreground/40",
+                    selected && !today && "bg-primary/10 ring-1 ring-inset ring-primary/50",
                   )}
                 >
                   <div className="flex items-center justify-between">
                     <span
                       className={cn(
-                        "type-meta font-medium",
-                        isToday(day) &&
-                          "flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground",
+                        "type-meta flex size-6 items-center justify-center rounded-full font-medium",
+                        today &&
+                          "bg-primary text-primary-foreground ring-4 ring-primary/15 shadow-[0_0_16px_2px] shadow-primary/50",
                       )}
                     >
                       {format(day, "d")}
@@ -250,7 +257,7 @@ function CampaignCalendarPage() {
                           pressure >= 1
                             ? "text-destructive"
                             : pressure >= 0.75
-                              ? "text-amber-600 dark:text-amber-400"
+                              ? "text-amber-500"
                               : "text-muted-foreground",
                         )}
                         title={
