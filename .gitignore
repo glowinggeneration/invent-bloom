@@ -33,3 +33,8 @@ dist-ssr
 
 # Local dev-server launch config (machine-specific paths)
 .claude/
+
+# Environment secrets
+.env
+.env.*
+!.env.example

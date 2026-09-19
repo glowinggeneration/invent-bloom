@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
 /**
- * Always-on editorial planning cron. Called by pg_cron with the project
- * publishable key in the `apikey` header.
+ * Always-on editorial planning cron. Called by pg_cron with the shared cron
+ * secret in the `authorization: Bearer` header.
  *
  * - `action: "plan"` builds the day's draft plan for always-on accounts.
  * - automatic background publishing is intentionally disabled. A reviewer
@@ -12,15 +13,8 @@ export const Route = createFileRoute("/api/public/hooks/always-on")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey =
-          request.headers.get("apikey") ??
-          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-          "";
-        const expected =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-        if (!expected || apiKey !== expected) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const authError = await authenticateCronRequest(request);
+        if (authError) return authError;
 
         let action = "plan";
         let maxAccounts = 12;

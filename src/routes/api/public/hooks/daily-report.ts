@@ -6,22 +6,14 @@
  * `date` (YYYY-MM-DD) to regenerate a past day.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
 export const Route = createFileRoute("/api/public/hooks/daily-report")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const key = request.headers.get("apikey") ?? "";
-        const accepted = [
-          process.env["SUPABASE_ANON_KEY"],
-          process.env["SUPABASE_PUBLISHABLE_KEY"],
-        ].filter((v): v is string => Boolean(v));
-        if (!accepted.length || !accepted.includes(key)) {
-          return new Response(JSON.stringify({ error: "Unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        const authError = await authenticateCronRequest(request);
+        if (authError) return authError;
 
         const date = new URL(request.url).searchParams.get("date");
         const validDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;

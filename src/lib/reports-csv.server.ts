@@ -9,7 +9,10 @@ import { loadExecutions, loadMentions } from "./reports.server";
 import { getWorkspaceSettings } from "./entity-config.server";
 
 function cell(value: string | number | null | undefined): string {
-  const s = value === null || value === undefined ? "" : String(value).replace(/\r?\n/g, " ");
+  let s = value === null || value === undefined ? "" : String(value).replace(/\r?\n/g, " ");
+  // Prefix a leading =, +, -, @, tab or CR so spreadsheet apps never treat
+  // externally-sourced content (mention text, author names) as a formula.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

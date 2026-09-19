@@ -113,6 +113,7 @@ async function reassignToHealthyAccount(
   const { data: candidates } = await admin
     .from("x_accounts")
     .select("id, handle, display_name, persona_label")
+    .eq("workspace_id", row.workspace_id)
     .eq("is_active", true)
     .eq("suspended", false)
     .not("auth_token", "is", null);
@@ -206,9 +207,70 @@ export async function enqueueScheduledActions(
   return (data ?? []).map((r: { id: string }) => r.id);
 }
 
+/**
+ * Blocks SSRF: only https URLs resolving to public IPs may be fetched
+ * server-side. Re-checked right before each fetch rather than at schema
+ * validation time, since DNS can change between submit and drain.
+ */
+async function assertPublicHttpsUrl(url: string): Promise<void> {
+  const { isIP } = await import("node:net");
+  const { lookup } = await import("node:dns/promises");
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error("Invalid media URL.");
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error("Media URL must use https.");
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+    throw new Error("Media URL host is not allowed.");
+  }
+
+  const isPrivateOrReserved = (ip: string): boolean => {
+    if (isIP(ip) === 4) {
+      const parts = ip.split(".").map(Number);
+      const a = parts[0] ?? -1;
+      const b = parts[1] ?? -1;
+      return (
+        a === 10 ||
+        a === 127 ||
+        a === 0 ||
+        (a === 169 && b === 254) ||
+        (a === 172 && b >= 16 && b <= 31) ||
+        (a === 192 && b === 168) ||
+        (a === 100 && b >= 64 && b <= 127)
+      );
+    }
+    const lower = ip.toLowerCase();
+    return (
+      lower === "::1" ||
+      lower.startsWith("fe80:") ||
+      lower.startsWith("fc") ||
+      lower.startsWith("fd")
+    );
+  };
+
+  const direct = isIP(hostname);
+  if (direct) {
+    if (isPrivateOrReserved(hostname)) throw new Error("Media URL host is not allowed.");
+    return;
+  }
+
+  const resolved = await lookup(hostname, { all: true }).catch(() => []);
+  if (!resolved.length || resolved.some((r) => isPrivateOrReserved(r.address))) {
+    throw new Error("Media URL host is not allowed.");
+  }
+}
+
 async function mediaIdsFor(posting: PostingAccount, urls: string[]) {
   const ids: string[] = [];
   for (const url of urls) {
+    await assertPublicHttpsUrl(url);
     const fetched = await fetch(url);
     if (!fetched.ok) throw new Error(`Could not fetch media: ${fetched.status}`);
     const bytes = new Uint8Array(await fetched.arrayBuffer());

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
 /**
  * Daily keyword refresh. Asks the model for new topics worth listening to and
@@ -8,15 +9,8 @@ export const Route = createFileRoute("/api/public/hooks/mention-keywords")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey =
-          request.headers.get("apikey") ??
-          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-          "";
-        const expected =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-        if (!expected || apiKey !== expected) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const authError = await authenticateCronRequest(request);
+        if (authError) return authError;
 
         const { refreshKeywords } = await import("@/lib/mention-keywords.server");
         try {

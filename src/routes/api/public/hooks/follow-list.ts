@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
 /**
  * Legacy mass-follow endpoint.
@@ -10,12 +11,8 @@ export const Route = createFileRoute("/api/public/hooks/follow-list")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = request.headers.get("apikey") ?? "";
-        const expected =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-        if (!expected || apiKey !== expected) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const authError = await authenticateCronRequest(request);
+        if (authError) return authError;
 
         return Response.json({
           ok: true,

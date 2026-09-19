@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
 /**
  * Bulk re-login maintenance job.
@@ -47,15 +48,8 @@ export const Route = createFileRoute("/api/public/hooks/bulk-relogin")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey =
-          request.headers.get("apikey") ??
-          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-          "";
-        const expected =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
-        if (!expected || apikey !== expected) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const authError = await authenticateCronRequest(request);
+        if (authError) return authError;
 
         let body: z.infer<typeof bodySchema>;
         try {
