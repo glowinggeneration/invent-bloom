@@ -24,6 +24,7 @@ import {
   Moon,
   Plus,
   Settings,
+  Settings2,
   ShieldAlert,
   ShieldCheck,
   SquarePen,
@@ -42,7 +43,9 @@ import { useProfile } from "@/hooks/use-profile";
 import { useTheme } from "@/hooks/use-theme";
 import { isAdminEmail } from "@/lib/access";
 import { useNotifications } from "@/hooks/use-notifications";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GlobalCommandPalette } from "@/components/global-command";
 import {
   DropdownMenu,
@@ -471,27 +474,160 @@ function MobileTabBar({ isAdmin, pathname }: { isAdmin: boolean; pathname: strin
   );
 }
 
+type NotificationCategoryKey = "all" | "mentions" | "system";
+
+function timeAgoShort(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(diff / 60000);
+  if (!Number.isFinite(mins)) return "";
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.round(hours / 24)}d`;
+}
+
 function NotificationsBell() {
-  const { unread } = useNotifications();
+  const { items, unread, markRead } = useNotifications();
+  const [expanded, setExpanded] = useState<NotificationCategoryKey | null>(null);
+
+  const mentions = items.filter((notification) => notification.kind === "mention");
+  const system = items.filter(
+    (notification) => notification.kind === "official" || notification.kind === "campaign",
+  );
+
+  const categories: {
+    key: NotificationCategoryKey;
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+    items: typeof items;
+  }[] = [
+    { key: "all", label: "All", icon: Bell, items },
+    { key: "mentions", label: "Mentions", icon: AtSign, items: mentions },
+    { key: "system", label: "System", icon: Settings2, items: system },
+  ];
+
   return (
-    <Button
-      asChild
-      variant="ghost"
-      size="icon"
-      className="relative size-10"
-      aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
-      title="Notifications"
-    >
-      <Link to="/notifications">
-        <Bell className="size-[18px]" aria-hidden="true" />
-        {unread > 0 ? (
-          <span
-            aria-hidden="true"
-            className="absolute right-2 top-2 size-2 rounded-full border-2 border-background bg-primary"
-          />
-        ) : null}
-      </Link>
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative size-10"
+          aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
+          title="Notifications"
+        >
+          <Bell className="size-[18px]" aria-hidden="true" />
+          {unread > 0 ? (
+            <span
+              aria-hidden="true"
+              className="absolute right-2 top-2 size-2 rounded-full border-2 border-background bg-primary"
+            />
+          ) : null}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 p-0">
+        <div className="border-b border-border px-4 py-3">
+          <p className="type-card font-semibold">Notifications</p>
+        </div>
+        <div className="space-y-1.5 p-1.5">
+          {categories.map((category) => {
+            const categoryUnread = category.items.filter(
+              (notification) => !notification.read,
+            ).length;
+            const isOpen = expanded === category.key;
+            return (
+              <Collapsible
+                key={category.key}
+                open={isOpen}
+                onOpenChange={(open) => setExpanded(open ? category.key : null)}
+              >
+                <div className="rounded-xl border border-border bg-card">
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted"
+                    >
+                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+                        <category.icon className="size-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 type-meta font-semibold">
+                        {category.label}
+                      </span>
+                      {category.items.length > 0 ? (
+                        <Badge
+                          variant="secondary"
+                          className="border-transparent bg-primary/10 text-primary"
+                        >
+                          {categoryUnread > 0 ? categoryUnread : category.items.length}
+                        </Badge>
+                      ) : null}
+                      <ChevronDown
+                        className={cn(
+                          "size-4 shrink-0 text-muted-foreground transition-transform",
+                          isOpen && "rotate-180",
+                        )}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-t border-border px-3 py-2">
+                    {category.items.length === 0 ? (
+                      <p className="py-1.5 type-meta text-muted-foreground">
+                        Nothing here right now.
+                      </p>
+                    ) : (
+                      <ul className="space-y-1">
+                        {category.items.slice(0, 3).map((notification) => (
+                          <li key={notification.id}>
+                            <Link
+                              to={notification.href}
+                              onClick={() => markRead([notification.id])}
+                              className="flex items-start gap-2 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-muted"
+                            >
+                              {!notification.read ? (
+                                <span
+                                  aria-hidden="true"
+                                  className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary"
+                                />
+                              ) : (
+                                <span className="mt-1.5 size-1.5 shrink-0" aria-hidden="true" />
+                              )}
+                              <span className="min-w-0 flex-1">
+                                <span
+                                  className={cn(
+                                    "block truncate type-meta",
+                                    notification.read
+                                      ? "text-muted-foreground"
+                                      : "font-semibold text-foreground",
+                                  )}
+                                >
+                                  {notification.title}
+                                </span>
+                              </span>
+                              <span className="mt-0.5 shrink-0 text-[11px] text-muted-foreground">
+                                {timeAgoShort(notification.at)}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <Link
+                      to="/notifications"
+                      search={category.key === "all" ? {} : { category: category.key }}
+                      className="mt-1.5 inline-block type-meta font-semibold text-primary hover:underline"
+                    >
+                      View all
+                    </Link>
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+            );
+          })}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

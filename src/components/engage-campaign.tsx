@@ -20,11 +20,13 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import { AccountIdentity } from "@/components/account-identity";
 import { ExternalIdentity } from "@/components/external-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
 import { GoalSwitcher } from "@/components/publish-goals";
+import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import {
   AccountHealthPanel,
   CampaignRunningDialog,
@@ -251,6 +253,9 @@ export function EngageCampaign() {
     !unhealthySelection;
 
   /* ---- execution ---- */
+  const confettiRef = useRef<ConfettiRef>(null);
+  const prefersReducedMotion = useReducedMotion();
+
   const scheduleMutation = useMutation({
     mutationFn: (timing: { spreadHours: number; delaySeconds: number; smartDelay: boolean }) =>
       scheduleEngage({
@@ -269,6 +274,7 @@ export function EngageCampaign() {
       updateLinks((items) => items.map((i) => ({ ...i, status: "done" as const })));
       setStartedOpen(true);
       toast.success(`${res.scheduled} action(s) queued.`);
+      if (!prefersReducedMotion) confettiRef.current?.fire();
       void queryClient.invalidateQueries({ queryKey: ["scheduled-actions"] });
     },
     onError: (e: Error) =>
@@ -332,6 +338,7 @@ export function EngageCampaign() {
       }
       setStartedOpen(true);
       toast.success("Engagement run finished.");
+      if (!prefersReducedMotion) confettiRef.current?.fire();
       void queryClient.invalidateQueries({ queryKey: ["publish-jobs"] });
     } finally {
       setRunning(false);
@@ -375,6 +382,7 @@ export function EngageCampaign() {
 
   return (
     <WorkspaceShell title="Engage campaign">
+      <Confetti ref={confettiRef} className="pointer-events-none fixed inset-0 z-50" />
       <CampaignRunningDialog open={startedOpen} onOpenChange={setStartedOpen} name={campaignName} />
       <div className="mx-auto w-full max-w-7xl pb-24">
         <header className="sticky top-0 z-20 -mx-4 mb-6 flex flex-wrap items-center gap-3 border-b border-border bg-background/85 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">

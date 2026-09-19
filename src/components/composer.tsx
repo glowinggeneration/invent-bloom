@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { extractFile, type ExtractedFile } from "@/lib/extract-file";
 import { clearComposerDraft, loadComposerDraft, saveComposerDraft } from "@/lib/composer-draft";
 import { friendlyError } from "@/lib/friendly-errors";
+import { cn } from "@/lib/utils";
 
 export type ComposerPayload = {
   text: string;
@@ -25,6 +26,7 @@ export function Composer({
   focusToken,
   runToken,
   draftKey,
+  variant = "default",
 }: {
   onSubmit: (payload: ComposerPayload) => void;
   pending: boolean;
@@ -45,7 +47,10 @@ export function Composer({
   runToken?: number;
   /** When set, text + attachments survive navigation via sessionStorage. */
   draftKey?: string;
+  /** "hero" renders the large glowing dark composer used on Response Studio. */
+  variant?: "default" | "hero";
 }) {
+  const hero = variant === "hero";
   const restored = useRef(loadComposerDraft(draftKey ?? "")).current;
   const [text, setText] = useState(restored?.text ?? "");
   const [files, setFiles] = useState<ExtractedFile[]>(restored?.files ?? []);
@@ -146,7 +151,13 @@ export function Composer({
   }, [runToken]);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-2 shadow-[0_2px_24px_-14px_oklch(0_0_0_/_0.5)]">
+    <div
+      className={cn(
+        "rounded-2xl border border-border bg-card p-2 shadow-[0_2px_24px_-14px_oklch(0_0_0_/_0.5)]",
+        hero &&
+          "rounded-3xl border-white/10 bg-neutral-950 p-3 shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15 transition-shadow duration-300 focus-within:shadow-primary/50 focus-within:ring-primary/30",
+      )}
+    >
       {files.length > 0 && (
         <div className="flex flex-wrap gap-2 p-1">
           {files.map((file) => (
@@ -155,12 +166,24 @@ export function Composer({
                 <img
                   src={file.dataUrl}
                   alt={file.name}
-                  className="h-24 w-auto rounded-xl border border-border object-cover"
+                  className={cn(
+                    "h-24 w-auto rounded-xl border border-border object-cover",
+                    hero && "border-white/10",
+                  )}
                 />
               ) : (
-                <div className="flex max-w-52 items-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2.5">
+                <div
+                  className={cn(
+                    "flex max-w-52 items-center gap-2 rounded-xl border border-border bg-secondary px-3 py-2.5",
+                    hero && "border-white/10 bg-white/5",
+                  )}
+                >
                   <FileText className="size-4 shrink-0 text-primary" />
-                  <span className="min-w-0 truncate text-xs text-foreground">{file.name}</span>
+                  <span
+                    className={cn("min-w-0 truncate text-xs text-foreground", hero && "text-white")}
+                  >
+                    {file.name}
+                  </span>
                 </div>
               )}
               <button
@@ -187,11 +210,21 @@ export function Composer({
         }}
         rows={3}
         placeholder={placeholder}
-        className="w-full resize-none bg-transparent px-3 py-2.5 text-base text-foreground outline-none placeholder:text-muted-foreground"
+        className={cn(
+          "w-full resize-none bg-transparent px-3 py-2.5 text-base text-foreground outline-none placeholder:text-muted-foreground",
+          hero && "px-4 py-3 text-lg text-white caret-primary placeholder:text-white/40",
+        )}
       />
       {chips && chips.length > 0 && (
-        <div className="border-t border-border/70 px-2 pb-1.5 pt-2">
-          <p className="mb-1.5 px-1 type-meta font-medium text-muted-foreground">
+        <div
+          className={cn("border-t border-border/70 px-2 pb-1.5 pt-2", hero && "border-white/10")}
+        >
+          <p
+            className={cn(
+              "mb-1.5 px-1 type-meta font-medium text-muted-foreground",
+              hero && "text-white/50",
+            )}
+          >
             Refine your message
           </p>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Message refinements">
@@ -200,7 +233,11 @@ export function Composer({
                 key={chip.label}
                 type="button"
                 onClick={() => applyChip(chip.text)}
-                className="rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className={cn(
+                  "rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+                  hero &&
+                    "border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white",
+                )}
               >
                 {chip.label}
               </button>
@@ -225,7 +262,10 @@ export function Composer({
             type="button"
             variant="ghost"
             size="sm"
-            className="gap-1.5 rounded-full text-muted-foreground"
+            className={cn(
+              "gap-1.5 rounded-full text-muted-foreground",
+              hero && "text-white/60 hover:bg-white/10 hover:text-white",
+            )}
             onClick={() => fileRef.current?.click()}
             disabled={reading}
           >
@@ -242,7 +282,10 @@ export function Composer({
         <Button
           type="button"
           size="sm"
-          className="shrink-0 gap-1.5 rounded-full px-3.5"
+          className={cn(
+            "shrink-0 gap-1.5 rounded-full px-3.5",
+            hero && "shadow-[0_0_20px_-4px] shadow-primary/60",
+          )}
           disabled={
             pending || reading || (!text.trim() && !files.some((f) => f.kind === "document"))
           }

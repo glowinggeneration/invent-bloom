@@ -17,10 +17,12 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
+import { useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import { AccountIdentity } from "@/components/account-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
 import { ProgressiveBlur } from "@/registry/magicui/progressive-blur";
+import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import {
   AccountHealthPanel,
   CampaignHeader,
@@ -245,6 +247,8 @@ export function PostCampaign() {
   // double-fire returns the original result instead of posting twice;
   // rotated after a successful submit so the next attempt is a fresh intent.
   const idempotencyKeyRef = useRef(crypto.randomUUID());
+  const confettiRef = useRef<ConfettiRef>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const runMutation = useMutation({
     mutationFn: (opts: { now: boolean }) =>
@@ -276,6 +280,7 @@ export function PostCampaign() {
       setResult(data ?? null);
       setStartedOpen(true);
       toast.success(opts.now || !scheduled ? "Posts published." : "Posts queued.");
+      if (!prefersReducedMotion) confettiRef.current?.fire();
       void queryClient.invalidateQueries({ queryKey: ["publish-jobs"] });
       void queryClient.invalidateQueries({ queryKey: ["scheduled-actions"] });
     },
@@ -363,6 +368,7 @@ export function PostCampaign() {
 
   return (
     <WorkspaceShell title="Post campaign">
+      <Confetti ref={confettiRef} className="pointer-events-none fixed inset-0 z-50" />
       <CampaignRunningDialog open={startedOpen} onOpenChange={setStartedOpen} name={campaignName} />
       <div className="mx-auto w-full max-w-7xl pb-24">
         <CampaignHeader
@@ -629,60 +635,60 @@ export function PostCampaign() {
                 {variations.length > 0 && (
                   <div className="relative max-h-80 overflow-y-auto rounded-xl">
                     <ul className="space-y-2 pb-4">
-                    {variations.map((v) => {
-                      const editing = editingId === v.accountId;
-                      const over = textLength(v.tweetText) > TWEET_LIMIT;
-                      return (
-                        <li key={v.accountId} className="rounded-xl border border-border p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="min-w-0 truncate text-xs font-semibold">
-                              @{v.handle}
-                              {v.personaName ? ` · ${v.personaName}` : ""}
-                            </p>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2 text-xs"
-                              onClick={() => setEditingId(editing ? null : v.accountId)}
-                            >
-                              {editing ? "Done" : "Edit"}
-                            </Button>
-                          </div>
-                          {editing ? (
-                            <>
-                              <Textarea
-                                rows={3}
-                                value={v.tweetText}
-                                onChange={(e) =>
-                                  setVariationText(
-                                    {
-                                      id: v.accountId,
-                                      handle: v.handle,
-                                      displayName: v.personaName,
-                                      personaId: v.personaId,
-                                    },
-                                    e.target.value,
-                                  )
-                                }
-                                className="mt-2 text-sm"
-                                aria-label={`Post for @${v.handle}`}
-                              />
-                              <p
-                                className={cn(
-                                  "mt-1 text-right text-[11px] tabular-nums",
-                                  over ? "text-destructive" : "text-muted-foreground",
-                                )}
-                              >
-                                {textLength(v.tweetText)}/{TWEET_LIMIT}
+                      {variations.map((v) => {
+                        const editing = editingId === v.accountId;
+                        const over = textLength(v.tweetText) > TWEET_LIMIT;
+                        return (
+                          <li key={v.accountId} className="rounded-xl border border-border p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="min-w-0 truncate text-xs font-semibold">
+                                @{v.handle}
+                                {v.personaName ? ` · ${v.personaName}` : ""}
                               </p>
-                            </>
-                          ) : (
-                            <p className="mt-1 whitespace-pre-wrap text-sm">{v.tweetText}</p>
-                          )}
-                        </li>
-                      );
-                    })}
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => setEditingId(editing ? null : v.accountId)}
+                              >
+                                {editing ? "Done" : "Edit"}
+                              </Button>
+                            </div>
+                            {editing ? (
+                              <>
+                                <Textarea
+                                  rows={3}
+                                  value={v.tweetText}
+                                  onChange={(e) =>
+                                    setVariationText(
+                                      {
+                                        id: v.accountId,
+                                        handle: v.handle,
+                                        displayName: v.personaName,
+                                        personaId: v.personaId,
+                                      },
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="mt-2 text-sm"
+                                  aria-label={`Post for @${v.handle}`}
+                                />
+                                <p
+                                  className={cn(
+                                    "mt-1 text-right text-[11px] tabular-nums",
+                                    over ? "text-destructive" : "text-muted-foreground",
+                                  )}
+                                >
+                                  {textLength(v.tweetText)}/{TWEET_LIMIT}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="mt-1 whitespace-pre-wrap text-sm">{v.tweetText}</p>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                     <ProgressiveBlur position="bottom" height="20%" className="rounded-b-xl" />
                   </div>

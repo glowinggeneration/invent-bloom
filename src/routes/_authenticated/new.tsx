@@ -165,6 +165,7 @@ function NewTest() {
           onStateChange={handleComposerState}
           prefill={prefill}
           focusToken={focusToken}
+          variant="hero"
         />
       )}
 

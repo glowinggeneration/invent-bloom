@@ -9,6 +9,12 @@ export type AudienceLocation = {
   count: number;
   /** Share of all accounts we could place. */
   share: number;
+  /** Latitude of the geocoded place, when Google resolved coordinates. */
+  lat: number | null;
+  /** Longitude of the geocoded place, when Google resolved coordinates. */
+  lng: number | null;
+  /** ISO 3166-1 alpha-2 country code, e.g. "KE", when Google resolved one. */
+  countryCode: string | null;
 };
 
 export type AudienceGender = {
@@ -124,31 +130,51 @@ export const getAudienceLocations = createServerFn({ method: "POST" })
       });
     }
 
+    type GeocodedPlace = {
+      place: string;
+      lat: number | null;
+      lng: number | null;
+      countryCode: string | null;
+    };
+
     const counts = new Map<string, number>();
-    const seen = new Map<string, string | null>();
+    const seen = new Map<string, GeocodedPlace | null>();
+    /** First resolved lat/lng/countryCode seen for each place string. */
+    const placeInfo = new Map<string, Pick<GeocodedPlace, "lat" | "lng" | "countryCode">>();
     let error: string | null = null;
     const byHandle: Record<string, string> = {};
     for (const { handle, value } of raw) {
       const key = value.toLowerCase();
-      let place = seen.get(key) ?? null;
+      let info = seen.get(key) ?? null;
       if (!seen.has(key)) {
         const res = await geocodePlace(value);
-        place = res.place;
+        info = res.place
+          ? { place: res.place, lat: res.lat, lng: res.lng, countryCode: res.countryCode }
+          : null;
         if (res.error && !error) error = res.error;
-        seen.set(key, place);
+        seen.set(key, info);
       }
-      if (!place) continue;
-      byHandle[handle] = place;
-      counts.set(place, (counts.get(place) ?? 0) + 1);
+      if (!info) continue;
+      byHandle[handle] = info.place;
+      counts.set(info.place, (counts.get(info.place) ?? 0) + 1);
+      if (!placeInfo.has(info.place)) {
+        placeInfo.set(info.place, { lat: info.lat, lng: info.lng, countryCode: info.countryCode });
+      }
     }
 
     const placed = [...counts.values()].reduce((a, b) => a + b, 0);
     const locations = [...counts.entries()]
-      .map(([place, count]) => ({
-        place,
-        count,
-        share: placed ? Math.round((count / placed) * 100) : 0,
-      }))
+      .map(([place, count]) => {
+        const info = placeInfo.get(place);
+        return {
+          place,
+          count,
+          share: placed ? Math.round((count / placed) * 100) : 0,
+          lat: info?.lat ?? null,
+          lng: info?.lng ?? null,
+          countryCode: info?.countryCode ?? null,
+        };
+      })
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 

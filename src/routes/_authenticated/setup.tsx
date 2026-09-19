@@ -33,6 +33,7 @@ import {
 } from "@/lib/onboarding";
 import { friendlyError } from "@/lib/friendly-errors";
 import { RequestChannelDialog } from "@/components/setup/request-channel-dialog";
+import { GlassPanel } from "@/components/smait/primitives/glass-panel";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({
@@ -411,6 +412,7 @@ function SetupPage() {
               {STEPS.map((s, i) => {
                 const done = i < step;
                 const current = i === step;
+                const last = i === STEPS.length - 1;
                 return (
                   <li key={s.id}>
                     <button
@@ -418,30 +420,50 @@ function SetupPage() {
                       onClick={() => goToStep(i)}
                       aria-current={current ? "step" : undefined}
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+                        "flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
                         current ? "bg-card shadow-sm" : "hover:bg-card/60",
                       )}
                     >
-                      <span
-                        className={cn(
-                          "grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold",
-                          done && "bg-emerald-500 text-white",
-                          current && "bg-primary text-primary-foreground",
-                          !done && !current && "bg-border/60 text-muted-foreground",
+                      {/* Circle + connecting line */}
+                      <span className="flex shrink-0 flex-col items-center self-stretch">
+                        <span
+                          className={cn(
+                            "grid shrink-0 place-items-center rounded-full font-semibold transition-all",
+                            done &&
+                              "size-7 bg-primary text-[11px] text-primary-foreground shadow-[0_0_10px_1px] shadow-primary/40",
+                            current &&
+                              "size-8 bg-primary text-xs text-primary-foreground ring-4 ring-primary/15 shadow-[0_0_16px_2px] shadow-primary/50",
+                            !done &&
+                              !current &&
+                              "size-7 bg-border/60 text-[11px] text-muted-foreground",
+                          )}
+                        >
+                          {done ? <Check className="size-3.5" /> : i + 1}
+                        </span>
+                        {!last && (
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "mt-1 w-0.5 flex-1 rounded-full transition-colors",
+                              done
+                                ? "bg-primary shadow-[0_0_8px_1px] shadow-primary/40"
+                                : "bg-border/60",
+                            )}
+                          />
                         )}
-                      >
-                        {done ? <Check className="size-3.5" /> : i + 1}
                       </span>
-                      <span
-                        className={cn(
-                          "min-w-0 text-sm font-medium",
-                          current ? "text-foreground" : "text-muted-foreground",
-                        )}
-                      >
-                        {s.label}
+                      <span className="min-w-0 flex-1 pt-1.5">
+                        <span
+                          className={cn(
+                            "block text-sm font-medium",
+                            current ? "text-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          {s.label}
+                        </span>
                       </span>
                       {current && (
-                        <ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground" />
+                        <ChevronRight className="ml-auto mt-1.5 size-4 shrink-0 text-muted-foreground" />
                       )}
                     </button>
                   </li>
@@ -454,7 +476,7 @@ function SetupPage() {
         {/* Step content */}
         <div className="flex min-w-0 flex-1 flex-col p-6 sm:p-10">
           <div className="flex flex-col items-center text-center">
-            <span className="grid size-14 place-items-center rounded-full bg-foreground text-lg font-semibold text-background">
+            <span className="grid size-14 place-items-center rounded-full bg-primary text-lg font-semibold text-primary-foreground ring-4 ring-primary/15 shadow-[0_0_20px_3px] shadow-primary/50 transition-all">
               {step + 1}
             </span>
             <h1 className="type-section mt-4">
@@ -465,7 +487,7 @@ function SetupPage() {
             ) : null}
           </div>
 
-          <div className="mx-auto mt-8 w-full max-w-xl space-y-5 pb-10">
+          <GlassPanel className="mx-auto mt-8 w-full max-w-xl space-y-5 p-6 sm:p-8" tone="default">
             {step === 0 && (
               <>
                 <Field label="Full name" required>
@@ -492,7 +514,11 @@ function SetupPage() {
                 <Field label="Phone">
                   <div className="flex gap-2">
                     <Select
-                      value={phoneDial === OTHER || PHONE_COUNTRIES.every((c) => c.dial !== phoneDial) ? OTHER : phoneDial}
+                      value={
+                        phoneDial === OTHER || PHONE_COUNTRIES.every((c) => c.dial !== phoneDial)
+                          ? OTHER
+                          : phoneDial
+                      }
                       onValueChange={(next) => {
                         if (next === OTHER) {
                           setPhoneDial(OTHER);
@@ -503,7 +529,8 @@ function SetupPage() {
                       }}
                     >
                       <SelectTrigger className="w-[150px] shrink-0" aria-label="Country code">
-                        {phoneDial !== OTHER && PHONE_COUNTRIES.some((c) => c.dial === phoneDial) ? (
+                        {phoneDial !== OTHER &&
+                        PHONE_COUNTRIES.some((c) => c.dial === phoneDial) ? (
                           <span>{phoneDial}</span>
                         ) : (
                           <SelectValue placeholder="Code" />
@@ -608,7 +635,6 @@ function SetupPage() {
               </>
             )}
 
-
             {step === 2 && (
               <>
                 <p className="type-meta text-muted-foreground">
@@ -649,9 +675,7 @@ function SetupPage() {
                   <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border px-4 py-4 hover:bg-muted/50">
                     <Upload className="size-4 shrink-0 text-muted-foreground" />
                     <span className="min-w-0 flex-1 truncate text-sm">
-                      {uploading
-                        ? "Uploading…"
-                        : orgProfileName || "Choose a file to upload"}
+                      {uploading ? "Uploading…" : orgProfileName || "Choose a file to upload"}
                     </span>
                     <input
                       type="file"
@@ -748,7 +772,7 @@ function SetupPage() {
                 </div>
               </>
             )}
-          </div>
+          </GlassPanel>
 
           <div className="mx-auto mt-auto flex w-full max-w-2xl items-center justify-between gap-x-4 gap-y-3 border-t border-border pt-6">
             <div className="flex items-center gap-2">

@@ -1,12 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Star, Users } from "lucide-react";
+import { Globe, MapPin, Star, Users } from "lucide-react";
+import { countries, type TCountryCode } from "countries-list";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccountAvatar } from "@/components/account-identity";
 import { getAudienceLocations } from "@/lib/audience-locations.functions";
 import { listNews } from "@/lib/news.functions";
 import { listSocialMentions, listSocialProfiles } from "@/lib/apify-mentions.functions";
 import { SourceAvatar, faviconFor, type SourcePlatform } from "@/components/source-avatar";
+import { cn } from "@/lib/utils";
+import { DottedMap, type DottedMapMarker } from "@/registry/magicui/dotted-map";
 
 const BARS = [
   "hsl(0 72% 45%)",
@@ -105,6 +108,135 @@ export function AudienceLocationsCard({ handles }: { handles: string[] }) {
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+}
+
+type LocationMarker = DottedMapMarker & {
+  place: string;
+  share: number;
+  count: number;
+  countryCode: string | null;
+};
+
+/** Short label for a marker pill, e.g. "Nairobi" from "Nairobi, Kenya". */
+const shortLabel = (place: string) => place.split(",")[0]?.trim() || place;
+
+/** Full country name for a resolved ISO code, when `countries-list` knows it. */
+const countryName = (code: string | null) =>
+  code && (code as TCountryCode) in countries ? countries[code as TCountryCode]!.name : null;
+
+/**
+ * Dotted-grid world map with a marker for every place we resolved coordinates
+ * for. Driven by the same `useAudienceLocations` data as the sidebar list, so
+ * it never issues a second fetch — it just skips rows Google couldn't place
+ * on a map (no lat/lng, e.g. country-only matches or requests made before the
+ * lat/lng pipeline existed).
+ */
+export function AudienceLocationsMap({
+  handles,
+  className,
+}: {
+  handles: string[];
+  className?: string;
+}) {
+  const { data, isLoading } = useAudienceLocations(handles);
+  const rows = data?.locations ?? [];
+
+  const markers: LocationMarker[] = rows
+    .filter(
+      (r): r is typeof r & { lat: number; lng: number } =>
+        typeof r.lat === "number" && typeof r.lng === "number",
+    )
+    .map((r) => ({
+      lat: r.lat,
+      lng: r.lng,
+      // Scale marker weight with audience share so bigger clusters read bigger.
+      size: 0.32 + (r.share / 100) * 0.9,
+      place: r.place,
+      share: r.share,
+      count: r.count,
+      countryCode: r.countryCode,
+    }));
+
+  return (
+    <section className={cn("rounded-2xl border border-border/60 bg-card p-4", className)}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex cursor-default items-center gap-2">
+            <Globe className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <h3 className="text-sm font-semibold leading-tight">Locations</h3>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-56">
+          Where the people we reply to and who mention us are actually located, plotted from the
+          same resolved profile locations as the list on the left.
+        </TooltipContent>
+      </Tooltip>
+
+      {isLoading ? (
+        <div
+          className="mt-3 aspect-[2/1] w-full animate-pulse rounded-xl bg-muted"
+          aria-hidden="true"
+        />
+      ) : markers.length === 0 ? (
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          {data?.error
+            ? "Taking longer than usual to load."
+            : "No profile locations we could place on a map yet."}
+        </p>
+      ) : (
+        <div className="mt-3">
+          <DottedMap
+            markers={markers}
+            height={70}
+            className="aspect-[2/1]"
+            renderMarkerOverlay={(marker) => (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex cursor-default items-center gap-1.5">
+                    <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-2 ring-background">
+                      {marker.countryCode ? (
+                        <img
+                          src={`https://flagcdn.com/w80/${marker.countryCode.toLowerCase()}.webp`}
+                          alt=""
+                          className="size-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span className="size-full bg-primary" aria-hidden="true" />
+                      )}
+                    </span>
+                    <span className="whitespace-nowrap rounded-full bg-foreground/90 px-1.5 py-0.5 text-[9px] font-medium leading-none text-background shadow-sm">
+                      {shortLabel(marker.place)}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="w-48 p-0">
+                  <div className="border-b border-border px-3 py-2">
+                    <p className="truncate text-xs font-semibold">{marker.place}</p>
+                    {countryName(marker.countryCode) ? (
+                      <p className="truncate text-[10px] text-muted-foreground">
+                        {countryName(marker.countryCode)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <dl className="divide-y divide-border">
+                    <div className="flex items-center justify-between gap-3 px-3 py-1.5">
+                      <dt className="text-[11px] text-muted-foreground">Accounts</dt>
+                      <dd className="text-[11px] font-medium tabular-nums">{marker.count}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 px-3 py-1.5">
+                      <dt className="text-[11px] text-muted-foreground">Share</dt>
+                      <dd className="text-[11px] font-medium tabular-nums">{marker.share}%</dd>
+                    </div>
+                  </dl>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          />
+        </div>
       )}
     </section>
   );

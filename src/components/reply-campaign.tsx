@@ -25,11 +25,13 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import { AccountIdentity } from "@/components/account-identity";
 import { ExternalIdentity } from "@/components/external-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
 import { GoalSwitcher } from "@/components/publish-goals";
+import { Confetti, type ConfettiRef } from "@/registry/magicui/confetti";
 import {
   AccountHealthPanel,
   CampaignRunningDialog,
@@ -457,6 +459,8 @@ export function ReplyCampaign() {
   // double-fire returns the original result instead of posting twice;
   // rotated after a successful submit so the next attempt is a fresh intent.
   const idempotencyKeyRef = useRef(crypto.randomUUID());
+  const confettiRef = useRef<ConfettiRef>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const publishMutation = useMutation({
     mutationFn: (opts: { now: boolean; spread?: number }) =>
@@ -490,6 +494,7 @@ export function ReplyCampaign() {
       setStartedOpen(true);
       clearPublishDraft();
       setDraftSavedAt(null);
+      if (!prefersReducedMotion) confettiRef.current?.fire();
       void queryClient.invalidateQueries({ queryKey: ["publish-jobs"] });
       if (!opts.now && spreadHours > 0) {
         toast.success(
@@ -538,6 +543,7 @@ export function ReplyCampaign() {
 
   return (
     <WorkspaceShell title="Reply campaign">
+      <Confetti ref={confettiRef} className="pointer-events-none fixed inset-0 z-50" />
       <CampaignRunningDialog open={startedOpen} onOpenChange={setStartedOpen} name={campaignName} />
       <div className="mx-auto w-full max-w-7xl pb-24">
         {/* Header */}

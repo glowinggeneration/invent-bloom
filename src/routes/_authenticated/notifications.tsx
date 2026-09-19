@@ -33,6 +33,8 @@ import type { NegativeAlertLevel } from "@/lib/notification-preferences";
 import type { AppNotification } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
+type NotificationCategory = "all" | "mentions" | "system";
+
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => ({
     meta: [
@@ -44,10 +46,31 @@ export const Route = createFileRoute("/_authenticated/notifications")({
       },
     ],
   }),
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    category?: NotificationCategory | undefined;
+  } => {
+    const raw = search["category"];
+    const category =
+      typeof raw === "string" && (raw === "mentions" || raw === "system")
+        ? (raw as NotificationCategory)
+        : undefined;
+    return { category };
+  },
   component: NotificationsPage,
 });
 
 type NotificationView = "all" | "unread" | "action" | "critical";
+
+/** Mentions are the "Mentions" bucket; official posts and campaign updates
+ * are grouped as "System" - this mirrors the categories shown in the
+ * notification bell dropdown. */
+function matchesCategory(notification: AppNotification, category: NotificationCategory) {
+  if (category === "all") return true;
+  if (category === "mentions") return notification.kind === "mention";
+  return notification.kind === "official" || notification.kind === "campaign";
+}
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -108,31 +131,38 @@ const NEGATIVE_LEVELS: { value: NegativeAlertLevel; label: string; description: 
 ];
 
 function NotificationsPage() {
+  const search = Route.useSearch();
+  const category = search.category ?? "all";
   const { items, unread, isPending, refresh, markRead, markAllRead, preferences, setPreferences } =
     useNotifications();
   const [view, setView] = useState<NotificationView>("all");
   const [query, setQuery] = useState("");
   const [showSettings, setShowSettings] = useState(false);
 
+  const categorised = useMemo(
+    () => items.filter((item) => matchesCategory(item, category)),
+    [items, category],
+  );
+
   const counts = useMemo(
     () => ({
-      all: items.length,
-      unread,
-      action: items.filter((item) => item.severity === "action").length,
-      critical: items.filter((item) => item.severity === "critical").length,
+      all: categorised.length,
+      unread: categorised.filter((item) => !item.read).length,
+      action: categorised.filter((item) => item.severity === "action").length,
+      critical: categorised.filter((item) => item.severity === "critical").length,
     }),
-    [items, unread],
+    [categorised],
   );
 
   const shown = useMemo(() => {
     const term = query.trim().toLowerCase();
-    return items.filter((item) => {
+    return categorised.filter((item) => {
       if (view === "unread" && item.read) return false;
       if (view === "action" && item.severity !== "action") return false;
       if (view === "critical" && item.severity !== "critical") return false;
       return !term || `${item.title} ${item.body} ${item.kind}`.toLowerCase().includes(term);
     });
-  }, [items, query, view]);
+  }, [categorised, query, view]);
 
   const tabs = [
     { value: "all" as const, label: "All", count: counts.all },
@@ -160,6 +190,18 @@ function NotificationsPage() {
       >
         Notifications
       </PageTitle>
+
+      {category !== "all" ? (
+        <div className="mb-4 flex items-center gap-2 type-meta">
+          <span className="text-muted-foreground">Filtered to</span>
+          <Badge variant="secondary" className="gap-1 capitalize">
+            {category === "mentions" ? "Mentions" : "System"}
+          </Badge>
+          <Link to="/notifications" className="font-semibold text-primary hover:underline">
+            Clear filter
+          </Link>
+        </div>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard label="Unread" value={unread} icon={Bell} />

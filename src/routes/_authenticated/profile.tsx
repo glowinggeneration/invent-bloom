@@ -5,10 +5,13 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   BadgeCheck,
   Building2,
+  CheckCircle2,
   CircleHelp,
   CreditCard,
   FileDown,
+  FileText,
   LogOut,
+  MapPin,
   Megaphone,
   Moon,
   ShieldCheck,
@@ -17,10 +20,12 @@ import {
   Target,
   UserMinus,
   UserPlus,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedBackground } from "@/components/core/animated-background";
 import { TransitionPanel } from "@/components/core/transition-panel";
 import { ContactSupportButton } from "@/components/contact-support";
@@ -32,11 +37,13 @@ import { Switch } from "@/components/ui/switch";
 import { friendlyError } from "@/lib/friendly-errors";
 import { resetFirstRun } from "@/lib/first-run";
 import { recordTipReset, setTipEnabled, useTipPrefs } from "@/lib/tip-prefs";
+import { initialsOf } from "@/lib/initials";
 import { useProfile } from "@/hooks/use-profile";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { updateProfileName } from "@/lib/smait.functions";
 import { getSetupStatus } from "@/lib/onboarding.functions";
+import type { SetupStatus } from "@/lib/onboarding";
 import {
   getWorkspaceOverview,
   inviteWorkspaceMember,
@@ -98,10 +105,19 @@ function ProfilePage() {
   const loadWorkspace = useServerFn(getWorkspaceOverview);
   const invite = useServerFn(inviteWorkspaceMember);
   const removeMember = useServerFn(removeWorkspaceMember);
+  const fetchSetupStatus = useServerFn(getSetupStatus);
 
   const workspaceOverview = useQuery({
     queryKey: ["workspace-overview"],
     queryFn: () => loadWorkspace(),
+  });
+
+  // Shared with MonitoringSetupCard (same query key, so this is a cache hit
+  // once either has fetched) — the completion sidebar reads the same fields
+  // that card already shows, nothing new to fetch.
+  const setupStatus = useQuery({
+    queryKey: ["setup-status"],
+    queryFn: () => fetchSetupStatus(),
   });
 
   const inviteMutation = useMutation({
@@ -303,82 +319,158 @@ function ProfilePage() {
                 id="profile-panel"
                 role="tabpanel"
                 aria-labelledby="profile-tab"
-                className="mt-3 rounded-[18px] border border-border bg-card p-5 shadow-sm sm:p-7"
+                className="mt-3"
               >
-                <PanelHeader
-                  title="Personal information"
-                  description="Used on campaigns, shared work and workspace activity."
-                />
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                  <div className="space-y-5">
+                    <div className="rounded-[18px] border border-border bg-card p-5 shadow-sm sm:p-7">
+                      <PanelHeader
+                        title="Edit profile"
+                        description="Used on campaigns, shared work and workspace activity."
+                      />
 
-                <form className="grid gap-5 pt-5" onSubmit={handleSave}>
-                  <div className="grid gap-2">
-                    <Label htmlFor="display-name">Display name</Label>
-                    <Input
-                      id="display-name"
-                      value={displayName}
-                      disabled={isSaving}
-                      aria-invalid={Boolean(displayNameError)}
-                      aria-describedby={displayNameError ? "display-name-error" : undefined}
-                      onChange={(event) => {
-                        setDisplayName(event.target.value);
-                        setSaveState("idle");
-                        setSaveError("");
-                      }}
-                      className="h-11 rounded-xl"
-                    />
-                    {displayNameError ? (
-                      <span id="display-name-error" className="type-meta text-destructive">
-                        {displayNameError}
-                      </span>
-                    ) : null}
-                  </div>
+                      <div className="flex flex-col items-center gap-4 border-b border-border py-6 text-center sm:flex-row sm:text-left">
+                        <Avatar className="size-20 shrink-0 border border-border bg-muted shadow-sm">
+                          <AvatarFallback className="type-card bg-positive font-semibold text-navy-foreground">
+                            {initialsOf(profile?.fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="type-body font-medium">{profile?.fullName ?? "Account"}</p>
+                          <p className="mt-1 type-meta text-muted-foreground">
+                            Shown using your initials. Photo uploads aren&apos;t available yet.
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="profile-email">Email address</Label>
-                    <Input
-                      id="profile-email"
-                      value={profile?.email ?? ""}
-                      readOnly
-                      aria-describedby="profile-email-note"
-                      className="h-11 rounded-xl bg-muted text-muted-foreground"
-                    />
-                    <span id="profile-email-note" className="type-meta text-muted-foreground">
-                      Managed by workspace authentication.
-                    </span>
-                  </div>
+                      <PanelHeader
+                        title="Personal Info"
+                        description="Your name and email as they appear across the workspace."
+                        className="border-b-0 pb-0 pt-5"
+                      />
 
-                  <div className="flex items-center justify-between gap-4 border-y border-border py-4">
-                    <div>
-                      <p className="type-meta text-muted-foreground">Workspace</p>
-                      <p className="mt-1 type-body font-medium">{workspaceName}</p>
+                      <form className="grid gap-5 pt-5" onSubmit={handleSave}>
+                        <div className="grid gap-2">
+                          <Label htmlFor="display-name">Full name</Label>
+                          <Input
+                            id="display-name"
+                            value={displayName}
+                            disabled={isSaving}
+                            aria-invalid={Boolean(displayNameError)}
+                            aria-describedby={displayNameError ? "display-name-error" : undefined}
+                            onChange={(event) => {
+                              setDisplayName(event.target.value);
+                              setSaveState("idle");
+                              setSaveError("");
+                            }}
+                            className="h-11 rounded-xl"
+                          />
+                          {displayNameError ? (
+                            <span id="display-name-error" className="type-meta text-destructive">
+                              {displayNameError}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="profile-email">Email address</Label>
+                          <Input
+                            id="profile-email"
+                            value={profile?.email ?? ""}
+                            readOnly
+                            aria-describedby="profile-email-note"
+                            className="h-11 rounded-xl bg-muted text-muted-foreground"
+                          />
+                          <span id="profile-email-note" className="type-meta text-muted-foreground">
+                            Managed by workspace authentication.
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4 border-y border-border py-4">
+                          <div>
+                            <p className="type-meta text-muted-foreground">Workspace</p>
+                            <p className="mt-1 type-body font-medium">{workspaceName}</p>
+                          </div>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 type-meta font-medium text-muted-foreground">
+                            <Building2 className="size-3.5" aria-hidden="true" />
+                            {relationshipLabel}
+                          </span>
+                        </div>
+
+                        <div className="flex min-h-11 flex-wrap items-center gap-3">
+                          <Button
+                            type="submit"
+                            disabled={!isDirty || Boolean(displayNameError) || isSaving}
+                            className="min-h-11 rounded-xl px-5"
+                          >
+                            {isSaving ? "Saving..." : "Save changes"}
+                          </Button>
+                          <span
+                            aria-live="polite"
+                            className={cn(
+                              "type-meta",
+                              saveState === "error"
+                                ? "text-destructive"
+                                : "text-emerald-700 dark:text-emerald-400",
+                            )}
+                          >
+                            {saveState === "success" ? "Changes saved" : saveError}
+                          </span>
+                        </div>
+                      </form>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 type-meta font-medium text-muted-foreground">
-                      <Building2 className="size-3.5" aria-hidden="true" />
-                      {relationshipLabel}
-                    </span>
+
+                    <div className="rounded-[18px] border border-border bg-card p-5 shadow-sm sm:p-7">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="flex items-center gap-2 type-card font-semibold">
+                            <MapPin className="size-4 text-primary" aria-hidden="true" />
+                            Location
+                          </h3>
+                          <p className="mt-1 type-meta text-muted-foreground">
+                            The organisation address used across campaigns and reports.
+                          </p>
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="shrink-0 rounded-xl">
+                          <Link to="/setup" search={{ edit: true }}>
+                            Edit
+                          </Link>
+                        </Button>
+                      </div>
+                      <p className="mt-4 type-body">
+                        {setupStatus.data?.orgAddress || (
+                          <span className="text-muted-foreground">Not set yet.</span>
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="rounded-[18px] border border-border bg-card p-5 shadow-sm sm:p-7">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="flex items-center gap-2 type-card font-semibold">
+                            <FileText className="size-4 text-primary" aria-hidden="true" />
+                            Bio
+                          </h3>
+                          <p className="mt-1 type-meta text-muted-foreground">
+                            A short description of the organisation this workspace represents.
+                          </p>
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="shrink-0 rounded-xl">
+                          <Link to="/setup" search={{ edit: true }}>
+                            Edit
+                          </Link>
+                        </Button>
+                      </div>
+                      <p className="mt-4 type-body text-muted-foreground">
+                        {setupStatus.data?.orgDescription || "No bio added yet."}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex min-h-11 flex-wrap items-center gap-3">
-                    <Button
-                      type="submit"
-                      disabled={!isDirty || Boolean(displayNameError) || isSaving}
-                      className="min-h-11 rounded-xl px-5"
-                    >
-                      {isSaving ? "Saving..." : "Save changes"}
-                    </Button>
-                    <span
-                      aria-live="polite"
-                      className={cn(
-                        "type-meta",
-                        saveState === "error"
-                          ? "text-destructive"
-                          : "text-emerald-700 dark:text-emerald-400",
-                      )}
-                    >
-                      {saveState === "success" ? "Changes saved" : saveError}
-                    </span>
-                  </div>
-                </form>
+                  <aside>
+                    <ProfileCompletionCard profile={profile} setup={setupStatus.data} />
+                  </aside>
+                </div>
               </section>
 
               <section
@@ -829,11 +921,126 @@ function MonitoringSetupCard() {
   );
 }
 
-function PanelHeader({ title, description }: { title: string; description: string }) {
+function PanelHeader({
+  title,
+  description,
+  className,
+}: {
+  title: string;
+  description: string;
+  className?: string;
+}) {
   return (
-    <div className="border-b border-border pb-5">
+    <div className={cn("border-b border-border pb-5", className)}>
       <h2 className="type-card font-semibold">{title}</h2>
       <p className="mt-1 type-body text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+/**
+ * Real completion score for the signed-in person's profile + workspace
+ * setup, built from the same fields already shown on this page (own name,
+ * and the setup answers `MonitoringSetupCard` displays) — no fabricated
+ * fields. Weights sum to 100.
+ */
+const COMPLETION_WEIGHTS = [
+  { key: "fullName", label: "Display name", weight: 15 },
+  { key: "jobTitle", label: "Job title", weight: 15 },
+  { key: "phone", label: "Phone number", weight: 15 },
+  { key: "team", label: "Team", weight: 10 },
+  { key: "brandName", label: "Organisation name", weight: 15 },
+  { key: "keyFigures", label: "Key people tracked", weight: 15 },
+  { key: "keywords", label: "Keywords tracked", weight: 15 },
+] as const;
+
+function ProfileCompletionCard({
+  profile,
+  setup,
+}: {
+  profile: { fullName: string } | undefined;
+  setup: SetupStatus | undefined;
+}) {
+  if (!setup) {
+    return (
+      <div className="rounded-[18px] border border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="h-56 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
+      </div>
+    );
+  }
+
+  const items = COMPLETION_WEIGHTS.map((item) => {
+    const done =
+      item.key === "fullName"
+        ? Boolean(profile?.fullName?.trim())
+        : item.key === "keyFigures"
+          ? setup.keyFigures.length > 0
+          : item.key === "keywords"
+            ? setup.keywords.length > 0
+            : Boolean(
+                String(setup[item.key as "jobTitle" | "phone" | "team" | "brandName"] ?? "").trim(),
+              );
+    return { ...item, done };
+  });
+
+  const percent = items.reduce((sum, item) => sum + (item.done ? item.weight : 0), 0);
+  const size = 104;
+  const stroke = 9;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percent / 100) * circumference;
+
+  return (
+    <div className="rounded-[18px] border border-border bg-card p-5 shadow-sm sm:p-6">
+      <h2 className="type-card font-semibold">Complete your profile</h2>
+      <p className="mt-1 type-meta text-muted-foreground">
+        Based on the details you&apos;ve added to your account and workspace setup.
+      </p>
+
+      <div className="mt-5 flex justify-center">
+        <div className="relative" style={{ width: size, height: size }}>
+          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              strokeWidth={stroke}
+              className="fill-none stroke-muted"
+            />
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              className="fill-none stroke-primary transition-all duration-500"
+            />
+          </svg>
+          <div className="absolute inset-0 grid place-items-center">
+            <span className="type-card font-semibold">{percent}%</span>
+          </div>
+        </div>
+      </div>
+
+      <ul className="mt-5 space-y-2.5">
+        {items.map((item) => (
+          <li key={item.key} className="flex items-center justify-between gap-2">
+            <span className="flex min-w-0 items-center gap-2 type-meta text-foreground">
+              {item.done ? (
+                <CheckCircle2 className="size-4 shrink-0 text-positive" aria-hidden="true" />
+              ) : (
+                <XCircle className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              )}
+              <span className="truncate">{item.label}</span>
+            </span>
+            <span className="shrink-0 type-meta font-medium text-muted-foreground">
+              +{item.weight}%
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
