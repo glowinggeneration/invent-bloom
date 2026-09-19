@@ -20,6 +20,8 @@ import { Route as AuthenticatedAccountHealthRouteImport } from './routes/_authen
 import { Route as AuthenticatedAlwaysOnRouteImport } from './routes/_authenticated/always-on'
 import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
 import { Route as AuthenticatedBriefRouteImport } from './routes/_authenticated/brief'
+import { Route as AuthenticatedCampaignCalendarRouteImport } from './routes/_authenticated/campaign-calendar'
+import { Route as AuthenticatedCampaignHistoryRouteImport } from './routes/_authenticated/campaign-history'
 import { Route as AuthenticatedCampaignManagerRouteImport } from './routes/_authenticated/campaign-manager'
 import { Route as AuthenticatedCampaignProofRouteImport } from './routes/_authenticated/campaign-proof'
 import { Route as AuthenticatedCampaignsRouteImport } from './routes/_authenticated/campaigns'
@@ -135,6 +137,18 @@ const AuthenticatedBriefRoute = AuthenticatedBriefRouteImport.update({
   path: '/brief',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCampaignCalendarRoute =
+  AuthenticatedCampaignCalendarRouteImport.update({
+    id: '/campaign-calendar',
+    path: '/campaign-calendar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCampaignHistoryRoute =
+  AuthenticatedCampaignHistoryRouteImport.update({
+    id: '/campaign-history',
+    path: '/campaign-history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCampaignManagerRoute =
   AuthenticatedCampaignManagerRouteImport.update({
     id: '/campaign-manager',
@@ -465,6 +479,8 @@ export interface FileRoutesByFullPath {
   '/always-on': typeof AuthenticatedAlwaysOnRoute
   '/archive': typeof AuthenticatedArchiveRoute
   '/brief': typeof AuthenticatedBriefRoute
+  '/campaign-calendar': typeof AuthenticatedCampaignCalendarRoute
+  '/campaign-history': typeof AuthenticatedCampaignHistoryRoute
   '/campaign-manager': typeof AuthenticatedCampaignManagerRoute
   '/campaign-proof': typeof AuthenticatedCampaignProofRoute
   '/campaigns': typeof AuthenticatedCampaignsRoute
@@ -534,6 +550,8 @@ export interface FileRoutesByTo {
   '/always-on': typeof AuthenticatedAlwaysOnRoute
   '/archive': typeof AuthenticatedArchiveRoute
   '/brief': typeof AuthenticatedBriefRoute
+  '/campaign-calendar': typeof AuthenticatedCampaignCalendarRoute
+  '/campaign-history': typeof AuthenticatedCampaignHistoryRoute
   '/campaign-manager': typeof AuthenticatedCampaignManagerRoute
   '/campaign-proof': typeof AuthenticatedCampaignProofRoute
   '/campaigns': typeof AuthenticatedCampaignsRoute
@@ -605,6 +623,8 @@ export interface FileRoutesById {
   '/_authenticated/always-on': typeof AuthenticatedAlwaysOnRoute
   '/_authenticated/archive': typeof AuthenticatedArchiveRoute
   '/_authenticated/brief': typeof AuthenticatedBriefRoute
+  '/_authenticated/campaign-calendar': typeof AuthenticatedCampaignCalendarRoute
+  '/_authenticated/campaign-history': typeof AuthenticatedCampaignHistoryRoute
   '/_authenticated/campaign-manager': typeof AuthenticatedCampaignManagerRoute
   '/_authenticated/campaign-proof': typeof AuthenticatedCampaignProofRoute
   '/_authenticated/campaigns': typeof AuthenticatedCampaignsRoute
@@ -676,6 +696,8 @@ export interface FileRouteTypes {
     | '/always-on'
     | '/archive'
     | '/brief'
+    | '/campaign-calendar'
+    | '/campaign-history'
     | '/campaign-manager'
     | '/campaign-proof'
     | '/campaigns'
@@ -745,6 +767,8 @@ export interface FileRouteTypes {
     | '/always-on'
     | '/archive'
     | '/brief'
+    | '/campaign-calendar'
+    | '/campaign-history'
     | '/campaign-manager'
     | '/campaign-proof'
     | '/campaigns'
@@ -815,6 +839,8 @@ export interface FileRouteTypes {
     | '/_authenticated/always-on'
     | '/_authenticated/archive'
     | '/_authenticated/brief'
+    | '/_authenticated/campaign-calendar'
+    | '/_authenticated/campaign-history'
     | '/_authenticated/campaign-manager'
     | '/_authenticated/campaign-proof'
     | '/_authenticated/campaigns'
@@ -981,6 +1007,20 @@ declare module '@tanstack/react-router' {
       path: '/brief'
       fullPath: '/brief'
       preLoaderRoute: typeof AuthenticatedBriefRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaign-calendar': {
+      id: '/_authenticated/campaign-calendar'
+      path: '/campaign-calendar'
+      fullPath: '/campaign-calendar'
+      preLoaderRoute: typeof AuthenticatedCampaignCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaign-history': {
+      id: '/_authenticated/campaign-history'
+      path: '/campaign-history'
+      fullPath: '/campaign-history'
+      preLoaderRoute: typeof AuthenticatedCampaignHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/campaign-manager': {
@@ -1405,6 +1445,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlwaysOnRoute: typeof AuthenticatedAlwaysOnRoute
   AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
   AuthenticatedBriefRoute: typeof AuthenticatedBriefRoute
+  AuthenticatedCampaignCalendarRoute: typeof AuthenticatedCampaignCalendarRoute
+  AuthenticatedCampaignHistoryRoute: typeof AuthenticatedCampaignHistoryRoute
   AuthenticatedCampaignManagerRoute: typeof AuthenticatedCampaignManagerRoute
   AuthenticatedCampaignProofRoute: typeof AuthenticatedCampaignProofRoute
   AuthenticatedCampaignsRoute: typeof AuthenticatedCampaignsRoute
@@ -1448,6 +1490,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlwaysOnRoute: AuthenticatedAlwaysOnRoute,
   AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
   AuthenticatedBriefRoute: AuthenticatedBriefRoute,
+  AuthenticatedCampaignCalendarRoute: AuthenticatedCampaignCalendarRoute,
+  AuthenticatedCampaignHistoryRoute: AuthenticatedCampaignHistoryRoute,
   AuthenticatedCampaignManagerRoute: AuthenticatedCampaignManagerRoute,
   AuthenticatedCampaignProofRoute: AuthenticatedCampaignProofRoute,
   AuthenticatedCampaignsRoute: AuthenticatedCampaignsRoute,

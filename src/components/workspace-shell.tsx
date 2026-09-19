@@ -9,6 +9,7 @@ import {
   BarChart3,
   Bell,
   CalendarClock,
+  CalendarDays,
   ChevronDown,
   ClipboardCheck,
   CreditCard,
@@ -17,6 +18,7 @@ import {
   FileText,
   Gauge,
   HelpCircle,
+  History,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -156,6 +158,7 @@ function AppSidebar() {
 
   const workItems: NavItem[] = [
     { to: "/campaign-manager", label: "Campaigns", icon: Gauge },
+    { to: "/campaign-calendar", label: "Campaign Calendar", icon: CalendarDays },
     { to: "/new", label: "Response Studio", icon: SquarePen },
     ...(isAdmin ? [{ to: "/performance", label: "Performance", icon: Activity }] : []),
     { to: "/reports", label: "Reports", icon: FileText },
@@ -169,6 +172,7 @@ function AppSidebar() {
     { to: "/decisions", label: "Decision Log", icon: ClipboardCheck },
     { to: "/preflight", label: "Campaign Preflight", icon: ShieldCheck },
     { to: "/campaign-proof", label: "Campaign Proof", icon: FileCheck2 },
+    { to: "/campaign-history", label: "Campaign History", icon: History },
     { to: "/archive", label: "Test Archive", icon: Archive },
     ...(isAdmin
       ? [
@@ -366,6 +370,7 @@ function MobileTabBar({ isAdmin, pathname }: { isAdmin: boolean; pathname: strin
   ];
   const trailingItems: NavItem[] = [
     { to: "/campaign-manager", label: "Campaigns", icon: Gauge },
+    { to: "/campaign-calendar", label: "Campaign Calendar", icon: CalendarDays },
     ...(isAdmin
       ? [{ to: "/performance", label: "Performance", icon: Activity }]
       : [{ to: "/reports", label: "Reports", icon: FileText }]),
@@ -380,6 +385,7 @@ function MobileTabBar({ isAdmin, pathname }: { isAdmin: boolean; pathname: strin
     { to: "/decisions", label: "Decision Log", icon: ClipboardCheck },
     { to: "/preflight", label: "Campaign Preflight", icon: ShieldCheck },
     { to: "/campaign-proof", label: "Campaign Proof", icon: FileCheck2 },
+    { to: "/campaign-history", label: "Campaign History", icon: History },
     { to: "/archive", label: "Test Archive", icon: Archive },
     { to: "/help", label: "Help Centre", icon: HelpCircle },
     {
