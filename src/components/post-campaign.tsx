@@ -20,6 +20,7 @@ import { useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AccountIdentity } from "@/components/account-identity";
 import { CampaignDialog } from "@/components/campaign-dialog";
+import { ProgressiveBlur } from "@/registry/magicui/progressive-blur";
 import {
   AccountHealthPanel,
   CampaignHeader,
@@ -626,7 +627,8 @@ export function PostCampaign() {
                 </Button>
 
                 {variations.length > 0 && (
-                  <ul className="space-y-2">
+                  <div className="relative max-h-80 overflow-y-auto rounded-xl">
+                    <ul className="space-y-2 pb-4">
                     {variations.map((v) => {
                       const editing = editingId === v.accountId;
                       const over = textLength(v.tweetText) > TWEET_LIMIT;
@@ -681,7 +683,9 @@ export function PostCampaign() {
                         </li>
                       );
                     })}
-                  </ul>
+                    </ul>
+                    <ProgressiveBlur position="bottom" height="20%" className="rounded-b-xl" />
+                  </div>
                 )}
               </Step>
             </div>

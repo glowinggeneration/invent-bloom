@@ -9,8 +9,10 @@ import {
   Loader2,
   MessageSquareReply,
   Sparkles,
+  Twitter,
 } from "lucide-react";
 
+import { ClientTweetCard } from "@/registry/magicui/client-tweet-card";
 import { ExternalIdentity } from "@/components/external-identity";
 import { NewsCard } from "@/components/news-card";
 import { SocialMentionCard } from "@/components/social-mention-card";
@@ -83,8 +85,15 @@ function stamp(iso: string | null) {
   return d.toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
 }
 
+/** X/Twitter tweet ids are purely numeric (snowflake ids); guard against any other id shape reaching react-tweet. */
+function isXTweetId(id: string): boolean {
+  return /^\d+$/.test(id);
+}
+
 function XFocusCard({ item }: { item: Extract<FocusItem, { kind: "x" }> }) {
   const m = item.mention;
+  const [showEmbed, setShowEmbed] = useState(false);
+  const canEmbed = isXTweetId(m.id);
   return (
     <li className="rounded-2xl border border-border bg-background p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
@@ -136,6 +145,20 @@ function XFocusCard({ item }: { item: Extract<FocusItem, { kind: "x" }> }) {
         {m.viewCount > 0 ? ` · ${m.viewCount.toLocaleString()} views` : ""}
         {m.likeCount > 0 ? ` · ${m.likeCount.toLocaleString()} likes` : ""}
       </p>
+
+      {canEmbed ? (
+        <div className="mt-3">
+          <Button type="button" size="sm" variant="outline" onClick={() => setShowEmbed((v) => !v)}>
+            <Twitter className="size-4" aria-hidden="true" />
+            {showEmbed ? "Hide embedded post" : "View embedded post"}
+          </Button>
+          {showEmbed ? (
+            <div className="mt-3 max-w-full overflow-hidden [&_.react-tweet-theme]:mx-0 [&_.react-tweet-theme]:my-0">
+              <ClientTweetCard id={m.id} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3">
         <span

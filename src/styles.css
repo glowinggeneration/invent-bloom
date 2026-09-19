@@ -414,6 +414,30 @@
     border-color var(--motion-base) var(--ease-out-apple);
 }
 
+/* Slow gradient sweep for AuroraText - background-position only, so it stays
+   crisp on text and is fully stopped by the reduced-motion rule above. */
+@keyframes aurora-sweep {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 50% 100%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 0%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@utility animate-aurora {
+  animation: aurora-sweep 8s ease-in-out infinite;
+}
+
 /* Soft scale-and-fade reveal - elements settle, never bounce. */
 @keyframes reveal-soft {
   from {

@@ -4,6 +4,7 @@ import { useId } from "react";
 import type { ComponentType, HTMLAttributes, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { AuroraText } from "@/registry/magicui/aurora-text";
 
 /** Shared layout primitives used across the authenticated workspace. */
 export function Card({ children, className, ...rest }: HTMLAttributes<HTMLDivElement>) {
@@ -26,7 +27,9 @@ export function PageTitle({
   return (
     <header className="mb-5 grid grid-cols-1 items-start gap-3 lg:mb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-5">
       <div className="min-w-0">
-        <h1 className="type-title max-w-full break-words lg:truncate">{children}</h1>
+        <h1 className="type-title max-w-full break-words lg:truncate">
+          <AuroraText>{children}</AuroraText>
+        </h1>
         {description ? (
           <p className="mt-2 max-w-3xl type-body text-muted-foreground">{description}</p>
         ) : null}

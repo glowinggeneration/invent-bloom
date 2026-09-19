@@ -51,6 +51,7 @@ import { translate as translateText, TRANSLATION_FALLBACK_MESSAGE } from "@/lib/
 import { listNews, type ScoredNewsArticle } from "@/lib/news.functions";
 import { SOCIAL_PROVIDERS, isSocialProvider } from "@/lib/news";
 import { listSocialMentions, type SocialMention } from "@/lib/apify-mentions.functions";
+import { MentionsAvatarStrip } from "@/components/mentions-avatar-strip";
 import { SocialMentionCard } from "@/components/social-mention-card";
 import { APIFY_SOURCE_LABELS } from "@/lib/apify-sources";
 
@@ -461,7 +462,8 @@ export function BrandMentions({
                 : "No brand handle configured yet — add one in setup to see tagged posts here."}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <MentionsAvatarStrip mentions={mentions} social={social} />
             <Button size="sm" variant="outline" onClick={refreshNow} disabled={isFetching}>
               {isFetching ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
