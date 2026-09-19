@@ -126,6 +126,7 @@ function ReportDetailPage() {
                       ? `${report.metrics.mentionsChangePct > 0 ? "↑" : "↓"} ${Math.abs(report.metrics.mentionsChangePct)}% vs previous period`
                       : "No earlier period to compare"
                   }
+                  className="ring-1 ring-primary/15 shadow-[0_0_50px_-12px] shadow-primary/30"
                 />
                 <StatCard
                   label="Sentiment"

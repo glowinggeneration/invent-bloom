@@ -185,7 +185,7 @@ function LinkedAccountsPage() {
                 <ShieldCheck className="size-4" /> Account health
               </Link>
             </Button>
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="shadow-[0_0_16px_1px] shadow-primary/40">
               <Link to="/admin/accounts">
                 <Settings2 className="size-4" /> Manage connections
               </Link>
@@ -203,6 +203,9 @@ function LinkedAccountsPage() {
           value={counts.ready}
           icon={CheckCircle2}
           tone={counts.ready ? "positive" : "neutral"}
+          className={
+            counts.ready ? "shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15" : ""
+          }
         />
         <StatCard
           label="Needs attention"

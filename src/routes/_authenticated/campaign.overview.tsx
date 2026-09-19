@@ -81,6 +81,11 @@ function CampaignOverviewPage() {
               label="Queued actions"
               value={queue.length}
               hint={nextAction ? `Next ${nextAction.actionType} is scheduled` : "Nothing waiting"}
+              className={
+                queue.length > 0
+                  ? "shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15"
+                  : ""
+              }
             />
             <StatCard
               icon={CheckCircle2}

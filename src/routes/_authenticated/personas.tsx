@@ -552,10 +552,10 @@ function PersonaDetails({
               src={image.avatarUrl}
               alt={`Abstract artwork representing ${persona.name}`}
               loading="lazy"
-              className="size-18 rounded-full border-4 border-background object-cover shadow-sm"
+              className="size-18 rounded-full border-4 border-background object-cover shadow-[0_0_20px_3px] shadow-primary/40 ring-4 ring-primary/15"
             />
           ) : (
-            <span className="flex size-18 items-center justify-center rounded-full border-4 border-background bg-secondary text-base font-bold shadow-sm">
+            <span className="flex size-18 items-center justify-center rounded-full border-4 border-background bg-secondary text-base font-bold shadow-[0_0_20px_3px] shadow-primary/40 ring-4 ring-primary/15">
               {initials}
             </span>
           )}

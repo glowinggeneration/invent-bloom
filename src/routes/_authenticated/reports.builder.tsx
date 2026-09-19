@@ -243,7 +243,7 @@ function CustomReportBuilderPage() {
         </div>
 
         <div>
-          <Card className="sticky top-20 p-5">
+          <Card className="sticky top-20 p-5 shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15">
             <div className="flex items-center gap-2">
               <FileText className="size-5 text-primary" />
               <SectionTitle>Report summary</SectionTitle>

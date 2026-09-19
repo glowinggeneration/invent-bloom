@@ -356,7 +356,7 @@ export function CampaignsWorkspace() {
               </Button>
             </Link>
             <Button
-              className="gap-2"
+              className="gap-2 shadow-[0_0_16px_2px] shadow-primary/50"
               onClick={() => {
                 setForm(EMPTY_FORM);
                 setPreview(null);
@@ -873,7 +873,9 @@ export function CampaignsWorkspace() {
                         <p className="type-body flex min-w-0 items-center gap-2 font-medium">
                           <span
                             className={`size-2 shrink-0 rounded-full ${
-                              c.isActive ? "bg-primary" : "bg-muted-foreground/40"
+                              c.isActive
+                                ? "bg-primary shadow-[0_0_6px_1px] shadow-primary/60"
+                                : "bg-muted-foreground/40"
                             }`}
                             aria-hidden="true"
                           />

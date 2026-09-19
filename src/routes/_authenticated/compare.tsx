@@ -187,14 +187,17 @@ function CompareMessagesPage() {
               const best = result.threadId === winner;
               const topSuggestion = result.analysis.suggestions[0]?.message ?? result.text;
               return (
-                <Card key={result.threadId} className={`p-5 ${best ? "border-primary" : ""}`}>
+                <Card
+                  key={result.threadId}
+                  className={`p-5 ${best ? "border-primary shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15" : ""}`}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="type-card font-semibold">{label}</p>
                       <p className="type-meta mt-1 text-muted-foreground">Rank #{index + 1}</p>
                     </div>
                     {best ? (
-                      <span className="rounded-full bg-primary/10 px-2 py-1 type-meta font-semibold text-primary">
+                      <span className="rounded-full bg-primary text-primary-foreground px-2 py-1 type-meta font-semibold shadow-[0_0_10px_1px] shadow-primary/40">
                         Strongest
                       </span>
                     ) : null}

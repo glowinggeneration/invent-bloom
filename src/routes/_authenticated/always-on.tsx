@@ -96,7 +96,7 @@ function AlwaysOnPage() {
       <PageTitle
         description="Plan content ahead, review it before publishing, and keep a record of what has gone live."
         actions={
-          <span className="type-meta inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1.5 font-semibold text-foreground">
+          <span className="type-meta inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 font-semibold text-foreground ring-1 ring-primary/15 shadow-[0_0_12px_1px] shadow-primary/25">
             <FileCheck2 className="size-3.5 text-primary" aria-hidden="true" /> Review-first
             publishing
           </span>

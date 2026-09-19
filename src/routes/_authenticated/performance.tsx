@@ -402,7 +402,13 @@ function PerformancePage() {
           <ol className="grid gap-3">
             {report.worked.slice(0, 3).map((item, index) => (
               <li key={item.title} className="flex min-w-0 gap-2.5">
-                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 type-meta font-semibold text-primary">
+                <span
+                  className={
+                    index === 0
+                      ? "grid size-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground ring-4 ring-primary/15 shadow-[0_0_10px_1px] shadow-primary/50 type-meta font-semibold"
+                      : "grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 type-meta font-semibold text-primary"
+                  }
+                >
                   {index + 1}
                 </span>
                 <div className="min-w-0">
@@ -609,19 +615,20 @@ function PerformancePage() {
                       ) : null}
                     </div>
                     {report ? (
-                      <ActivityGauge
-                        title={`${report.headline.engagementRate}%`}
-                        subtitle="Engagement rate"
-                        data={[
-                          {
-                            name: "Engagement rate",
-                            value: report.headline.engagementRate,
-                            color: "var(--primary)",
-                          },
-                        ]}
-                        height={220}
-                        className="mx-auto max-w-60"
-                      />
+                      <div className="mx-auto max-w-60 rounded-full shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15">
+                        <ActivityGauge
+                          title={`${report.headline.engagementRate}%`}
+                          subtitle="Engagement rate"
+                          data={[
+                            {
+                              name: "Engagement rate",
+                              value: report.headline.engagementRate,
+                              color: "var(--primary)",
+                            },
+                          ]}
+                          height={220}
+                        />
+                      </div>
                     ) : null}
                   </div>
                 </Card>

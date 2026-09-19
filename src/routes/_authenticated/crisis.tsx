@@ -278,7 +278,7 @@ function CrisisCommandPage() {
           />
         </div>
         <div className="mt-3">
-          <Button asChild size="sm" className="w-full">
+          <Button asChild size="sm" className="w-full shadow-[0_0_16px_-2px] shadow-primary/50">
             <Link to="/new" search={{ text: responseSeed } as any}>
               <MessageSquareText className="size-4" /> Test response now
             </Link>

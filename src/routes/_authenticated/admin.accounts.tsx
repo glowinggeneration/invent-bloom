@@ -396,7 +396,12 @@ function AdminAccountsPage() {
               )}{" "}
               Sync X status
             </Button>
-            <Button size="sm" onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
+            <Button
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+              disabled={upload.isPending}
+              className="shadow-[0_0_16px_1px] shadow-primary/40"
+            >
               {upload.isPending ? (
                 <LoadingIndicator size="sm" label="Importing accounts" />
               ) : (
@@ -436,7 +441,15 @@ function AdminAccountsPage() {
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard label="Ready" value={ready} icon={CheckCircle2} tone="positive" />
+        <StatCard
+          label="Ready"
+          value={ready}
+          icon={CheckCircle2}
+          tone="positive"
+          className={
+            ready > 0 ? "shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15" : ""
+          }
+        />
         <StatCard
           label="Needs attention"
           value={attention}

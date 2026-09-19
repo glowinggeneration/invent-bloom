@@ -340,7 +340,11 @@ function ReportsPage() {
                 </RailCard>
 
                 {latestReport ? (
-                  <RailCard title="Latest report" icon={FileText}>
+                  <RailCard
+                    title="Latest report"
+                    icon={FileText}
+                    className="shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15"
+                  >
                     <div className="space-y-2">
                       <p className="type-card font-semibold capitalize">
                         {latestReport.kind === "daily"

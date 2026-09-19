@@ -154,7 +154,9 @@ function OperationsActivityPage() {
         <Card className="mt-4 overflow-hidden p-0">
           <div className="border-b border-border px-5 py-4">
             <div className="flex items-center gap-2">
-              <Activity className="size-4 text-primary" />
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 ring-4 ring-primary/15 shadow-[0_0_12px_1px] shadow-primary/40">
+                <Activity className="size-3.5 text-primary" />
+              </span>
               <SectionTitle>{visible.length.toLocaleString()} recent records</SectionTitle>
             </div>
           </div>

@@ -72,7 +72,7 @@ export const Route = createFileRoute("/_authenticated/chat/$threadId")({
 
 function ExecutiveSummary({ analysis, threadId }: { analysis: Analysis; threadId: string }) {
   return (
-    <Card className="p-6">
+    <Card className="p-6 shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="type-section">Executive summary</h2>
         <span className="rounded-full bg-positive/10 px-2 py-1 type-meta font-semibold text-positive">

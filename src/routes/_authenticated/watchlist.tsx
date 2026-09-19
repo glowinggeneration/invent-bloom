@@ -223,7 +223,7 @@ function WatchlistPage() {
       </Card>
 
       <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="card-surface min-w-0 p-4">
+        <div className="card-surface min-w-0 p-4 shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15">
           <p className="type-meta text-muted-foreground">Watchlist items</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">{items.length}</p>
         </div>
@@ -302,7 +302,7 @@ function WatchlistPage() {
                 {isAdmin ? (
                   <Button
                     size="sm"
-                    className="h-9 w-full gap-2 rounded-xl"
+                    className="h-9 w-full gap-2 rounded-xl shadow-[0_0_16px_-2px] shadow-primary/50"
                     onClick={() => setDraft({ ...EMPTY })}
                   >
                     <Plus className="size-3.5" /> Add priority

@@ -267,6 +267,11 @@ function CampaignProofPage() {
               value={`${completionRate}%`}
               icon={Gauge}
               tone={selected.status === "completed" ? "positive" : "neutral"}
+              className={
+                selected.status === "completed"
+                  ? "shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15"
+                  : ""
+              }
             />
             <StatCard label="Completed actions" value={selected.completed} icon={CheckCircle2} />
             <StatCard label="Participating accounts" value={accounts.length} icon={Users} />

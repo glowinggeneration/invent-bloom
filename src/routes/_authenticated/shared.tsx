@@ -71,7 +71,10 @@ function SharedPage() {
 
       <ul className="mt-6 space-y-2">
         {threads?.map((thread) => (
-          <li key={thread.id} className="rounded-2xl border border-border bg-card px-4 py-3">
+          <li
+            key={thread.id}
+            className="card-surface px-4 py-3 transition-shadow hover:shadow-[0_0_24px_-8px] hover:shadow-primary/20"
+          >
             <Link to="/chat/$threadId" params={{ threadId: thread.id }} className="block min-w-0">
               <p className="truncate type-card">{thread.title}</p>
               <p className="type-meta text-muted-foreground">

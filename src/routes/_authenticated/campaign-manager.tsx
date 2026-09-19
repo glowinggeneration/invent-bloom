@@ -495,6 +495,11 @@ function CampaignManagerPage() {
               label="Running"
               value={counts.running}
               hint="Campaigns executing now"
+              className={
+                counts.running > 0
+                  ? "shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15"
+                  : ""
+              }
             />
             <StatCard
               icon={CalendarClock}

@@ -419,7 +419,10 @@ function ArchivePage() {
         description="Your own tests, private unless shared with the workspace."
         actions={
           <div className="flex items-center gap-2">
-            <Button asChild>
+            <Button
+              asChild
+              className="ring-2 ring-primary/15 shadow-[0_0_16px_2px] shadow-primary/50"
+            >
               <Link to="/new">New test</Link>
             </Button>
           </div>

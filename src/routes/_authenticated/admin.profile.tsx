@@ -60,7 +60,7 @@ function AdminProfilePage() {
 
       <Card className="border-primary/20 bg-primary/[0.025]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+          <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground ring-4 ring-primary/15 shadow-[0_0_20px_3px] shadow-primary/50">
             {initialsOf(profile?.fullName)}
           </span>
           <div className="min-w-0 flex-1">

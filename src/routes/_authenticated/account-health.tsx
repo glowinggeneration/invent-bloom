@@ -112,7 +112,18 @@ function AccountHealthPage() {
           icon={ShieldAlert}
           tone={held ? "negative" : "neutral"}
         />
-        <StatCard label="Average health" value={`${avgScore}%`} icon={Gauge} />
+        <StatCard
+          label="Average health"
+          value={`${avgScore}%`}
+          icon={Gauge}
+          className={
+            rows.length && avgScore >= 80
+              ? "shadow-[0_0_40px_-10px] shadow-emerald-500/30 ring-1 ring-emerald-500/20"
+              : rows.length && avgScore < 50
+                ? "shadow-[0_0_40px_-10px] shadow-destructive/30 ring-1 ring-destructive/20"
+                : ""
+          }
+        />
       </div>
 
       {rows.length > 0 ? (
@@ -234,7 +245,13 @@ function AccountHealthPage() {
                         @{row.handle.replace(/^@/, "")}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${row.state === "ready" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : row.state === "watch" ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" : "bg-destructive/10 text-destructive"}`}
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                          row.state === "ready"
+                            ? "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/25 shadow-[0_0_10px_0px] shadow-emerald-500/30 dark:text-emerald-300"
+                            : row.state === "watch"
+                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                              : "bg-destructive/10 text-destructive ring-1 ring-destructive/25 shadow-[0_0_10px_0px] shadow-destructive/30"
+                        }`}
                       >
                         {stateLabel(row.state)}
                       </span>

@@ -29,6 +29,7 @@ import { friendlyError } from "@/lib/friendly-errors";
 import { recordRecommendationCopied } from "@/lib/first-run";
 import { LegalSafetyBadge } from "@/components/legal-safety-badge";
 import { CopyConfirmationButton } from "@/components/core/copy-confirmation-button";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/recommendations/$threadId")({
   head: () => ({
@@ -120,7 +121,12 @@ function RecommendationCard({
   }
 
   return (
-    <article className="flex flex-col rounded-2xl border border-border bg-card p-6">
+    <article
+      className={cn(
+        "flex flex-col rounded-2xl border border-border bg-card p-6",
+        index === 0 && "shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15",
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 type-meta font-bold uppercase tracking-wide text-primary">

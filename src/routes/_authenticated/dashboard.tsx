@@ -187,7 +187,12 @@ function BrandHealthPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <h1 className="type-title">Brand Health</h1>
         <div className="flex w-full gap-2 sm:w-auto">
-          <Button asChild size="lg" className="w-full gap-2 sm:w-auto" disabled={!latestTestId}>
+          <Button
+            asChild
+            size="lg"
+            className="w-full gap-2 shadow-[0_0_20px_-4px] shadow-primary/50 sm:w-auto"
+            disabled={!latestTestId}
+          >
             <Link to="/chat/$threadId" params={{ threadId: latestTestId ?? "" }}>
               Open latest test <ArrowRight className="size-4" />
             </Link>
@@ -259,7 +264,7 @@ function BrandHealthPage() {
         <>
           {/* Score + headline stats */}
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
-            <section className="flex items-center gap-6 rounded-2xl border border-border bg-card p-6">
+            <section className="flex items-center gap-6 rounded-2xl border border-border bg-card p-6 shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15">
               <HealthRing score={data.score} />
               <div className="min-w-0 flex-1 space-y-3">
                 <h2 className="type-card">Brand health score</h2>

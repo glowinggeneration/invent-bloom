@@ -124,7 +124,14 @@ function ChangelogPage() {
                         aria-controls={contentId}
                         className="flex min-h-20 w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50 sm:px-6"
                       >
-                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10">
+                        <span
+                          className={cn(
+                            "grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10",
+                            date === dates[0] &&
+                              index === 0 &&
+                              "ring-4 ring-primary/15 shadow-[0_0_16px_2px] shadow-primary/50",
+                          )}
+                        >
                           <Icon className="size-5 text-primary" aria-hidden="true" />
                         </span>
                         <span className="min-w-0 flex-1">

@@ -186,6 +186,11 @@ function PreflightPage() {
           value={passedCount}
           icon={CheckCircle2}
           tone={passedCount === checks.length ? "positive" : "neutral"}
+          className={
+            passedCount === checks.length
+              ? "shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15"
+              : ""
+          }
         />
         <StatCard
           label="Warnings"
@@ -248,7 +253,13 @@ function PreflightPage() {
         }
         right={
           <>
-            <RailCard title="Next action" icon={Megaphone}>
+            <RailCard
+              title="Next action"
+              icon={Megaphone}
+              className={
+                !paused ? "shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15" : ""
+              }
+            >
               <p className="type-meta text-muted-foreground">
                 Review the live context, then continue through Post or Reply where accounts, timing
                 and message risk are confirmed.

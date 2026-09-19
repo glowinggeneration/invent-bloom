@@ -1201,7 +1201,7 @@ function HelpPage() {
                   className={cn(
                     "grid min-h-28 min-w-0 grid-cols-[auto_1fr_auto] grid-rows-2 items-center gap-x-3 rounded-2xl border p-4 text-left transition-colors",
                     selected
-                      ? "border-primary/30 bg-primary/5"
+                      ? "border-primary/30 bg-primary/5 ring-1 ring-primary/15 shadow-[0_0_24px_-8px] shadow-primary/25"
                       : "border-border bg-card hover:border-primary/25",
                   )}
                 >

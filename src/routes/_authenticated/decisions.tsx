@@ -213,7 +213,11 @@ function DecisionLogPage() {
               <DataFreshness at={newest} label="Decision log" staleMinutes={1440} />
             )}
             {isAdmin ? (
-              <Button size="sm" onClick={() => setDraft({ ...EMPTY })}>
+              <Button
+                size="sm"
+                className="shadow-[0_0_16px_-2px] shadow-primary/50"
+                onClick={() => setDraft({ ...EMPTY })}
+              >
                 <Plus className="size-4" /> Add decision
               </Button>
             ) : null}

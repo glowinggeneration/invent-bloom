@@ -230,7 +230,7 @@ function ExecutiveBriefPage() {
       </Card>
 
       <div className="mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(20rem,0.75fr)]">
-        <Card>
+        <Card className="shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15">
           <div className="flex min-w-0 items-center gap-2">
             <Sparkles className="size-5 shrink-0 text-primary" />
             <h2 className="type-section">Today in 5 minutes</h2>
@@ -293,7 +293,7 @@ function ExecutiveBriefPage() {
               {topOpportunity?.detail ??
                 "Use the Overview intelligence layer to identify the next constructive conversation worth joining."}
             </p>
-            <Button asChild size="sm" className="mt-4">
+            <Button asChild size="sm" className="mt-4 shadow-[0_0_16px_-2px] shadow-primary/50">
               <Link to="/overview">
                 Open full intelligence <ArrowUpRight className="size-4" />
               </Link>
