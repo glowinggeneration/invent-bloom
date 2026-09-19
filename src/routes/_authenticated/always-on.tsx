@@ -13,6 +13,7 @@ import { PageTitle, StatCard, LockScreen, EmptyState, PageToolbar } from "@/comp
 import { CATEGORY_LABELS } from "@/lib/always-on";
 import { listAlwaysOnPlans, listAlwaysOnPublished } from "@/lib/always-on.functions";
 import { DailyTimetable } from "@/components/daily-timetable";
+import { AutomationVisual } from "@/components/smait/workflow-visuals";
 
 export const Route = createFileRoute("/_authenticated/always-on")({
   head: () => ({
@@ -149,6 +150,7 @@ function AlwaysOnPage() {
                 </Button>
               ) : undefined
             }
+            visual={items.length === 0 ? <AutomationVisual /> : undefined}
           />
         </div>
       ) : (

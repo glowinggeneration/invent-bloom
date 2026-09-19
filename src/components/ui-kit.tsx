@@ -198,13 +198,16 @@ export function EmptyState({
   title,
   description,
   action,
+  visual,
 }: {
   title: string;
   description?: ReactNode;
   action?: ReactNode;
+  visual?: ReactNode;
 }) {
   return (
     <div className="card-surface border-dashed p-5 text-center shadow-none sm:p-6">
+      {visual ? <div className="mb-5">{visual}</div> : null}
       <p className="type-card">{title}</p>
       {description ? <p className="type-meta mt-2 text-muted-foreground">{description}</p> : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}

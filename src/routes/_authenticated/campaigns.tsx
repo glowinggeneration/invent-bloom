@@ -74,6 +74,7 @@ import {
 } from "@/lib/campaigns.functions";
 import { listXAccounts } from "@/lib/publish.functions";
 import { friendlyError } from "@/lib/friendly-errors";
+import { CampaignMomentumVisual } from "@/components/smait/workflow-visuals";
 
 export const Route = createFileRoute("/_authenticated/campaigns")({
   head: () => ({
@@ -843,6 +844,7 @@ export function CampaignsWorkspace() {
               <EmptyState
                 title="Nothing here yet."
                 description="Campaigns you create will appear here."
+                visual={<CampaignMomentumVisual />}
               />
             </div>
           ) : visible.length === 0 ? (
