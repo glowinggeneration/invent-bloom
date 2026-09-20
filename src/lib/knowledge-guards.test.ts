@@ -135,6 +135,17 @@ describe("the approval trust boundary is enforced at the database layer, not jus
   });
 });
 
+describe("approved/superseded knowledge entries can't be deleted directly via the client SDK either", () => {
+  const migration = read("supabase/migrations/20260920220000_knowledge_delete_trust_boundary.sql");
+
+  it("the DELETE trigger rejects deleting anything but pending/rejected entries, unless service_role", () => {
+    expect(migration).toMatch(/CREATE TRIGGER knowledge_entries_delete_admin_only/);
+    expect(migration).toMatch(/BEFORE DELETE ON public\.knowledge_entries/);
+    expect(migration).toMatch(/auth\.role\(\) <> 'service_role'/);
+    expect(migration).toMatch(/OLD\.approval_status NOT IN \('pending', 'rejected'\)/);
+  });
+});
+
 describe("Knowledge Library UI hides Approve/Reject from non-admins", () => {
   const source = read("src/routes/_authenticated/knowledge.tsx");
 
