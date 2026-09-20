@@ -1,0 +1,1 @@
+revoke all on function public.add_profile_to_default_workspace() from public, anon, authenticated;
