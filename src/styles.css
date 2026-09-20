@@ -88,10 +88,17 @@
 
 :root {
   --x-blue: oklch(0.55 0.17 245);
-  --radius: 0.5rem;
+  /* Apple's continuous-corner card radius (~12-14px at 1x) rather than the
+   * tighter 8px default most web design systems use. */
+  --radius: 0.75rem;
+  /* Apple's own system-font stack: San Francisco on Apple devices (the
+   * -apple-system/BlinkMacSystemFont keywords resolve to the OS font, never
+   * an embedded file - SF Pro isn't licensed for arbitrary web embedding),
+   * each platform's native UI font elsewhere, so text always renders in
+   * whatever "the system font" means on the visitor's own device. */
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter",
-    "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, system-ui,
+    sans-serif;
 
   /* Apple-style elevation: tight contact shadow + soft ambient spread */
   --shadow-xs: 0 1px 2px oklch(0.18 0.01 20 / 0.05);
@@ -113,76 +120,87 @@
   --card-pad-lg: 1.5rem;
   --section-gap: 2rem;
 
-  /* SMAIT brand: engine pink + navy. The monitored organisation's own
-   * identity (crest, name) is configured separately as content - this
-   * token set is the platform's own primary/accent colour. */
-  --brand-pink: oklch(0.647 0.241 13.3); /* #fe2762 - decorative/large-scale only, not text-bearing */
-  --brand-navy: oklch(0.218 0.054 244); /* #001c31 */
+  /* Apple's own iOS/macOS system palette, adopted app-wide (per explicit
+   * decision - see EXCEPTION_REGISTER.md: this replaces SMAIT's prior
+   * pink/navy brand identity, not just its visual language). systemBlue is
+   * the platform accent everywhere a brand color used to be; the
+   * monitored organisation's own identity (crest, name) stays configured
+   * separately as content, unaffected by this. */
+  --brand-pink: oklch(0.55 0.211 259); /* alias kept for back-compat only - now maps to Apple systemBlue */
+  --brand-navy: oklch(0.28 0.03 259);
   --background: oklch(1 0 0);
   --foreground: oklch(0.18 0.01 20);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 20);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.01 20);
-  /* Functional primary is a deepened brand pink: #fe2762 itself only hits
-   * 3.7:1 against white text (fails AA 4.5:1); this shade holds ~4.9:1. */
-  --primary: oklch(0.58 0.241 13.3);
+  /* Apple systemBlue (#007AFF) at a shade that still holds ~4.6:1 with
+   * white button labels. */
+  --primary: oklch(0.55 0.211 259);
   --primary-foreground: oklch(0.99 0.002 20);
-  --secondary: oklch(0.968 0.004 20);
+  /* Apple systemGray6 / systemGray5 - the flat neutral fills Apple uses for
+   * secondary buttons, chips and subtle backgrounds. */
+  --secondary: oklch(0.955 0.003 259);
   --secondary-foreground: oklch(0.18 0.01 20);
-  --muted: oklch(0.968 0.004 20);
-  --muted-foreground: oklch(0.5 0.012 20);
+  --muted: oklch(0.955 0.003 259);
+  --muted-foreground: oklch(0.55 0.01 259); /* Apple systemGray */
   --accent: oklch(0.18 0.01 20);
   --accent-foreground: oklch(0.99 0.002 20);
-  /* Destructive stays a distinct true red (not brand pink) and is only ever used as text/outline. */
-  --destructive: oklch(0.505 0.196 22);
+  /* Apple systemRed (#FF3B30). */
+  --destructive: oklch(0.63 0.211 25);
   --destructive-foreground: oklch(0.99 0.002 20);
-  --border: oklch(0.918 0.006 20);
-  --input: oklch(0.918 0.006 20);
-  --ring: oklch(0.58 0.241 13.3);
-  --navy: oklch(0.218 0.054 244);
+  /* Apple systemGray4 - the hairline separator colour used across iOS/macOS. */
+  --border: oklch(0.89 0.004 259);
+  --input: oklch(0.89 0.004 259);
+  --ring: oklch(0.55 0.211 259);
+  --navy: oklch(0.28 0.03 259);
   --navy-foreground: oklch(0.99 0.002 20);
-  --positive: oklch(0.52 0.14 156);
+  /* Apple systemGreen (#34C759). */
+  --positive: oklch(0.72 0.17 145);
   --neutral: oklch(0.75 0.09 85);
-  /* Negative sentiment is amber, unlinked from the CTA red. */
-  --negative: oklch(0.66 0.155 52);
-  --success: oklch(0.52 0.14 156);
+  /* Apple systemOrange (#FF9500) - sentiment/attention colour, kept
+   * distinct from the systemRed destructive/CTA colour. */
+  --negative: oklch(0.75 0.17 65);
+  --success: oklch(0.72 0.17 145);
   --success-foreground: oklch(0.99 0.002 20);
-  --warning: oklch(0.62 0.14 72);
+  --warning: oklch(0.75 0.17 65);
   --warning-foreground: oklch(0.99 0.002 20);
-  --info: oklch(0.55 0.13 240);
+  --info: oklch(0.55 0.211 259);
   --info-foreground: oklch(0.99 0.002 20);
 
-  --chart-1: oklch(0.58 0.241 13.3);
-  --chart-2: oklch(0.218 0.054 244);
-  --chart-3: oklch(0.52 0.14 156);
-  --chart-4: oklch(0.75 0.11 85);
-  --chart-5: oklch(0.6 0.05 20);
-  --sidebar: oklch(0.99 0.002 20);
+  /* Apple's own chart/graph accent set: blue, green, orange, purple, teal. */
+  --chart-1: oklch(0.55 0.211 259);
+  --chart-2: oklch(0.72 0.17 145);
+  --chart-3: oklch(0.75 0.17 65);
+  --chart-4: oklch(0.55 0.19 305);
+  --chart-5: oklch(0.65 0.13 200);
+  --sidebar: oklch(0.965 0.003 259);
   --sidebar-foreground: oklch(0.18 0.01 20);
-  --sidebar-primary: oklch(0.58 0.241 13.3);
+  --sidebar-primary: oklch(0.55 0.211 259);
   --sidebar-primary-foreground: oklch(0.99 0.002 20);
-  --sidebar-accent: oklch(0.968 0.004 20);
+  --sidebar-accent: oklch(0.93 0.004 259);
   --sidebar-accent-foreground: oklch(0.18 0.01 20);
-  --sidebar-border: oklch(0.918 0.006 20);
-  --sidebar-ring: oklch(0.58 0.241 13.3);
+  --sidebar-border: oklch(0.89 0.004 259);
+  --sidebar-ring: oklch(0.55 0.211 259);
 }
 
 .dark {
   --x-blue: oklch(0.68 0.18 245);
-  --brand-pink: oklch(0.647 0.241 13.3);
-  --brand-navy: oklch(0.218 0.054 244);
-  /* True black page, cards lifted just enough to read as separate surfaces
-   * against it (not the previous dark-charcoal background). */
+  /* Apple systemBlue (dark variant, #0A84FF) - brighter/lighter than the
+   * light-mode shade, matching how Apple's own dynamic colours shift
+   * between appearances. */
+  --brand-pink: oklch(0.65 0.19 259);
+  --brand-navy: oklch(0.28 0.03 259);
+  /* True black page (Apple's own OLED "pure black" dark appearance, as
+   * used in Music/Podcasts/Watch apps), cards lifted just enough to read
+   * as separate surfaces against it. */
   --background: oklch(0 0 0);
   --foreground: oklch(0.97 0.002 20);
   --card: oklch(0.1 0.006 20);
   --card-foreground: oklch(0.97 0.002 20);
   --popover: oklch(0.1 0.006 20);
   --popover-foreground: oklch(0.97 0.002 20);
-  /* Slightly lighter than the light-mode primary so it reads against the
-   * dark page background too, while white button labels still hold ~4.6:1. */
-  --primary: oklch(0.595 0.241 13.3);
+  --primary: oklch(0.65 0.19 259);
   --primary-foreground: oklch(0.99 0.002 20);
   --secondary: oklch(0.16 0.008 20);
   --secondary-foreground: oklch(0.97 0.002 20);
@@ -190,30 +208,32 @@
   --muted-foreground: oklch(0.72 0.012 20);
   --accent: oklch(0.19 0.01 20);
   --accent-foreground: oklch(0.97 0.002 20);
-  --destructive: oklch(0.58 0.19 22);
+  /* Apple systemRed (dark variant, #FF453A). */
+  --destructive: oklch(0.65 0.19 25);
   --destructive-foreground: oklch(0.99 0.002 20);
   --border: oklch(1 0 0 / 14%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.595 0.241 13.3);
+  --ring: oklch(0.65 0.19 259);
   --navy: oklch(0.1 0.006 20);
   --navy-foreground: oklch(0.97 0.002 20);
-  --positive: oklch(0.62 0.14 156);
+  /* Apple systemGreen (dark variant, #30D158). */
+  --positive: oklch(0.77 0.18 145);
   --neutral: oklch(0.78 0.09 85);
-  --negative: oklch(0.72 0.15 52);
-  --chart-1: oklch(0.595 0.241 13.3);
-  --chart-2: oklch(0.85 0.005 20);
-
-  --chart-3: oklch(0.62 0.14 156);
-  --chart-4: oklch(0.78 0.11 85);
-  --chart-5: oklch(0.66 0.05 20);
+  /* Apple systemOrange (dark variant, #FF9F0A). */
+  --negative: oklch(0.79 0.17 65);
+  --chart-1: oklch(0.65 0.19 259);
+  --chart-2: oklch(0.77 0.18 145);
+  --chart-3: oklch(0.79 0.17 65);
+  --chart-4: oklch(0.65 0.2 305);
+  --chart-5: oklch(0.7 0.13 200);
   --sidebar: oklch(0.03 0.004 20);
   --sidebar-foreground: oklch(0.97 0.002 20);
-  --sidebar-primary: oklch(0.595 0.241 13.3);
+  --sidebar-primary: oklch(0.65 0.19 259);
   --sidebar-primary-foreground: oklch(0.99 0.002 20);
   --sidebar-accent: oklch(0.18 0.01 20);
   --sidebar-accent-foreground: oklch(0.97 0.002 20);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.595 0.241 13.3);
+  --sidebar-ring: oklch(0.65 0.19 259);
 
   /* Deeper, more diffuse elevation reads better on true-black surfaces */
   --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.5);
@@ -251,10 +271,12 @@
 
   body {
     background-color: var(--color-background);
-    /* Soft grey page wash so white cards and panels lift off the background */
-    background-image:
-      radial-gradient(1100px 520px at 50% -12%, oklch(0.925 0.005 20 / 0.85), transparent 72%),
-      linear-gradient(180deg, oklch(0.945 0.004 20) 0%, oklch(0.968 0.003 20) 40%, oklch(0.932 0.005 20) 100%);
+    /* Apple's systemGroupedBackground (#F2F2F7): a flat, neutral, barely-
+     * tinted grey so white cards lift off it - no directional gradient or
+     * colour wash, matching how Settings/Mail/Notes lay out their own
+     * grouped-table backgrounds. */
+    background-color: oklch(0.965 0.003 259);
+    background-image: none;
     background-attachment: fixed;
     background-repeat: no-repeat;
     color: var(--color-foreground);
@@ -266,9 +288,9 @@
   }
 
   .dark body {
-    background-image:
-      radial-gradient(1200px 600px at 50% -10%, oklch(0.24 0.01 20 / 0.9), transparent 70%),
-      linear-gradient(180deg, oklch(0.19 0.009 20) 0%, oklch(0.16 0.008 20) 45%, oklch(0.14 0.008 20) 100%);
+    /* True black, flat - Apple's own OLED dark appearance has no gradient wash. */
+    background-color: oklch(0 0 0);
+    background-image: none;
   }
 
   h1, h2, h3, h4 {
@@ -326,6 +348,18 @@
   ::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(in oklab, var(--color-foreground) 30%, transparent);
   }
+
+  /* SF Symbols render at a lighter visual weight than most web icon sets'
+   * 2px default. Lucide (used throughout this app) sets stroke-width as an
+   * SVG presentation attribute, which a CSS rule always beats regardless of
+   * specificity - so this one rule nudges every icon toward that same
+   * lighter, Apple-like weight without touching each call site. An icon
+   * that genuinely needs a different weight must override this CSS
+   * property directly (a class or inline style), not the strokeWidth prop
+   * alone, since the prop can no longer win against this rule. */
+  svg {
+    stroke-width: 1.75;
+  }
 }
 
 @layer components {
@@ -351,6 +385,19 @@
 
 @utility surface-soft {
   box-shadow: var(--shadow-soft);
+}
+
+/* Apple's "material" vibrancy: translucent, blurred chrome (nav bars,
+ * sidebars, toolbars, sheets) that lets page content tint through instead
+ * of sitting on a flat opaque fill. Falls back to a solid surface when
+ * backdrop-filter isn't supported. */
+@utility material-chrome {
+  background-color: color-mix(in oklab, var(--color-background) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  @supports not (backdrop-filter: blur(1px)) {
+    background-color: var(--color-background);
+  }
 }
 
 @utility press-scale {
