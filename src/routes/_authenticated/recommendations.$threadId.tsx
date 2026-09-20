@@ -4,9 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   ArrowLeft,
+  Clock,
   Download,
   FileDown,
+  History,
   Loader2,
+  Rocket,
+  Save,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -21,7 +25,9 @@ import { TestProgress } from "@/components/test-progress";
 import { RecommendationsSkeleton } from "@/components/results-skeleton";
 import { readActiveTest } from "@/lib/active-test";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Analysis } from "@/lib/analysis";
 import { negativeBacklash, shareProbability, suggestionStats } from "@/lib/insights";
 import { getThread, sendMessage } from "@/lib/smait.functions";
@@ -29,6 +35,11 @@ import { friendlyError } from "@/lib/friendly-errors";
 import { recordRecommendationCopied } from "@/lib/first-run";
 import { LegalSafetyBadge } from "@/components/legal-safety-badge";
 import { CopyConfirmationButton } from "@/components/core/copy-confirmation-button";
+import {
+  listDraftVersions,
+  saveDraftVersion,
+  type DraftVersion,
+} from "@/lib/draft-versions.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/recommendations/$threadId")({
@@ -64,16 +75,50 @@ function RecommendationCard({
   analysis,
   index,
   suggestion,
+  threadId,
+  sourceMessageId,
 }: {
   analysis: Analysis;
   index: number;
   suggestion: Analysis["suggestions"][number];
+  threadId: string;
+  sourceMessageId: string | undefined;
 }) {
   const [value, setValue] = useState(suggestion.message);
   const stats = suggestionStats(analysis, index);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runTest = useServerFn(sendMessage);
+
+  const fetchVersions = useServerFn(listDraftVersions);
+  const versionsQuery = useQuery({
+    queryKey: ["draft-versions", threadId, index],
+    queryFn: () => fetchVersions({ data: { threadId } }),
+  });
+  const versions = (versionsQuery.data ?? []).filter((v) => v.suggestionIndex === index);
+
+  const [versionName, setVersionName] = useState("");
+  const [saveVersionOpen, setSaveVersionOpen] = useState(false);
+  const saveVersion = useServerFn(saveDraftVersion);
+  const saveVersionMutation = useMutation({
+    mutationFn: () =>
+      saveVersion({
+        data: {
+          threadId,
+          name: versionName.trim() || `Recommendation ${LETTERS[index]} v${versions.length + 1}`,
+          content: value,
+          ...(sourceMessageId ? { sourceMessageId } : {}),
+          suggestionIndex: index,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["draft-versions", threadId, index] });
+      toast.success("Version saved - nothing before it was changed or lost.");
+      setSaveVersionOpen(false);
+      setVersionName("");
+    },
+    onError: (error) => toast.error(friendlyError(error)),
+  });
 
   const saveRun = useMutation({
     mutationFn: (text: string) => runTest({ data: { threadId: null, text } }),
@@ -186,12 +231,84 @@ function RecommendationCard({
         >
           Reset
         </Button>
+        <Popover open={saveVersionOpen} onOpenChange={setSaveVersionOpen}>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" className="gap-2 rounded-xl">
+              <Save className="size-4" />
+              Save version
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64">
+            <label htmlFor={`version-name-${index}`} className="type-meta font-medium">
+              Name this version
+            </label>
+            <Input
+              id={`version-name-${index}`}
+              value={versionName}
+              onChange={(e) => setVersionName(e.target.value)}
+              placeholder={`Recommendation ${LETTERS[index]} v${versions.length + 1}`}
+              className="mt-1.5"
+              autoFocus
+            />
+            <p className="mt-2 type-meta text-muted-foreground">
+              Saves the text currently in the box above. Earlier versions are never overwritten.
+            </p>
+            <Button
+              size="sm"
+              className="mt-3 w-full"
+              disabled={saveVersionMutation.isPending || value.trim().length === 0}
+              onClick={() => saveVersionMutation.mutate()}
+            >
+              {saveVersionMutation.isPending ? "Saving…" : "Save"}
+            </Button>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <p className="mt-3 type-meta leading-relaxed text-muted-foreground">
         <Sparkles className="mr-1 inline size-4 text-primary" />
         {suggestion.rationale}
       </p>
+
+      {versions.length > 0 && (
+        <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3">
+          <div className="flex items-center gap-1.5 type-meta font-medium text-muted-foreground">
+            <History className="size-3.5" aria-hidden="true" />
+            {versions.length} saved version{versions.length === 1 ? "" : "s"}
+          </div>
+          <ul className="mt-2 space-y-2">
+            {versions.map((v: DraftVersion) => (
+              <li
+                key={v.id}
+                className="flex items-center justify-between gap-2 rounded-lg bg-background p-2"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate type-meta font-medium">{v.name}</span>
+                  <span className="flex items-center gap-1 type-meta text-muted-foreground">
+                    <Clock className="size-3" aria-hidden="true" />
+                    {new Date(v.createdAt).toLocaleString([], {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                    {v.createdByName ? ` · ${v.createdByName}` : ""}
+                  </span>
+                </span>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => setValue(v.content)}>
+                    Restore
+                  </Button>
+                  <Button asChild size="sm" variant="ghost" className="gap-1">
+                    <Link to="/publish" search={{ text: v.content, mode: "tweet" }}>
+                      <Rocket className="size-3.5" aria-hidden="true" />
+                      To campaign
+                    </Link>
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="mt-4 space-y-2 border-t border-border pt-4">
         {rows.map((row) => {
@@ -234,7 +351,8 @@ function RecommendationsPage() {
     return !!active && active.threadId === threadId && active.status === "running";
   });
 
-  const analysis = [...(data?.messages ?? [])].reverse().find((m) => m.analysis)?.analysis ?? null;
+  const sourceMessage = [...(data?.messages ?? [])].reverse().find((m) => m.analysis) ?? null;
+  const analysis = sourceMessage?.analysis ?? null;
 
   function exportRecommendations() {
     if (!analysis) return;
@@ -342,6 +460,8 @@ function RecommendationsPage() {
                 analysis={analysis}
                 index={i}
                 suggestion={s}
+                threadId={threadId}
+                sourceMessageId={sourceMessage?.id}
               />
             ))}
           </div>

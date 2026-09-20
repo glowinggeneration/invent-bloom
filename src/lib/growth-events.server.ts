@@ -16,6 +16,7 @@ export type GrowthEventName =
   | "investigation_saved"
   | "knowledge_entry_approved"
   | "priority_completed"
+  | "draft_version_saved"
   | "report_shared"
   | "collaborator_joined"
   | "workspace_returned"
