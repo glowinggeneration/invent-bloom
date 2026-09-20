@@ -45,6 +45,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { isAdminEmail } from "@/lib/access";
 import { ReportCsvMenu, ReportPdfButton, StatusPill } from "@/components/reports/report-parts";
 import { formatReportDateShort, REPORT_FILTERS, type ReportFilter } from "@/lib/reports";
+import { ReportLibraryVisual } from "@/components/smait/workflow-visuals";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
   head: () => ({
@@ -375,6 +376,7 @@ function ReportsPage() {
                 title="No reports yet"
                 description="Daily records appear automatically. Create a focused report whenever you need a snapshot for a specific period."
                 action={<GenerateDialog />}
+                visual={<ReportLibraryVisual />}
               />
             ) : (
               <div className="card-surface overflow-hidden p-0">

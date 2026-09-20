@@ -18,6 +18,7 @@ import { getOverview } from "@/lib/overview.functions";
 import { getOverviewIntelligence } from "@/lib/overview-intelligence.functions";
 import { getPerformance } from "@/lib/performance.functions";
 import { friendlyError } from "@/lib/friendly-errors";
+import { ReportDeliveryVisual } from "@/components/smait/workflow-visuals";
 
 export const Route = createFileRoute("/_authenticated/reports/builder")({
   head: () => ({
@@ -244,6 +245,7 @@ function CustomReportBuilderPage() {
 
         <div>
           <Card className="sticky top-20 p-5 shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15">
+            <ReportDeliveryVisual className="mb-5" />
             <div className="flex items-center gap-2">
               <FileText className="size-5 text-primary" />
               <SectionTitle>Report summary</SectionTitle>

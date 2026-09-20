@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PlanPreparationVisual } from "@/components/smait/workflow-visuals";
 
 /**
  * Branded full-card loading screen shown while the user is being taken from
@@ -21,14 +22,7 @@ export function CampaignActionLoading({ label }: { label?: string }) {
       aria-busy="true"
       className="flex flex-col items-center rounded-2xl border border-border bg-card px-6 py-16 text-center"
     >
-      <div className="relative">
-        <span className="absolute inset-0 animate-ping rounded-full bg-primary/15" />
-        <img
-          src="/smait-logo.svg"
-          alt="SMAIT logo"
-          className="relative h-14 w-auto animate-pulse object-contain"
-        />
-      </div>
+      <PlanPreparationVisual className="max-w-sm border-0 bg-transparent" />
 
       <p className="mt-6 text-base font-semibold text-foreground">
         {label ? `Opening ${label}` : "Opening your campaign"}
