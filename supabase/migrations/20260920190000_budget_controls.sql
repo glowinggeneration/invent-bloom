@@ -1,28 +1,18 @@
--- Wires up the idempotency scaffold (src/lib/platform/idempotency.server.ts)
--- that has existed unused since Master Rules §8.1 adoption, and adds the
--- minimum real schema for AI spend tracking. No AI/LLM cost concept existed
--- anywhere in this codebase before this migration - only Twitter/X action
--- credits (a separate provider, see src/lib/action-cost.ts) and soft,
+-- Adds the minimum real schema for AI spend tracking. No AI/LLM cost concept
+-- existed anywhere in this codebase before this migration - only Twitter/X
+-- action credits (a separate provider, see src/lib/action-cost.ts) and soft,
 -- unenforced plan_limits call counts.
-
-CREATE TABLE public.idempotency_keys (
-  key text PRIMARY KEY,
-  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-  request_fingerprint text NOT NULL,
-  status text NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'failed')),
-  result jsonb,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  completed_at timestamptz
-);
-
-CREATE INDEX idempotency_keys_created_idx ON public.idempotency_keys (created_at);
-
-ALTER TABLE public.idempotency_keys ENABLE ROW LEVEL SECURITY;
-
--- No client policy at all: only the service-role client
--- (createSupabaseIdempotencyStore, called from server functions with
--- supabaseAdmin) ever touches this table. A workspace member has no reason
--- to read or write idempotency bookkeeping directly.
+--
+-- NOTE: this migration originally also tried to CREATE TABLE
+-- idempotency_keys, on the mistaken understanding (from research at the
+-- time) that the scaffold in src/lib/platform/idempotency.server.ts had
+-- never been given a table. That was wrong - idempotency_keys has existed
+-- since 20260830190000_platform_scaffolding.sql, including workspace_id
+-- (added 20260909120000, set NOT NULL 20260909123000). The duplicate
+-- CREATE TABLE was removed before this migration ever shipped to a real
+-- database; createSupabaseIdempotencyStore was fixed to write workspace_id
+-- so it satisfies that pre-existing NOT NULL constraint - see
+-- src/lib/platform/idempotency.server.ts.
 
 -- Per-workspace AI spend limit and warning threshold. Nullable - absence
 -- means "no limit set", not "zero budget". Distinct from plan_limits

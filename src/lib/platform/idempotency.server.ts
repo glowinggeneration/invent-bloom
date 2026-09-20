@@ -95,13 +95,17 @@ export async function withIdempotencyKey<T>(
 }
 
 /**
- * Supabase-backed store. Cast at the client boundary until the
- * `idempotency_keys` migration is applied and types are regenerated (see
- * src/lib/platform/README.md).
+ * Supabase-backed store, against the real `idempotency_keys` table (has
+ * existed since 20260830190000_platform_scaffolding.sql - `workspace_id`
+ * is NOT NULL there, added 20260909120000, so it must be supplied on every
+ * insert or the write fails outright). Cast at the client boundary since
+ * this table predates the generated Supabase types this environment can
+ * regenerate.
  */
-export function createSupabaseIdempotencyStore(admin: {
-  from: (table: string) => any;
-}): IdempotencyStore {
+export function createSupabaseIdempotencyStore(
+  admin: { from: (table: string) => any },
+  workspaceId: string,
+): IdempotencyStore {
   return {
     async get(key) {
       const { data } = await admin
@@ -124,6 +128,7 @@ export function createSupabaseIdempotencyStore(admin: {
       const { error } = await admin.from("idempotency_keys").insert({
         key,
         user_id: userId,
+        workspace_id: workspaceId,
         request_fingerprint: fingerprint,
         status: "in_progress",
       });

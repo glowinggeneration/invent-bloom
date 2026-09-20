@@ -299,7 +299,7 @@ export const sendMessage = createServerFn({ method: "POST" })
     const { withIdempotencyKey, createSupabaseIdempotencyStore } =
       await import("./platform/idempotency.server");
     return withIdempotencyKey(
-      createSupabaseIdempotencyStore(supabaseAdmin as any),
+      createSupabaseIdempotencyStore(supabaseAdmin as any, workspaceId),
       {
         key: data.idempotencyKey,
         userId: context.userId,

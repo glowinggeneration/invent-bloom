@@ -6,7 +6,7 @@ function read(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
 }
 
-describe("workspace_budgets RLS and idempotency_keys lockdown", () => {
+describe("workspace_budgets RLS", () => {
   const migration = read("supabase/migrations/20260920190000_budget_controls.sql");
 
   it("workspace_budgets is workspace-scoped RLS, matching every other shared-content table", () => {
@@ -14,13 +14,33 @@ describe("workspace_budgets RLS and idempotency_keys lockdown", () => {
     expect(migration).toMatch(/private\.can_access_workspace\(workspace_id\)/);
   });
 
-  it("idempotency_keys has RLS enabled with no client-facing policy at all", () => {
-    const section = migration.slice(migration.indexOf("CREATE TABLE public.idempotency_keys"));
-    const nextTable = section.indexOf("CREATE TABLE public.", 1);
-    const scoped = nextTable === -1 ? section : section.slice(0, nextTable);
-    expect(scoped).toMatch(/ENABLE ROW LEVEL SECURITY/);
-    expect(scoped).not.toMatch(/CREATE POLICY/);
+  it("does not redeclare idempotency_keys - it already existed before this migration", () => {
+    expect(migration).not.toMatch(/CREATE TABLE public\.idempotency_keys/);
   });
+});
+
+describe("createSupabaseIdempotencyStore satisfies idempotency_keys.workspace_id's real NOT NULL constraint", () => {
+  const source = read("src/lib/platform/idempotency.server.ts");
+
+  it("takes workspaceId as a required parameter", () => {
+    const fnBody = source.slice(source.indexOf("export function createSupabaseIdempotencyStore"));
+    const sig = fnBody.slice(0, fnBody.indexOf("): IdempotencyStore"));
+    expect(sig).toMatch(/workspaceId: string/);
+  });
+
+  it("writes workspace_id on every insert into idempotency_keys", () => {
+    const fnBody = source.slice(source.indexOf("async createInProgress"));
+    expect(fnBody).toMatch(/workspace_id: workspaceId/);
+  });
+});
+
+describe("every call site passes workspaceId to createSupabaseIdempotencyStore", () => {
+  for (const file of ["src/lib/smait.functions.ts", "src/lib/publish.functions.ts"]) {
+    it(`${file} calls createSupabaseIdempotencyStore with two arguments`, () => {
+      const source = read(file);
+      expect(source).toMatch(/createSupabaseIdempotencyStore\(supabaseAdmin as any, workspaceId\)/);
+    });
+  }
 });
 
 describe("checkSpendLimit only blocks once cumulative spend has actually reached the limit", () => {
