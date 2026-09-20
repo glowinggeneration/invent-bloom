@@ -22,6 +22,45 @@ import { voiceCard, voiceCardBrief } from "./persona-voice";
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3.6-flash";
 
+/**
+ * Records this gateway call to ai_events (with its estimated cost, per
+ * §9.8/§9.7) - this call site had no observability at all before. Never
+ * blocks the actual variation generation it's describing.
+ */
+async function recordVariationsEvent(meta: {
+  userId: string | null;
+  workspaceId: string;
+  startedAt: number;
+  usage?: { prompt_tokens?: number; completion_tokens?: number } | undefined;
+  outcome: "success" | "failure";
+  failureReason?: string;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { recordAiEvent } = await import("./platform/ai-observability.server");
+    const response: { content: string; provider: string; model: string } & Partial<{
+      inputTokens: number;
+      outputTokens: number;
+    }> = { content: "", provider: "lovable-gateway", model: MODEL };
+    if (typeof meta.usage?.prompt_tokens === "number")
+      response.inputTokens = meta.usage.prompt_tokens;
+    if (typeof meta.usage?.completion_tokens === "number")
+      response.outputTokens = meta.usage.completion_tokens;
+    await recordAiEvent(supabaseAdmin as any, {
+      userId: meta.userId,
+      workspaceId: meta.workspaceId,
+      feature: "publish.persona_variations",
+      startedAt: meta.startedAt,
+      outcome:
+        meta.outcome === "success"
+          ? { ok: true, attempts: 1, fallbackUsed: false, response }
+          : { ok: false, attempts: 1, error: meta.failureReason ?? "unknown error" },
+    });
+  } catch (err) {
+    console.error("[variations] observability logging failed", err);
+  }
+}
+
 export type AccountVariation = {
   accountId: string;
   handle: string;
@@ -122,6 +161,9 @@ export async function buildPersonaVariations(input: {
   /** Operator briefing on how personas should frame their replies. */
   briefing?: string;
   workspaceId: string;
+  /** Optional - only used for observability/cost attribution, never for
+   *  authorization (that's already handled by the caller's own middleware). */
+  userId?: string | null;
 }): Promise<AccountVariation[]> {
   // Publishing mode (scope 7.5/8.5): only personas with a credible reason to
   // join this conversation, spread across segments.
@@ -200,6 +242,7 @@ export async function buildPersonaVariations(input: {
     ),
   ].join("\n");
 
+  const startedAt = Date.now();
   try {
     const response = await fetch(GATEWAY_URL, {
       method: "POST",
@@ -215,11 +258,26 @@ export async function buildPersonaVariations(input: {
     });
     if (!response.ok) {
       console.error(`[variations] gateway ${response.status}`);
+      void recordVariationsEvent({
+        userId: input.userId ?? null,
+        workspaceId: input.workspaceId,
+        startedAt,
+        outcome: "failure",
+        failureReason: `http_${response.status}`,
+      });
       return fallback();
     }
     const payload = (await response.json()) as {
       choices?: { message?: { content?: string } }[];
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
     };
+    void recordVariationsEvent({
+      userId: input.userId ?? null,
+      workspaceId: input.workspaceId,
+      startedAt,
+      usage: payload.usage,
+      outcome: "success",
+    });
     const raw = (payload.choices?.[0]?.message?.content ?? "")
       .replace(/^```(?:json)?/i, "")
       .replace(/```$/, "")
@@ -345,6 +403,13 @@ export async function buildPersonaVariations(input: {
     return output;
   } catch (e) {
     console.error("[variations] failed", e);
+    void recordVariationsEvent({
+      userId: input.userId ?? null,
+      workspaceId: input.workspaceId,
+      startedAt,
+      outcome: "failure",
+      failureReason: e instanceof Error ? e.message.slice(0, 200) : "unknown error",
+    });
     return fallback();
   }
 }

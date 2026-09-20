@@ -655,6 +655,12 @@ export const runPublish = createServerFn({ method: "POST" })
           });
         }
       } else if (data.varyByPersona) {
+        // No checkSpendLimit here deliberately: buildPersonaVariations never
+        // throws (it degrades to local templates on any failure), and this
+        // runs after publish_jobs already has a 'running' row - a hard block
+        // here would leave that row orphaned with nothing to clean it up.
+        // Spend is still enforced at the point the operator actually
+        // reviews and approves variations (previewPersonaVariations, above).
         const { buildPersonaVariations } = await import("./variations.server");
         const built = await buildPersonaVariations({
           accounts: accounts.map((a: any) => ({ id: a.id, handle: a.handle })),
@@ -665,6 +671,7 @@ export const runPublish = createServerFn({ method: "POST" })
           intensity: data.intensity,
           briefing: data.briefing,
           workspaceId,
+          userId: context.userId,
         });
         for (const v of built) {
           variationMap.set(v.accountId, {
@@ -848,28 +855,32 @@ export const runPublish = createServerFn({ method: "POST" })
             .select("id")
             .maybeSingle();
 
-          await enqueueScheduledActions(supabaseAdmin as any, [
-            {
-              user_id: context.userId,
-              workspace_id: workspaceId,
-              source: "publish",
-              job_id: job.id,
-              publish_action_id: pendingRow?.id ?? null,
-              account_id: unit.acc.id,
-              handle: unit.acc.handle,
-              persona_name: unit.personaName,
-              action_type: unit.type,
-              content: unit.content,
-              target_tweet_id:
-                unit.targetTweetId ??
-                (unit.type === "tweet" || unit.type === "follow" ? null : targetId),
-              target_handle: unit.targetHandle ?? null,
-              media_urls: unit.type === "tweet" || unit.type === "comment" ? data.imageUrls : [],
-              run_at: runAt,
-            },
-            // Reply campaigns deliberately send every chosen persona's reply to
-            // the same target post.
-          ], { allowMultiAccountTarget: true });
+          await enqueueScheduledActions(
+            supabaseAdmin as any,
+            [
+              {
+                user_id: context.userId,
+                workspace_id: workspaceId,
+                source: "publish",
+                job_id: job.id,
+                publish_action_id: pendingRow?.id ?? null,
+                account_id: unit.acc.id,
+                handle: unit.acc.handle,
+                persona_name: unit.personaName,
+                action_type: unit.type,
+                content: unit.content,
+                target_tweet_id:
+                  unit.targetTweetId ??
+                  (unit.type === "tweet" || unit.type === "follow" ? null : targetId),
+                target_handle: unit.targetHandle ?? null,
+                media_urls: unit.type === "tweet" || unit.type === "comment" ? data.imageUrls : [],
+                run_at: runAt,
+              },
+              // Reply campaigns deliberately send every chosen persona's reply to
+              // the same target post.
+            ],
+            { allowMultiAccountTarget: true },
+          );
 
           scheduledResults.push({
             id: pendingRow?.id ?? `${unit.acc.id}-${unit.type}-${i}`,
@@ -936,7 +947,7 @@ export const runPublish = createServerFn({ method: "POST" })
     const { withIdempotencyKey, createSupabaseIdempotencyStore } =
       await import("./platform/idempotency.server");
     return withIdempotencyKey(
-      createSupabaseIdempotencyStore(supabaseAdmin as any),
+      createSupabaseIdempotencyStore(supabaseAdmin as any, workspaceId),
       {
         key: data.idempotencyKey,
         userId: context.userId,
@@ -1023,6 +1034,9 @@ export const previewPersonaVariations = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!accounts || accounts.length === 0) throw new Error("No matching accounts found.");
 
+    const { checkSpendLimit } = await import("./budget.server");
+    await checkSpendLimit(supabaseAdmin as any, workspaceId);
+
     const { buildPersonaVariations } = await import("./variations.server");
     return buildPersonaVariations({
       accounts: accounts.map((a: any) => ({ id: a.id, handle: a.handle })),
@@ -1033,6 +1047,7 @@ export const previewPersonaVariations = createServerFn({ method: "POST" })
       intensity: data.intensity,
       briefing: data.briefing,
       workspaceId,
+      userId: context.userId,
     });
   });
 
