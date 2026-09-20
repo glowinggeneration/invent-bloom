@@ -31,6 +31,16 @@ export type PerformanceTotals = {
   bookmarks: number;
   quotes: number;
   engagementRate: number;
+  /** True when engagementRate is a real ratio (impressions > 0) - when
+   *  false, `engagementRate` is a placeholder 0 and the UI must show
+   *  "not available", never "0%", which would misrepresent unknown
+   *  performance as confirmed poor performance. */
+  engagementRateAvailable: boolean;
+  /** True when any row in this scope has no reported impressions and its
+   *  contribution to `reach` came from the amplification estimate in
+   *  reachOf(), not the platform. The UI must label reach as an estimate
+   *  whenever this is true - it is never presented as a measured fact. */
+  reachIncludesEstimates: boolean;
 };
 
 export type PerformanceSummary = {
@@ -56,6 +66,13 @@ export type PerformanceSummary = {
     lastReplyAt: string | null;
   }[];
   lastRefreshed: string | null;
+  /** Reconciliation against execution facts (scheduled_actions), so a gap
+   *  between "posts actually sent" and "posts we have metrics for" is
+   *  shown honestly instead of the missing posts just not appearing. */
+  sourceCoverage: {
+    executedPosts: number;
+    postsWithMetrics: number;
+  };
 };
 
 /** Engagements = every interaction the post received. */
@@ -77,6 +94,13 @@ export function reachOf(impressions: number, retweets: number, quotes: number): 
   return impressions > 0 ? impressions : (retweets + quotes) * 120;
 }
 
+/** True when a row's reach came from the amplification estimate rather than
+ *  a reported impression count - i.e. whenever reachOf() took its fallback
+ *  branch. Kept alongside reachOf() so the two can never drift apart. */
+export function isReachEstimated(impressions: number): boolean {
+  return impressions <= 0;
+}
+
 export function emptySummary(): PerformanceSummary {
   return {
     totals: {
@@ -91,12 +115,15 @@ export function emptySummary(): PerformanceSummary {
       bookmarks: 0,
       quotes: 0,
       engagementRate: 0,
+      engagementRateAvailable: false,
+      reachIncludesEstimates: false,
     },
     rows: [],
     byAccount: [],
     byDay: [],
     byCampaign: [],
     lastRefreshed: null,
+    sourceCoverage: { executedPosts: 0, postsWithMetrics: 0 },
   };
 }
 
@@ -128,6 +155,8 @@ export function scopeSummary(summary: PerformanceSummary, campaignId: string): P
     bookmarks: 0,
     quotes: 0,
     engagementRate: 0,
+    engagementRateAvailable: false,
+    reachIncludesEstimates: false,
   };
   const accounts = new Map<string, PerformanceSummary["byAccount"][number]>();
   const days = new Map<string, PerformanceSummary["byDay"][number]>();
@@ -143,6 +172,7 @@ export function scopeSummary(summary: PerformanceSummary, campaignId: string): P
     totals.repliesReceived += r.replies;
     totals.bookmarks += r.bookmarks;
     totals.quotes += r.quotes;
+    if (isReachEstimated(r.impressions)) totals.reachIncludesEstimates = true;
 
     const acc = accounts.get(r.handle) ?? {
       handle: r.handle,
@@ -165,8 +195,10 @@ export function scopeSummary(summary: PerformanceSummary, campaignId: string): P
     days.set(date, day);
   }
 
-  totals.engagementRate =
-    totals.impressions > 0 ? Math.round((totals.engagements / totals.impressions) * 1000) / 10 : 0;
+  totals.engagementRateAvailable = totals.impressions > 0;
+  totals.engagementRate = totals.engagementRateAvailable
+    ? Math.round((totals.engagements / totals.impressions) * 1000) / 10
+    : 0;
 
   return {
     ...summary,

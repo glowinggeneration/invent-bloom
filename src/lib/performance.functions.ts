@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   emptySummary,
   engagementsOf,
+  isReachEstimated,
   reachOf,
   type PerformanceRow,
   type PerformanceSummary,
@@ -111,6 +112,7 @@ export const getPerformance = createServerFn({ method: "POST" })
       summary.totals.repliesReceived += r.replies;
       summary.totals.bookmarks += r.bookmarks;
       summary.totals.quotes += r.quotes;
+      if (isReachEstimated(r.impressions)) summary.totals.reachIncludesEstimates = true;
 
       const acc = accounts.get(r.handle) ?? { posts: 0, impressions: 0, engagements: 0, reach: 0 };
       acc.posts += 1;
@@ -147,7 +149,8 @@ export const getPerformance = createServerFn({ method: "POST" })
       days.set(day, d);
     }
 
-    summary.totals.engagementRate = summary.totals.impressions
+    summary.totals.engagementRateAvailable = summary.totals.impressions > 0;
+    summary.totals.engagementRate = summary.totals.engagementRateAvailable
       ? Number(((summary.totals.engagements / summary.totals.impressions) * 100).toFixed(2))
       : 0;
 
@@ -179,6 +182,24 @@ export const getPerformance = createServerFn({ method: "POST" })
       (max, r) => (r.fetchedAt > max ? r.fetchedAt : max),
       rows[0]!.fetchedAt,
     );
+
+    // Reconciliation: how many posts were actually sent (an execution fact,
+    // from scheduled_actions) versus how many of those have platform metrics
+    // synced (tweet_metrics rows). A gap here is shown honestly rather than
+    // the missing posts just silently not appearing anywhere on the page.
+    const { resolveWorkspaceId } = await import("./workspace.server");
+    const workspaceId = await resolveWorkspaceId(context);
+    const { count: executedPosts } = await (context.supabase as any)
+      .from("scheduled_actions")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
+      .eq("status", "success")
+      .in("action_type", ["tweet", "comment"])
+      .not("result_tweet_id", "is", null);
+    summary.sourceCoverage = {
+      executedPosts: executedPosts ?? 0,
+      postsWithMetrics: rows.length,
+    };
 
     return summary;
   });
