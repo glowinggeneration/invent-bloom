@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { getBudgetSummary, setWorkspaceBudget } from "@/lib/budget.functions";
 import { formatUsdEstimate } from "@/lib/ai-pricing";
 import { friendlyError } from "@/lib/friendly-errors";
+import { useProfile } from "@/hooks/use-profile";
+import { isAdminEmail } from "@/lib/access";
 
 function toNumberOrNull(value: string): number | null {
   const trimmed = value.trim();
@@ -26,6 +28,8 @@ function toNumberOrNull(value: string): number | null {
  */
 export function AiBudgetCard() {
   const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
+  const isAdmin = isAdminEmail(profile?.email);
   const fetchBudget = useServerFn(getBudgetSummary);
   const { data, isLoading } = useQuery({
     queryKey: ["budget-summary"],
@@ -115,7 +119,11 @@ export function AiBudgetCard() {
             </p>
           ) : null}
 
-          {editing ? (
+          {!isAdmin ? (
+            <p className="mt-4 type-meta text-muted-foreground">
+              Only the workspace administrator can change this limit.
+            </p>
+          ) : editing ? (
             <div className="mt-4 space-y-3 border-t border-border pt-4">
               <div className="space-y-1">
                 <Label htmlFor="budget-limit" className="type-meta">
@@ -157,10 +165,6 @@ export function AiBudgetCard() {
                   Cancel
                 </Button>
               </div>
-              <p className="type-meta text-muted-foreground">
-                Any workspace member can set this today - role-gating for this action doesn't exist
-                anywhere in this app yet.
-              </p>
             </div>
           ) : (
             <Button size="sm" variant="outline" className="mt-4" onClick={startEditing}>

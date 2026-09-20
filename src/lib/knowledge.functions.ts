@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveWorkspaceId } from "./workspace.server";
 import { trackEvent } from "./growth-events.server";
+import { assertAdmin } from "./access";
 
 export type KnowledgeCategory =
   "fact" | "product_detail" | "terminology" | "positioning" | "prior_statement";
@@ -263,15 +264,31 @@ const statusSchema = z.object({
 });
 
 /** Approve, reject or return an entry to pending - never marks 'superseded'
- *  directly (see supersedeKnowledgeEntry) and never deletes. */
+ *  directly (see supersedeKnowledgeEntry) and never deletes. Admin-gated:
+ *  this is the step that makes Studio treat an entry as authoritative, the
+ *  same trust boundary decision_log/managed_reports already gate the same
+ *  way. Drafting an entry (createKnowledgeEntry/updateKnowledgeEntry) stays
+ *  open to any workspace member - only the approval transition is
+ *  restricted, matching the spec's "authorised reviewer" language. */
 export const setKnowledgeApprovalStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => statusSchema.parse(input))
   .handler(async ({ data, context }): Promise<KnowledgeEntry> => {
-    const { data: row, error } = await (context.supabase as any)
+    assertAdmin(context as any);
+    // Uses the service-role client, not context.supabase: a database trigger
+    // (private.enforce_knowledge_approval_admin_only) now rejects any
+    // approval_status/superseded_by change from the RLS-scoped
+    // "authenticated" role outright, so this is the only client that can
+    // make this specific change - the real enforcement is at the database
+    // layer, assertAdmin above is the friendly error before hitting it.
+    // Workspace scoping is therefore explicit here (RLS no longer applies).
+    const workspaceId = await resolveWorkspaceId(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await (supabaseAdmin as any)
       .from("knowledge_entries")
       .update({ approval_status: data.status })
       .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
@@ -294,11 +311,14 @@ const supersedeSchema = z.object({
 
 /** Marks an old entry superseded by a newer one that must already exist and
  *  be in the same workspace - keeps the outdated entry visible in history
- *  without it ever being retrieved as active context again. */
+ *  without it ever being retrieved as active context again. Admin-gated for
+ *  the same reason as setKnowledgeApprovalStatus: this changes what Studio
+ *  treats as authoritative. */
 export const supersedeKnowledgeEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => supersedeSchema.parse(input))
   .handler(async ({ data, context }): Promise<KnowledgeEntry> => {
+    assertAdmin(context as any);
     const supabase = context.supabase as any;
     const { data: existing, error: fetchError } = await supabase
       .from("knowledge_entries")
@@ -318,10 +338,17 @@ export const supersedeKnowledgeEntry = createServerFn({ method: "POST" })
       throw new Error("Replacement entry not found, or you don't have access to it.");
     }
 
-    const { data: row, error } = await supabase
+    // Same reason as setKnowledgeApprovalStatus: the database trigger
+    // rejects this exact change from the RLS-scoped role, so the actual
+    // write goes through the service-role client - workspace scoping is
+    // explicit (existing.workspace_id, already verified above) since RLS
+    // no longer applies to this call.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await (supabaseAdmin as any)
       .from("knowledge_entries")
       .update({ approval_status: "superseded", superseded_by: data.replacementId })
       .eq("id", data.id)
+      .eq("workspace_id", existing.workspace_id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);

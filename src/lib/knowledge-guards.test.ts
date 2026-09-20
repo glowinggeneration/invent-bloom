@@ -74,3 +74,83 @@ describe("createKnowledgeEntry and deleteKnowledgeEntry enforce their stated inv
     expect(fnBody).toMatch(/patch\["approval_status"\]\s*=\s*"pending"/);
   });
 });
+
+describe("the approval trust boundary is enforced at the database layer, not just in application code", () => {
+  const source = read("src/lib/knowledge.functions.ts");
+  const migration = read(
+    "supabase/migrations/20260920200000_knowledge_approval_trust_boundary.sql",
+  );
+
+  it("the trigger rejects a non-service-role change to approval_status unless it's a demotion to pending", () => {
+    expect(migration).toMatch(/CREATE TRIGGER knowledge_entries_approval_admin_only/);
+    expect(migration).toMatch(/auth\.role\(\) <> 'service_role'/);
+    expect(migration).toMatch(/NEW\.approval_status <> 'pending'/);
+  });
+
+  it("the trigger rejects any non-service-role change to superseded_by, no exceptions", () => {
+    expect(migration).toMatch(
+      /NEW\.superseded_by IS DISTINCT FROM OLD\.superseded_by[\s\S]{0,80}RAISE EXCEPTION/,
+    );
+  });
+
+  it("setKnowledgeApprovalStatus calls assertAdmin AND writes through the service-role client (context.supabase alone would now be rejected by the trigger)", () => {
+    const fnBody = source.slice(
+      source.indexOf("export const setKnowledgeApprovalStatus"),
+      source.indexOf("const supersedeSchema"),
+    );
+    expect(fnBody).toMatch(/assertAdmin\(context as any\)/);
+    expect(fnBody).toMatch(/supabaseAdmin as any/);
+    expect(fnBody).not.toMatch(
+      /context\.supabase as any\)\s*\n\s*\.from\("knowledge_entries"\)\s*\n\s*\.update/,
+    );
+  });
+
+  it("supersedeKnowledgeEntry calls assertAdmin AND writes through the service-role client", () => {
+    const fnBody = source.slice(source.indexOf("export const supersedeKnowledgeEntry"));
+    expect(fnBody).toMatch(/assertAdmin\(context as any\)/);
+    expect(fnBody).toMatch(/supabaseAdmin as any/);
+  });
+
+  it("updateKnowledgeEntry (member-open) only ever demotes approval_status to 'pending', never elevates it", () => {
+    const fnBody = source.slice(
+      source.indexOf("export const updateKnowledgeEntry"),
+      source.indexOf("const statusSchema"),
+    );
+    expect(fnBody).toMatch(/patch\["approval_status"\]\s*=\s*"pending"/);
+    expect(fnBody).not.toMatch(/approval_status"\]\s*=\s*"approved"/);
+    expect(fnBody).not.toMatch(/superseded_by/);
+  });
+
+  it("drafting (create/update) stays open to any workspace member - only approval is restricted", () => {
+    const createBody = source.slice(
+      source.indexOf("export const createKnowledgeEntry"),
+      source.indexOf("const updateEntrySchema"),
+    );
+    const updateBody = source.slice(
+      source.indexOf("export const updateKnowledgeEntry"),
+      source.indexOf("const statusSchema"),
+    );
+    expect(createBody).not.toMatch(/assertAdmin/);
+    expect(updateBody).not.toMatch(/assertAdmin/);
+  });
+});
+
+describe("approved/superseded knowledge entries can't be deleted directly via the client SDK either", () => {
+  const migration = read("supabase/migrations/20260920220000_knowledge_delete_trust_boundary.sql");
+
+  it("the DELETE trigger rejects deleting anything but pending/rejected entries, unless service_role", () => {
+    expect(migration).toMatch(/CREATE TRIGGER knowledge_entries_delete_admin_only/);
+    expect(migration).toMatch(/BEFORE DELETE ON public\.knowledge_entries/);
+    expect(migration).toMatch(/auth\.role\(\) <> 'service_role'/);
+    expect(migration).toMatch(/OLD\.approval_status NOT IN \('pending', 'rejected'\)/);
+  });
+});
+
+describe("Knowledge Library UI hides Approve/Reject from non-admins", () => {
+  const source = read("src/routes/_authenticated/knowledge.tsx");
+
+  it("checks isAdminEmail before rendering the approval controls", () => {
+    expect(source).toMatch(/const isAdmin = isAdminEmail\(profile\?\.email\)/);
+    expect(source).toMatch(/\{isAdmin \? \(/);
+  });
+});

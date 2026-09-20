@@ -37,6 +37,8 @@ import {
   type KnowledgeEntry,
 } from "@/lib/knowledge.functions";
 import { friendlyError } from "@/lib/friendly-errors";
+import { useProfile } from "@/hooks/use-profile";
+import { isAdminEmail } from "@/lib/access";
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -172,6 +174,8 @@ function EntryCard({
   onToggle: () => void;
 }) {
   const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
+  const isAdmin = isAdminEmail(profile?.email);
   const [content, setContent] = useState(entry.content);
   const [changeNote, setChangeNote] = useState("");
 
@@ -261,32 +265,38 @@ function EntryCard({
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            {entry.approvalStatus !== "approved" && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => statusMutation.mutate("approved")}
-                disabled={statusMutation.isPending}
-              >
-                <Check className="size-3.5" aria-hidden="true" />
-                Approve
-              </Button>
-            )}
-            {entry.approvalStatus !== "rejected" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="gap-1.5 text-muted-foreground"
-                onClick={() => statusMutation.mutate("rejected")}
-                disabled={statusMutation.isPending}
-              >
-                <X className="size-3.5" aria-hidden="true" />
-                Reject
-              </Button>
-            )}
-          </div>
+          {isAdmin ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {entry.approvalStatus !== "approved" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => statusMutation.mutate("approved")}
+                  disabled={statusMutation.isPending}
+                >
+                  <Check className="size-3.5" aria-hidden="true" />
+                  Approve
+                </Button>
+              )}
+              {entry.approvalStatus !== "rejected" && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1.5 text-muted-foreground"
+                  onClick={() => statusMutation.mutate("rejected")}
+                  disabled={statusMutation.isPending}
+                >
+                  <X className="size-3.5" aria-hidden="true" />
+                  Reject
+                </Button>
+              )}
+            </div>
+          ) : (
+            <p className="type-meta text-muted-foreground">
+              Only the workspace administrator can approve or reject entries.
+            </p>
+          )}
 
           {versions && versions.length > 0 && (
             <div className="border-t border-border pt-3">
