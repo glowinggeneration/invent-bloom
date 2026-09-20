@@ -138,6 +138,20 @@ export function PostCampaign() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [previewApproved, setPreviewApproved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Same validation, surfaced a second way: blockStep already toasts and
+  // scrolls to the step; this additionally renders the message right next
+  // to the field that needs fixing, keyed by that field's step id.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const clearFieldError = (id: string) =>
+    setFieldErrors((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  useEffect(() => {
+    if (personas.selected.length > 0) clearFieldError("post-personas");
+  }, [personas.selected.length]);
   const [campaignId, setCampaignId] = useState<string | null>(null);
 
   // Any change to the message or voice invalidates the generated versions.
@@ -218,6 +232,7 @@ export function PostCampaign() {
   // the operator sees it wherever they are before we scroll them to the step.
   const blockStep = (message: string, id: string) => {
     setError(message);
+    setFieldErrors((prev) => ({ ...prev, [id]: message }));
     toast.error(message);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -239,6 +254,7 @@ export function PostCampaign() {
       return;
     }
     setError(null);
+    setFieldErrors({});
     previewMutation.mutate();
   };
 
@@ -277,6 +293,7 @@ export function PostCampaign() {
     onSuccess: (data, opts) => {
       idempotencyKeyRef.current = crypto.randomUUID();
       setError(null);
+      setFieldErrors({});
       setResult(data ?? null);
       setStartedOpen(true);
       toast.success(opts.now || !scheduled ? "Posts published." : "Posts queued.");
@@ -334,6 +351,7 @@ export function PostCampaign() {
       return;
     }
     setError(null);
+    setFieldErrors({});
     runMutation.mutate({ now });
   };
 
@@ -426,13 +444,29 @@ export function PostCampaign() {
                   <Input
                     id="post-campaign-name"
                     value={campaignName}
-                    onChange={(e) => setCampaignName(e.target.value.slice(0, 80))}
+                    onChange={(e) => {
+                      setCampaignName(e.target.value.slice(0, 80));
+                      clearFieldError("post-campaign-name");
+                    }}
+                    aria-invalid={Boolean(fieldErrors["post-campaign-name"])}
+                    aria-describedby={
+                      fieldErrors["post-campaign-name"] ? "post-campaign-name-error" : undefined
+                    }
                     placeholder="e.g. Harambee Stars matchday push"
                     className="max-w-md"
                   />
                   <p className="text-[11px] text-muted-foreground">
                     Used to find this run again in Campaigns and Performance.
                   </p>
+                  {fieldErrors["post-campaign-name"] ? (
+                    <p
+                      id="post-campaign-name-error"
+                      role="alert"
+                      className="text-[11px] font-medium text-destructive"
+                    >
+                      {fieldErrors["post-campaign-name"]}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="border-t border-border pt-4">
@@ -467,15 +501,29 @@ export function PostCampaign() {
                 <Textarea
                   rows={5}
                   value={tweetText}
-                  onChange={(e) => setTweetText(e.target.value)}
+                  onChange={(e) => {
+                    setTweetText(e.target.value);
+                    clearFieldError("post-details");
+                  }}
                   placeholder={
                     objectiveMode
                       ? "e.g. Celebrate the Harambee Stars qualification and thank the fans."
                       : "Write the post exactly as it should appear…"
                   }
                   aria-label="Post message"
+                  aria-invalid={Boolean(fieldErrors["post-details"])}
+                  aria-describedby={fieldErrors["post-details"] ? "post-details-error" : undefined}
                   className="resize-y"
                 />
+                {fieldErrors["post-details"] ? (
+                  <p
+                    id="post-details-error"
+                    role="alert"
+                    className="text-[11px] font-medium text-destructive"
+                  >
+                    {fieldErrors["post-details"]}
+                  </p>
+                ) : null}
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium" htmlFor="post-link">
@@ -568,6 +616,11 @@ export function PostCampaign() {
                   loading={accountsQuery.isLoading}
                   label="How many personas should post?"
                 />
+                {fieldErrors["post-personas"] ? (
+                  <p role="alert" className="text-[11px] font-medium text-destructive">
+                    {fieldErrors["post-personas"]}
+                  </p>
+                ) : null}
                 <AccountHealthPanel
                   accounts={personas.selectedAccounts}
                   health={accountHealth}
