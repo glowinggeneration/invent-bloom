@@ -32,6 +32,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated/governance'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
+import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedLinkedAccountsRouteImport } from './routes/_authenticated/linked-accounts'
 import { Route as AuthenticatedMentionsRouteImport } from './routes/_authenticated/mentions'
 import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
@@ -202,6 +203,11 @@ const AuthenticatedGovernanceRoute = AuthenticatedGovernanceRouteImport.update({
 const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
   id: '/help',
   path: '/help',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLinkedAccountsRoute =
@@ -509,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/governance': typeof AuthenticatedGovernanceRoute
   '/help': typeof AuthenticatedHelpRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
   '/mentions': typeof AuthenticatedMentionsRoute
   '/new': typeof AuthenticatedNewRoute
@@ -583,6 +590,7 @@ export interface FileRoutesByTo {
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/governance': typeof AuthenticatedGovernanceRoute
   '/help': typeof AuthenticatedHelpRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
   '/mentions': typeof AuthenticatedMentionsRoute
   '/new': typeof AuthenticatedNewRoute
@@ -659,6 +667,7 @@ export interface FileRoutesById {
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
+  '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
   '/_authenticated/mentions': typeof AuthenticatedMentionsRoute
   '/_authenticated/new': typeof AuthenticatedNewRoute
@@ -735,6 +744,7 @@ export interface FileRouteTypes {
     | '/decisions'
     | '/governance'
     | '/help'
+    | '/knowledge'
     | '/linked-accounts'
     | '/mentions'
     | '/new'
@@ -809,6 +819,7 @@ export interface FileRouteTypes {
     | '/decisions'
     | '/governance'
     | '/help'
+    | '/knowledge'
     | '/linked-accounts'
     | '/mentions'
     | '/new'
@@ -884,6 +895,7 @@ export interface FileRouteTypes {
     | '/_authenticated/decisions'
     | '/_authenticated/governance'
     | '/_authenticated/help'
+    | '/_authenticated/knowledge'
     | '/_authenticated/linked-accounts'
     | '/_authenticated/mentions'
     | '/_authenticated/new'
@@ -1127,6 +1139,13 @@ declare module '@tanstack/react-router' {
       path: '/help'
       fullPath: '/help'
       preLoaderRoute: typeof AuthenticatedHelpRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/knowledge': {
+      id: '/_authenticated/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof AuthenticatedKnowledgeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/linked-accounts': {
@@ -1527,6 +1546,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
   AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
+  AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedLinkedAccountsRoute: typeof AuthenticatedLinkedAccountsRoute
   AuthenticatedMentionsRoute: typeof AuthenticatedMentionsRoute
   AuthenticatedNewRoute: typeof AuthenticatedNewRoute
@@ -1574,6 +1594,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
   AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
+  AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedLinkedAccountsRoute: AuthenticatedLinkedAccountsRoute,
   AuthenticatedMentionsRoute: AuthenticatedMentionsRoute,
   AuthenticatedNewRoute: AuthenticatedNewRoute,

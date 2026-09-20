@@ -341,6 +341,18 @@ export const sendMessage = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true })
       .limit(12);
 
+    const { getActiveKnowledgeEntries } = await import("./knowledge.server");
+    const { data: threadRow } = await (supabase as any)
+      .from("threads")
+      .select("project_id")
+      .eq("id", threadId)
+      .maybeSingle();
+    const knowledgeEntries = await getActiveKnowledgeEntries(
+      supabase,
+      workspaceId,
+      threadRow?.project_id ?? null,
+    );
+
     const rawAnalysis = await runAnalysis({
       text: data.text,
       imageDataUrl: data.imageDataUrl ?? null,
@@ -351,6 +363,7 @@ export const sendMessage = createServerFn({ method: "POST" })
       })),
       userId: context.userId,
       workspaceId,
+      knowledgeEntries,
     });
 
     // Legal-Risk Language Transformation Engine: rewrite risky wording in the

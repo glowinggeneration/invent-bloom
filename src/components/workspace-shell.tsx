@@ -8,6 +8,7 @@ import {
   AtSign,
   BarChart3,
   Bell,
+  BookOpen,
   Building2,
   CalendarClock,
   CalendarDays,
@@ -239,6 +240,7 @@ function useDestinations(isAdmin: boolean) {
 /** Secondary/operational tools, reachable through the compact "More tools" menu. */
 function useSecondaryTools(isAdmin: boolean) {
   return [
+    { to: "/knowledge", label: "Knowledge Library", icon: BookOpen },
     { to: "/notifications", label: "Notifications", icon: Bell },
     { to: "/governance", label: "Governance & Data", icon: ShieldCheck },
     { to: "/changelog", label: "Changelog", icon: History },

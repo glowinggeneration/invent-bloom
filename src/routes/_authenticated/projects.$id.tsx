@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Archive,
   ArchiveRestore,
+  BookOpen,
   Check,
   EyeOff,
   FileCheck2,
@@ -45,6 +46,7 @@ import {
   type LinkableItemType,
 } from "@/lib/projects.functions";
 import { friendlyError } from "@/lib/friendly-errors";
+import { listKnowledgeEntries } from "@/lib/knowledge.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
@@ -158,6 +160,13 @@ function ProjectDetailPage() {
     mutationFn: (vars: { id: string; excluded: boolean }) => toggleRef({ data: vars }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["project-references", id] }),
     onError: (error) => toast.error(friendlyError(error)),
+  });
+
+  const fetchKnowledge = useServerFn(listKnowledgeEntries);
+  const knowledgeQuery = useQuery({
+    queryKey: ["knowledge-entries", "project", id],
+    queryFn: () => fetchKnowledge({ data: { projectId: id, includeProjectSpecific: false } }),
+    enabled: Boolean(project),
   });
 
   const deleteRef = useServerFn(deleteProjectReference);
@@ -420,6 +429,23 @@ function ProjectDetailPage() {
                 </ul>
               )}
             </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between gap-2">
+              <SectionTitle>Project knowledge</SectionTitle>
+              <Button asChild size="sm" variant="outline" className="gap-1.5">
+                <Link to="/knowledge" search={{ entry: undefined }}>
+                  <BookOpen className="size-3.5" aria-hidden="true" />
+                  Open library
+                </Link>
+              </Button>
+            </div>
+            <p className="mt-1 type-meta text-muted-foreground">
+              {(knowledgeQuery.data ?? []).length === 0
+                ? "No project-specific entries yet - organisation-wide approved knowledge still applies."
+                : `${(knowledgeQuery.data ?? []).filter((e) => e.approvalStatus === "approved").length} approved entry(ies) specific to this project.`}
+            </p>
           </Card>
 
           <Card>

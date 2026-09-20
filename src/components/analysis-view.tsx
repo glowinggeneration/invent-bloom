@@ -1,4 +1,5 @@
-import { ChevronDown, Download, TriangleAlert } from "lucide-react";
+import { BookOpen, ChevronDown, Download, TriangleAlert } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
@@ -396,6 +397,34 @@ export function AnalysisView({
               <li key={risk} className="flex items-start gap-2 type-body text-muted-foreground">
                 <TriangleAlert className="mt-0.5 size-4 shrink-0 text-negative" />
                 {risk}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+
+      {analysis.knowledgeConflicts && analysis.knowledgeConflicts.length > 0 && (
+        <Panel
+          title="Knowledge Library conflicts"
+          subtitle="This message or a rewrite appears to contradict approved organisational guidance - review before sending."
+        >
+          <ul className="space-y-3">
+            {analysis.knowledgeConflicts.map((c) => (
+              <li key={c.entryId} className="flex items-start gap-2 type-body">
+                <BookOpen className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                <div>
+                  <span className="font-medium">{c.entryTitle}</span>
+                  <span className="text-muted-foreground"> — {c.note}</span>
+                  <div>
+                    <Link
+                      to="/knowledge"
+                      search={{ entry: c.entryId }}
+                      className="type-meta text-primary hover:underline"
+                    >
+                      Review this entry
+                    </Link>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>

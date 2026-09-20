@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveWorkspaceId } from "./workspace.server";
+import { trackEvent } from "./growth-events.server";
 
 export type Project = {
   id: string;
@@ -125,6 +126,7 @@ export const createProject = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
+    void trackEvent({ workspaceId, userId: context.userId, eventName: "project_created" });
     return mapProject(row);
   });
 
@@ -438,6 +440,14 @@ export const saveInvestigation = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
+    // Proxy for "first useful result" in the activation journey - see
+    // EXCEPTION_REGISTER.md for what would validate this proxy choice.
+    void trackEvent({
+      workspaceId,
+      userId: context.userId,
+      eventName: "investigation_saved",
+      properties: { hasProject: Boolean(data.projectId) },
+    });
     return mapInvestigation(row);
   });
 

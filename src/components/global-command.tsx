@@ -6,6 +6,7 @@ import {
   AtSign,
   Bell,
   BarChart3,
+  BookOpen,
   ClipboardCheck,
   Compass,
   Eye,
@@ -166,6 +167,13 @@ const BASE_COMMANDS = [
     to: "/reports/builder",
     icon: FilePlus2,
     group: "Results",
+  },
+  {
+    label: "Knowledge Library",
+    description: "Approved facts, terminology and positioning Studio checks drafts against",
+    to: "/knowledge",
+    icon: BookOpen,
+    group: "Secondary",
   },
   {
     label: "Notifications",

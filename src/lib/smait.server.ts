@@ -5,6 +5,7 @@ import { LEGAL_RISK_DOCTRINE, RISK_LEVEL_LABELS, transformText } from "./legal-r
 import { logLegalReview, reviewTexts } from "./legal-risk.server";
 import { adaptiveBrief, type PersonaStateRow } from "./persona-learning";
 import { loadPersonaStates } from "./persona-learning.server";
+import { formatKnowledgeContext } from "./knowledge.server";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3.6-flash";
@@ -160,7 +161,11 @@ Return STRICT JSON only:
 "reaction": "one sentence in that persona's own voice", "likelyAction": "3-5 words e.g. Shares it, Scrolls past, Asks price",
 "strategy": "the response strategy that persona would take" } ] }`;
 
-const SYNTHESIS_SYSTEM = `You are the head strategist for SMAIT.
+function synthesisSystem(knowledgeContext: string): string {
+  const knowledgeBlock = knowledgeContext
+    ? `\n\nApproved Knowledge Library entries for this organisation (treat as authoritative - never contradict them in a rewrite, and never invent a "fact" of your own that isn't here or in the supplied material):\n${knowledgeContext}\n\nIf the message under test, or any rewrite you propose, appears to contradict one of these entries, list it in "knowledgeConflicts" using that entry's exact bracketed id. If nothing conflicts, return an empty array. Do not flag a conflict just because a topic isn't covered by an entry - only an actual contradiction counts.`
+    : "";
+  return `You are the head strategist for SMAIT.
 
 You receive a message under test and a statistical digest of how a 100-persona Kenyan panel reacted.
 Write the verdict and rewrites. Be specific, commercial and Kenyan-literate.
@@ -169,7 +174,7 @@ Each rewrite must use a DIFFERENT response strategy and a different voice angle.
 
 ${PERSONA_ENGINE_DOCTRINE}
 
-${LEGAL_RISK_DOCTRINE}
+${LEGAL_RISK_DOCTRINE}${knowledgeBlock}
 
 Return STRICT JSON only:
 {
@@ -178,9 +183,10 @@ Return STRICT JSON only:
   "metrics": { "clarity": int, "culturalFit": int, "trust": int, "relevance": int, "callToAction": int, "shareability": int },
   "classification": { "topic": "short label", "intent": "one intent label", "tone": "short label", "language": "English | Kiswahili | Sheng | code-switching", "risk": "low"|"medium"|"high" },
   "risks": ["short risk or objection", ...],
-  "suggestions": [ { "title": "short label", "message": "the full rewritten message, ready to send", "rationale": "why it works better for this panel", "strategy": "the response strategy used" } ]
+  "suggestions": [ { "title": "short label", "message": "the full rewritten message, ready to send", "rationale": "why it works better for this panel", "strategy": "the response strategy used" } ]${knowledgeContext ? ',\n  "knowledgeConflicts": [ { "entryId": "the bracketed id, unchanged", "note": "one sentence on what conflicts and why" } ]' : ""}
 }
 risks: 3-5 items. suggestions: exactly 3.`;
+}
 
 export async function runAnalysis(input: {
   text: string;
@@ -189,6 +195,9 @@ export async function runAnalysis(input: {
   history?: { role: "user" | "assistant"; content: string }[];
   userId?: string | null;
   workspaceId: string;
+  /** Approved Knowledge Library entries to treat as authoritative and check
+   *  the message/rewrites against - see knowledge.server.ts. */
+  knowledgeEntries?: { id: string; category: string; title: string; content: string }[];
 }): Promise<Analysis> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured for this project.");
@@ -277,9 +286,13 @@ export async function runAnalysis(input: {
       .join("\n")}`,
   ].join("\n\n");
 
+  const knowledgeEntries = input.knowledgeEntries ?? [];
+  const knowledgeContext = formatKnowledgeContext(knowledgeEntries);
+  const knowledgeById = new Map(knowledgeEntries.map((e) => [e.id, e]));
+
   const synthesis = await callGateway(
     apiKey,
-    SYNTHESIS_SYSTEM,
+    synthesisSystem(knowledgeContext),
     [{ type: "text", text: `${messageBlock}\n\nPanel digest:\n${digest}` }],
     { userId: input.userId ?? null, workspaceId: input.workspaceId, feature: "smait.synthesis" },
   );
@@ -291,6 +304,18 @@ export async function runAnalysis(input: {
     : classifyRisk(input.text);
   const suggestions = Array.isArray(synthesis["suggestions"]) ? synthesis["suggestions"] : [];
   const risks = Array.isArray(synthesis["risks"]) ? synthesis["risks"] : [];
+  // Only entries actually supplied as context can be cited - filters out any
+  // id the model hallucinates rather than trusting it verbatim.
+  const knowledgeConflicts = (
+    Array.isArray(synthesis["knowledgeConflicts"]) ? synthesis["knowledgeConflicts"] : []
+  )
+    .map((c) => {
+      const obj = (c ?? {}) as Record<string, unknown>;
+      const entry = knowledgeById.get(String(obj["entryId"] ?? ""));
+      if (!entry) return null;
+      return { entryId: entry.id, entryTitle: entry.title, note: String(obj["note"] ?? "") };
+    })
+    .filter((c): c is { entryId: string; entryTitle: string; note: string } => c !== null);
 
   return {
     summary: String(synthesis["summary"] ?? ""),
@@ -327,6 +352,7 @@ export async function runAnalysis(input: {
         ...(obj["strategy"] ? { strategy: String(obj["strategy"]) } : {}),
       };
     }),
+    ...(knowledgeConflicts.length > 0 ? { knowledgeConflicts } : {}),
   };
 }
 
