@@ -1023,6 +1023,9 @@ export const previewPersonaVariations = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!accounts || accounts.length === 0) throw new Error("No matching accounts found.");
 
+    const { checkSpendLimit } = await import("./budget.server");
+    await checkSpendLimit(supabaseAdmin as any, workspaceId);
+
     const { buildPersonaVariations } = await import("./variations.server");
     return buildPersonaVariations({
       accounts: accounts.map((a: any) => ({ id: a.id, handle: a.handle })),
@@ -1033,6 +1036,7 @@ export const previewPersonaVariations = createServerFn({ method: "POST" })
       intensity: data.intensity,
       briefing: data.briefing,
       workspaceId,
+      userId: context.userId,
     });
   });
 
