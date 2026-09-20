@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveWorkspaceId } from "./workspace.server";
 import { trackEvent } from "./growth-events.server";
+import { assertAdmin } from "./access";
 
 export type KnowledgeCategory =
   "fact" | "product_detail" | "terminology" | "positioning" | "prior_statement";
@@ -263,11 +264,17 @@ const statusSchema = z.object({
 });
 
 /** Approve, reject or return an entry to pending - never marks 'superseded'
- *  directly (see supersedeKnowledgeEntry) and never deletes. */
+ *  directly (see supersedeKnowledgeEntry) and never deletes. Admin-gated:
+ *  this is the step that makes Studio treat an entry as authoritative, the
+ *  same trust boundary decision_log/managed_reports already gate the same
+ *  way. Drafting an entry (createKnowledgeEntry/updateKnowledgeEntry) stays
+ *  open to any workspace member - only the approval transition is
+ *  restricted, matching the spec's "authorised reviewer" language. */
 export const setKnowledgeApprovalStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => statusSchema.parse(input))
   .handler(async ({ data, context }): Promise<KnowledgeEntry> => {
+    assertAdmin(context as any);
     const { data: row, error } = await (context.supabase as any)
       .from("knowledge_entries")
       .update({ approval_status: data.status })
@@ -294,11 +301,14 @@ const supersedeSchema = z.object({
 
 /** Marks an old entry superseded by a newer one that must already exist and
  *  be in the same workspace - keeps the outdated entry visible in history
- *  without it ever being retrieved as active context again. */
+ *  without it ever being retrieved as active context again. Admin-gated for
+ *  the same reason as setKnowledgeApprovalStatus: this changes what Studio
+ *  treats as authoritative. */
 export const supersedeKnowledgeEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => supersedeSchema.parse(input))
   .handler(async ({ data, context }): Promise<KnowledgeEntry> => {
+    assertAdmin(context as any);
     const supabase = context.supabase as any;
     const { data: existing, error: fetchError } = await supabase
       .from("knowledge_entries")

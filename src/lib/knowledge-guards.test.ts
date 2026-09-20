@@ -74,3 +74,42 @@ describe("createKnowledgeEntry and deleteKnowledgeEntry enforce their stated inv
     expect(fnBody).toMatch(/patch\["approval_status"\]\s*=\s*"pending"/);
   });
 });
+
+describe("the approval trust boundary is admin-gated, matching decision_log/managed_reports", () => {
+  const source = read("src/lib/knowledge.functions.ts");
+
+  it("setKnowledgeApprovalStatus calls assertAdmin before writing", () => {
+    const fnBody = source.slice(
+      source.indexOf("export const setKnowledgeApprovalStatus"),
+      source.indexOf("const supersedeSchema"),
+    );
+    expect(fnBody).toMatch(/assertAdmin\(context as any\)/);
+  });
+
+  it("supersedeKnowledgeEntry calls assertAdmin before writing", () => {
+    const fnBody = source.slice(source.indexOf("export const supersedeKnowledgeEntry"));
+    expect(fnBody).toMatch(/assertAdmin\(context as any\)/);
+  });
+
+  it("drafting (create/update) stays open to any workspace member - only approval is restricted", () => {
+    const createBody = source.slice(
+      source.indexOf("export const createKnowledgeEntry"),
+      source.indexOf("const updateEntrySchema"),
+    );
+    const updateBody = source.slice(
+      source.indexOf("export const updateKnowledgeEntry"),
+      source.indexOf("const statusSchema"),
+    );
+    expect(createBody).not.toMatch(/assertAdmin/);
+    expect(updateBody).not.toMatch(/assertAdmin/);
+  });
+});
+
+describe("Knowledge Library UI hides Approve/Reject from non-admins", () => {
+  const source = read("src/routes/_authenticated/knowledge.tsx");
+
+  it("checks isAdminEmail before rendering the approval controls", () => {
+    expect(source).toMatch(/const isAdmin = isAdminEmail\(profile\?\.email\)/);
+    expect(source).toMatch(/\{isAdmin \? \(/);
+  });
+});
