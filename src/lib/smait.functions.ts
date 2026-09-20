@@ -14,6 +14,12 @@ const sendSchema = z.object({
     .array(z.object({ name: z.string().max(200), excerpt: z.string().max(20_000) }))
     .max(5)
     .optional(),
+  // Client-generated, rotated after a successful submit (same convention as
+  // post-campaign.tsx's idempotencyKeyRef) - lets a network retry or
+  // double-click return the original result instead of running (and
+  // charging for) the test twice. Optional so existing callers that don't
+  // pass one keep working exactly as before.
+  idempotencyKey: z.string().uuid().optional(),
 });
 
 export const getProfile = createServerFn({ method: "POST" })
@@ -264,125 +270,166 @@ export const sendMessage = createServerFn({ method: "POST" })
     const supabase = context.supabase;
     const workspaceId = await resolveWorkspaceId(context);
 
-    const { checkRateLimit, createSupabaseRateLimitStore, RATE_LIMIT_PRESETS } =
-      await import("./platform/rate-limit.server");
-    const rate = await checkRateLimit(createSupabaseRateLimitStore(supabaseAdmin as any), {
-      bucketKey: `ai-generate:user:${context.userId}`,
-      ...RATE_LIMIT_PRESETS.aiGenerate,
-    });
-    if (!rate.allowed) {
-      throw new Error(
-        "You're testing messages faster than we can process them. Wait a moment and try again.",
-      );
-    }
-
-    let threadId = data.threadId;
-    if (threadId) {
-      const { data: existing } = await supabase
-        .from("threads")
-        .select("id")
-        .eq("id", threadId)
-        .maybeSingle();
-      if (!existing) throw new Error("Test not found.");
-    } else {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("org")
-        .eq("id", context.userId)
-        .maybeSingle();
-      const title = data.text.slice(0, 60) + (data.text.length > 60 ? "…" : "");
-      // Cast: the generated Supabase types don't know about workspace_id yet -
-      // types are regenerated from the live schema, which this environment has
-      // no credentials to reach.
-      const { data: created, error } = await (supabase as any)
-        .from("threads")
-        .insert({
-          user_id: context.userId,
-          workspace_id: workspaceId,
-          org: profile?.org ?? "external",
-          title,
-        })
-        .select("id")
-        .single();
-      if (error || !created) throw new Error(error?.message ?? "Could not start a test.");
-      threadId = created.id as string;
-    }
-    if (!threadId) throw new Error("Could not start a test.");
-
-    let storagePath: string | null = null;
-    if (data.imageDataUrl?.startsWith("data:")) {
-      const match = /^data:([^;]+);base64,(.+)$/.exec(data.imageDataUrl);
-      if (match) {
-        const mime = match[1] ?? "image/png";
-        const bytes = Buffer.from(match[2] ?? "", "base64");
-        const ext = mime.split("/")[1]?.split("+")[0] ?? "png";
-        const path = `${threadId}/${crypto.randomUUID()}.${ext}`;
-        const { error: uploadError } = await supabaseAdmin.storage
-          .from(BUCKET)
-          .upload(path, bytes, { contentType: mime, upsert: false });
-        if (uploadError) console.error("[storage] upload failed", uploadError.message);
-        else storagePath = path;
+    // The actual work, run at most once per idempotency key (see below) -
+    // rate-limit/spend checks live inside this closure, not outside it, so
+    // a deduped retry that returns the cached result never re-consumes
+    // rate-limit budget or gets blocked by a spend limit a second time for
+    // work that already happened once.
+    const operation = async (): Promise<{ threadId: string }> => {
+      const { checkRateLimit, createSupabaseRateLimitStore, RATE_LIMIT_PRESETS } =
+        await import("./platform/rate-limit.server");
+      const rate = await checkRateLimit(createSupabaseRateLimitStore(supabaseAdmin as any), {
+        bucketKey: `ai-generate:user:${context.userId}`,
+        ...RATE_LIMIT_PRESETS.aiGenerate,
+      });
+      if (!rate.allowed) {
+        throw new Error(
+          "You're testing messages faster than we can process them. Wait a moment and try again.",
+        );
       }
-    }
 
-    const { error: userInsertError } = await supabase.from("messages").insert({
-      thread_id: threadId,
-      user_id: context.userId,
-      role: "user",
-      content: data.text,
-      image_url: storagePath,
-    });
-    if (userInsertError) throw new Error(userInsertError.message);
+      const { checkSpendLimit } = await import("./budget.server");
+      await checkSpendLimit(supabaseAdmin as any, workspaceId);
 
-    const { data: prior } = await supabase
-      .from("messages")
-      .select("role, content")
-      .eq("thread_id", threadId)
-      .order("created_at", { ascending: true })
-      .limit(12);
+      return sendOnce(data, context, workspaceId);
+    };
 
-    const { getActiveKnowledgeEntries } = await import("./knowledge.server");
-    const { data: threadRow } = await (supabase as any)
+    if (!data.idempotencyKey) return operation();
+
+    const { withIdempotencyKey, createSupabaseIdempotencyStore } =
+      await import("./platform/idempotency.server");
+    return withIdempotencyKey(
+      createSupabaseIdempotencyStore(supabaseAdmin as any),
+      {
+        key: data.idempotencyKey,
+        userId: context.userId,
+        payload: {
+          threadId: data.threadId,
+          text: data.text,
+          imageDataUrl: data.imageDataUrl,
+          attachments: data.attachments,
+        },
+      },
+      operation,
+    );
+  });
+
+async function sendOnce(
+  data: z.infer<typeof sendSchema>,
+  context: { supabase: any; userId: string },
+  workspaceId: string,
+): Promise<{ threadId: string }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { runAnalysis, applyLegalReview } = await import("./smait.server");
+  const supabase = context.supabase;
+
+  let threadId = data.threadId;
+  if (threadId) {
+    const { data: existing } = await supabase
       .from("threads")
-      .select("project_id")
+      .select("id")
       .eq("id", threadId)
       .maybeSingle();
-    const knowledgeEntries = await getActiveKnowledgeEntries(
-      supabase,
-      workspaceId,
-      threadRow?.project_id ?? null,
-    );
-
-    const rawAnalysis = await runAnalysis({
-      text: data.text,
-      imageDataUrl: data.imageDataUrl ?? null,
-      attachments: data.attachments ?? [],
-      history: (prior ?? []).slice(0, -1).map((p) => ({
-        role: p.role as "user" | "assistant",
-        content: p.content,
-      })),
-      userId: context.userId,
-      workspaceId,
-      knowledgeEntries,
-    });
-
-    // Legal-Risk Language Transformation Engine: rewrite risky wording in the
-    // recommendations and record the verdict on the tested message.
-    const analysis = await applyLegalReview(rawAnalysis, data.text, workspaceId);
-
-    const { error: assistantInsertError } = await supabase.from("messages").insert({
-      thread_id: threadId,
-      user_id: context.userId,
-      role: "assistant",
-      content: analysis.summary,
-      analysis: JSON.parse(JSON.stringify(analysis)),
-    });
-    if (assistantInsertError) throw new Error(assistantInsertError.message);
-
-    await supabaseAdmin
+    if (!existing) throw new Error("Test not found.");
+  } else {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("org")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const title = data.text.slice(0, 60) + (data.text.length > 60 ? "…" : "");
+    // Cast: the generated Supabase types don't know about workspace_id yet -
+    // types are regenerated from the live schema, which this environment has
+    // no credentials to reach.
+    const { data: created, error } = await (supabase as any)
       .from("threads")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", threadId);
+      .insert({
+        user_id: context.userId,
+        workspace_id: workspaceId,
+        org: profile?.org ?? "external",
+        title,
+      })
+      .select("id")
+      .single();
+    if (error || !created) throw new Error(error?.message ?? "Could not start a test.");
+    threadId = created.id as string;
+  }
+  if (!threadId) throw new Error("Could not start a test.");
 
-    return { threadId };
+  let storagePath: string | null = null;
+  if (data.imageDataUrl?.startsWith("data:")) {
+    const match = /^data:([^;]+);base64,(.+)$/.exec(data.imageDataUrl);
+    if (match) {
+      const mime = match[1] ?? "image/png";
+      const bytes = Buffer.from(match[2] ?? "", "base64");
+      const ext = mime.split("/")[1]?.split("+")[0] ?? "png";
+      const path = `${threadId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from(BUCKET)
+        .upload(path, bytes, { contentType: mime, upsert: false });
+      if (uploadError) console.error("[storage] upload failed", uploadError.message);
+      else storagePath = path;
+    }
+  }
+
+  const { error: userInsertError } = await supabase.from("messages").insert({
+    thread_id: threadId,
+    user_id: context.userId,
+    role: "user",
+    content: data.text,
+    image_url: storagePath,
   });
+  if (userInsertError) throw new Error(userInsertError.message);
+
+  const { data: prior } = await supabase
+    .from("messages")
+    .select("role, content")
+    .eq("thread_id", threadId)
+    .order("created_at", { ascending: true })
+    .limit(12);
+
+  const { getActiveKnowledgeEntries } = await import("./knowledge.server");
+  const { data: threadRow } = await (supabase as any)
+    .from("threads")
+    .select("project_id")
+    .eq("id", threadId)
+    .maybeSingle();
+  const knowledgeEntries = await getActiveKnowledgeEntries(
+    supabase,
+    workspaceId,
+    threadRow?.project_id ?? null,
+  );
+
+  const rawAnalysis = await runAnalysis({
+    text: data.text,
+    imageDataUrl: data.imageDataUrl ?? null,
+    attachments: data.attachments ?? [],
+    history: (prior ?? []).slice(0, -1).map((p: { role: string; content: string }) => ({
+      role: p.role as "user" | "assistant",
+      content: p.content,
+    })),
+    userId: context.userId,
+    workspaceId,
+    knowledgeEntries,
+  });
+
+  // Legal-Risk Language Transformation Engine: rewrite risky wording in the
+  // recommendations and record the verdict on the tested message.
+  const analysis = await applyLegalReview(rawAnalysis, data.text, workspaceId);
+
+  const { error: assistantInsertError } = await supabase.from("messages").insert({
+    thread_id: threadId,
+    user_id: context.userId,
+    role: "assistant",
+    content: analysis.summary,
+    analysis: JSON.parse(JSON.stringify(analysis)),
+  });
+  if (assistantInsertError) throw new Error(assistantInsertError.message);
+
+  await supabaseAdmin
+    .from("threads")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", threadId);
+
+  return { threadId };
+}

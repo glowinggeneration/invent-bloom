@@ -17,6 +17,7 @@
  * to retain prompts for debugging (and a matching retention policy).
  */
 import type { AiOutcome } from "./ai-provider.server";
+import { estimateCostUsd } from "@/lib/ai-pricing";
 
 export type AiEventInput = {
   userId: string | null;
@@ -51,6 +52,11 @@ export async function recordAiEvent(
         fallback_used: input.outcome.fallbackUsed,
         outcome: "success" as const,
         failure_reason: null,
+        estimated_cost_usd: estimateCostUsd(
+          input.outcome.response.model,
+          input.outcome.response.inputTokens ?? null,
+          input.outcome.response.outputTokens ?? null,
+        ),
       }
     : {
         user_id: input.userId,

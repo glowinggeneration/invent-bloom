@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { GitCompareArrows } from "lucide-react";
 import { toast } from "sonner";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Composer, type ComposerPayload } from "@/components/composer";
 import { MessageTemplates } from "@/components/message-templates";
 import { setAnalysisStatus, setFirstRunStep } from "@/lib/first-run";
@@ -67,6 +67,12 @@ function NewTest() {
 
   const list = threads ?? [];
 
+  // Stable across a retry of the same submit attempt so a network retry or
+  // double submission returns the original result instead of running (and
+  // being charged for) the test twice; rotated after success so the next
+  // submit is a fresh intent. Same convention as post-campaign.tsx.
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
+
   const mutation = useMutation({
     mutationFn: async (payload: ComposerPayload) =>
       send({
@@ -75,6 +81,7 @@ function NewTest() {
           text: payload.text,
           imageDataUrl: payload.imageDataUrl,
           attachments: payload.attachments,
+          idempotencyKey: idempotencyKeyRef.current,
         },
       }),
     onMutate: (payload: ComposerPayload) => {
@@ -82,6 +89,7 @@ function NewTest() {
       startActiveTest({ text: payload.text });
     },
     onSuccess: (result) => {
+      idempotencyKeyRef.current = crypto.randomUUID();
       setAnalysisStatus("completed");
       completeActiveTest(result.threadId);
       queryClient.invalidateQueries({ queryKey: ["threads"] });
