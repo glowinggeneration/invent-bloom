@@ -31,7 +31,7 @@ async function recordVariationsEvent(meta: {
   userId: string | null;
   workspaceId: string;
   startedAt: number;
-  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  usage?: { prompt_tokens?: number; completion_tokens?: number } | undefined;
   outcome: "success" | "failure";
   failureReason?: string;
 }): Promise<void> {
