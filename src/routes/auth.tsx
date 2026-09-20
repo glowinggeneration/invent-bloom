@@ -337,7 +337,7 @@ function AuthPage() {
                   setMode("signin");
                   setPassword("");
                 }}
-                className="type-meta font-medium text-positive hover:underline"
+                className="type-meta font-medium text-primary hover:underline"
               >
                 Back to sign in
               </button>
@@ -386,7 +386,7 @@ function AuthPage() {
                   setMode("signin");
                   setResetSent(false);
                 }}
-                className="w-full type-meta font-medium text-positive hover:underline"
+                className="w-full type-meta font-medium text-primary hover:underline"
               >
                 Back to sign in
               </button>
@@ -478,7 +478,7 @@ function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setMode("signin")}
-                  className="font-medium text-positive hover:underline"
+                  className="font-medium text-primary hover:underline"
                 >
                   Sign in
                 </button>
@@ -538,7 +538,7 @@ function AuthPage() {
                 </label>
                 <button
                   type="button"
-                  className="type-meta font-medium text-positive hover:underline"
+                  className="type-meta font-medium text-primary hover:underline"
                   onClick={() => {
                     setResetSent(false);
                     setMode("forgot");
@@ -557,7 +557,7 @@ function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setMode("signup")}
-                  className="font-medium text-positive hover:underline"
+                  className="font-medium text-primary hover:underline"
                 >
                   Create your workspace
                 </button>
