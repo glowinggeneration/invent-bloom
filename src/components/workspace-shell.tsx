@@ -17,6 +17,7 @@ import {
   CreditCard,
   Eye,
   FileCheck2,
+  FolderKanban,
   FilePlus2,
   FileText,
   Gauge,
@@ -44,6 +45,7 @@ import { AboutPopover } from "@/components/core/about-popover";
 import { OfficialPostAlert } from "@/components/official-post-alert";
 import { IdleSessionGuard } from "@/components/idle-session-guard";
 import { QuickAccessDock } from "@/components/quick-access-dock";
+import { ProjectSwitcher } from "@/components/project-switcher";
 import { AnimatedThemeToggler } from "@/registry/magicui/animated-theme-toggler";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
@@ -161,6 +163,7 @@ function NavGroup({
  */
 function useDestinations(isAdmin: boolean) {
   const today: NavItem = { to: "/today", label: "Today", icon: Compass };
+  const projectsNav: NavItem = { to: "/projects", label: "Projects", icon: FolderKanban };
 
   const groupsBase: {
     key: DestinationGroupKey;
@@ -230,7 +233,7 @@ function useDestinations(isAdmin: boolean) {
     matchPrefixes: [...group.items.map((item) => item.to), ...GROUP_EXTRA_PREFIXES[group.key]],
   }));
 
-  return { today, groups };
+  return { today, projectsNav, groups };
 }
 
 /** Secondary/operational tools, reachable through the compact "More tools" menu. */
@@ -331,7 +334,7 @@ function AppSidebar() {
   const profilePath = isAdmin ? "/admin/profile" : "/profile";
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [secondaryOpen, setSecondaryOpen] = useState(false);
-  const { today, groups } = useDestinations(isAdmin);
+  const { today, projectsNav, groups } = useDestinations(isAdmin);
   const secondaryTools = useSecondaryTools(isAdmin);
   const secondaryActive = secondaryTools.some((item) => pathname.startsWith(item.to));
 
@@ -431,6 +434,17 @@ function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        {/* Projects: standalone, next to Today - not one of the four
+            collapsible groups, and deliberately not a mobile tab either
+            (see MobileTabBar) - reachable there via the header switcher
+            and command search instead, to keep five tabs, not six. */}
+        <NavGroup
+          label=""
+          items={[{ ...projectsNav, label: "Projects" }]}
+          pathname={pathname}
+          isCompactRail={isCompactRail}
+        />
 
         <SidebarSeparator className="mx-4 my-1" />
 
@@ -845,6 +859,7 @@ export function WorkspaceShell({
               aria-label="Page actions"
             >
               {actions}
+              <ProjectSwitcher />
               <GlobalCommandPalette />
               <Button asChild className="hidden h-10 shrink-0 gap-1.5 lg:inline-flex">
                 <Link to="/publish" search={{ choose: true }} title="Create campaign">

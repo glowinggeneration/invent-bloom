@@ -41,6 +41,7 @@ import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPersonasRouteImport } from './routes/_authenticated/personas'
 import { Route as AuthenticatedPreflightRouteImport } from './routes/_authenticated/preflight'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPublishRouteImport } from './routes/_authenticated/publish'
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
 import { Route as AuthenticatedSharedRouteImport } from './routes/_authenticated/shared'
@@ -58,6 +59,7 @@ import { Route as AuthenticatedCampaignActionRouteImport } from './routes/_authe
 import { Route as AuthenticatedCampaignOverviewRouteImport } from './routes/_authenticated/campaign.overview'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as AuthenticatedPerformanceInsightsRouteImport } from './routes/_authenticated/performance.insights'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedRecommendationsThreadIdRouteImport } from './routes/_authenticated/recommendations.$threadId'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedReportsReportIdRouteImport } from './routes/_authenticated/reports.$reportId'
@@ -250,6 +252,11 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPublishRoute = AuthenticatedPublishRouteImport.update({
   id: '/publish',
   path: '/publish',
@@ -345,6 +352,11 @@ const AuthenticatedPerformanceInsightsRoute =
     path: '/insights',
     getParentRoute: () => AuthenticatedPerformanceRoute,
   } as any)
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedProjectsRoute,
+} as any)
 const AuthenticatedRecommendationsThreadIdRoute =
   AuthenticatedRecommendationsThreadIdRouteImport.update({
     id: '/recommendations/$threadId',
@@ -506,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/personas': typeof AuthenticatedPersonasRoute
   '/preflight': typeof AuthenticatedPreflightRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/publish': typeof AuthenticatedPublishRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/shared': typeof AuthenticatedSharedRoute
@@ -523,6 +536,7 @@ export interface FileRoutesByFullPath {
   '/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
   '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/reports/builder': typeof AuthenticatedReportsBuilderRoute
@@ -578,6 +592,7 @@ export interface FileRoutesByTo {
   '/personas': typeof AuthenticatedPersonasRoute
   '/preflight': typeof AuthenticatedPreflightRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/publish': typeof AuthenticatedPublishRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/shared': typeof AuthenticatedSharedRoute
@@ -595,6 +610,7 @@ export interface FileRoutesByTo {
   '/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
   '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/reports/builder': typeof AuthenticatedReportsBuilderRoute
@@ -652,6 +668,7 @@ export interface FileRoutesById {
   '/_authenticated/personas': typeof AuthenticatedPersonasRoute
   '/_authenticated/preflight': typeof AuthenticatedPreflightRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/publish': typeof AuthenticatedPublishRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/shared': typeof AuthenticatedSharedRoute
@@ -669,6 +686,7 @@ export interface FileRoutesById {
   '/_authenticated/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
   '/_authenticated/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/_authenticated/reports/builder': typeof AuthenticatedReportsBuilderRoute
@@ -726,6 +744,7 @@ export interface FileRouteTypes {
     | '/personas'
     | '/preflight'
     | '/profile'
+    | '/projects'
     | '/publish'
     | '/setup'
     | '/shared'
@@ -743,6 +762,7 @@ export interface FileRouteTypes {
     | '/campaign/overview'
     | '/chat/$threadId'
     | '/performance/insights'
+    | '/projects/$id'
     | '/recommendations/$threadId'
     | '/reports/$reportId'
     | '/reports/builder'
@@ -798,6 +818,7 @@ export interface FileRouteTypes {
     | '/personas'
     | '/preflight'
     | '/profile'
+    | '/projects'
     | '/publish'
     | '/setup'
     | '/shared'
@@ -815,6 +836,7 @@ export interface FileRouteTypes {
     | '/campaign/overview'
     | '/chat/$threadId'
     | '/performance/insights'
+    | '/projects/$id'
     | '/recommendations/$threadId'
     | '/reports/$reportId'
     | '/reports/builder'
@@ -871,6 +893,7 @@ export interface FileRouteTypes {
     | '/_authenticated/personas'
     | '/_authenticated/preflight'
     | '/_authenticated/profile'
+    | '/_authenticated/projects'
     | '/_authenticated/publish'
     | '/_authenticated/setup'
     | '/_authenticated/shared'
@@ -888,6 +911,7 @@ export interface FileRouteTypes {
     | '/_authenticated/campaign/overview'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/performance/insights'
+    | '/_authenticated/projects/$id'
     | '/_authenticated/recommendations/$threadId'
     | '/_authenticated/reports/$reportId'
     | '/_authenticated/reports/builder'
@@ -1168,6 +1192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/publish': {
       id: '/_authenticated/publish'
       path: '/publish'
@@ -1286,6 +1317,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/performance/insights'
       preLoaderRoute: typeof AuthenticatedPerformanceInsightsRouteImport
       parentRoute: typeof AuthenticatedPerformanceRoute
+    }
+    '/_authenticated/projects/$id': {
+      id: '/_authenticated/projects/$id'
+      path: '/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedProjectsRoute
     }
     '/_authenticated/recommendations/$threadId': {
       id: '/_authenticated/recommendations/$threadId'
@@ -1459,6 +1497,19 @@ const AuthenticatedPerformanceRouteWithChildren =
     AuthenticatedPerformanceRouteChildren,
   )
 
+interface AuthenticatedProjectsRouteChildren {
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+}
+
+const AuthenticatedProjectsRouteChildren: AuthenticatedProjectsRouteChildren = {
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+}
+
+const AuthenticatedProjectsRouteWithChildren =
+  AuthenticatedProjectsRoute._addFileChildren(
+    AuthenticatedProjectsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountHealthRoute: typeof AuthenticatedAccountHealthRoute
   AuthenticatedAlwaysOnRoute: typeof AuthenticatedAlwaysOnRoute
@@ -1485,6 +1536,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPersonasRoute: typeof AuthenticatedPersonasRoute
   AuthenticatedPreflightRoute: typeof AuthenticatedPreflightRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedPublishRoute: typeof AuthenticatedPublishRoute
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
   AuthenticatedSharedRoute: typeof AuthenticatedSharedRoute
@@ -1531,6 +1583,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPersonasRoute: AuthenticatedPersonasRoute,
   AuthenticatedPreflightRoute: AuthenticatedPreflightRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedPublishRoute: AuthenticatedPublishRoute,
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
   AuthenticatedSharedRoute: AuthenticatedSharedRoute,
