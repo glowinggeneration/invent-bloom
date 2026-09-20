@@ -19,7 +19,7 @@ describe("workspace_budgets RLS", () => {
   });
 });
 
-describe("setWorkspaceBudget is admin-gated, matching the assertAdmin pattern already used elsewhere", () => {
+describe("setWorkspaceBudget is admin-gated at both the application AND database layer", () => {
   const source = read("src/lib/budget.functions.ts");
 
   it("calls assertAdmin before touching workspace_budgets", () => {
@@ -28,6 +28,21 @@ describe("setWorkspaceBudget is admin-gated, matching the assertAdmin pattern al
     const upsertIdx = fnBody.indexOf('.from("workspace_budgets")');
     expect(assertIdx).toBeGreaterThan(-1);
     expect(upsertIdx).toBeGreaterThan(assertIdx);
+  });
+
+  it("writes through the service-role client, not context.supabase - RLS alone denies the write for a regular member", () => {
+    const fnBody = source.slice(source.indexOf("export const setWorkspaceBudget"));
+    expect(fnBody).toMatch(/supabaseAdmin as any/);
+  });
+});
+
+describe("workspace_budgets RLS is read-only for workspace members - no FOR ALL policy left that assertAdmin alone would have to guard", () => {
+  const migration = read("supabase/migrations/20260920210000_workspace_budgets_trust_boundary.sql");
+
+  it("drops the old FOR ALL policy and replaces it with SELECT only", () => {
+    expect(migration).toMatch(/DROP POLICY IF EXISTS workspace_budgets_workspace_access/);
+    expect(migration).toMatch(/FOR SELECT TO authenticated/);
+    expect(migration).not.toMatch(/CREATE POLICY[\s\S]*?FOR (ALL|INSERT|UPDATE|DELETE)/);
   });
 });
 

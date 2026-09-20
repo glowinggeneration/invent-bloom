@@ -76,6 +76,13 @@ const setBudgetSchema = z.object({
  * version of this function claimed no such server-side check existed
  * anywhere in the app - that was wrong; assertAdmin was already an
  * established, real pattern this function should have used from the start.
+ *
+ * Writes through the service-role client, not context.supabase:
+ * workspace_budgets' RLS is read-only for the "authenticated" role (see
+ * 20260920210000_workspace_budgets_trust_boundary.sql) precisely so
+ * assertAdmin can't be bypassed by a member calling the client SDK
+ * directly - the real boundary is the database, this check is just the
+ * friendly error before hitting it.
  */
 export const setWorkspaceBudget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -83,7 +90,8 @@ export const setWorkspaceBudget = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
     assertAdmin(context as any);
     const workspaceId = await resolveWorkspaceId(context);
-    const { error } = await (context.supabase as any).from("workspace_budgets").upsert(
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any).from("workspace_budgets").upsert(
       {
         workspace_id: workspaceId,
         spend_limit_usd: data.spendLimitUsd,
