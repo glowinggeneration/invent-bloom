@@ -123,6 +123,11 @@ function activityKindOf(row: { kind: "tweet" | "reply"; campaignId: string | nul
   return row.kind === "reply" ? "comment" : "post";
 }
 
+// No workspace-level timezone setting exists yet - every timestamp on this
+// page is rendered in the viewer's own local timezone, so the label states
+// that explicitly rather than implying a shared organisational timezone.
+const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 function PerformancePage() {
   const { campaign: campaignKey } = Route.useSearch();
   const queryClient = useQueryClient();
@@ -221,10 +226,13 @@ function PerformancePage() {
 
   const toneTally = useMemo(() => toneCounts(preToneRows.map((row) => row.content)), [preToneRows]);
 
-  const rows = useMemo(
-    () => preToneRows.filter((row) => matchesToneFilter(row.content, toneFilter)).slice(0, 100),
+  // Same filters as the on-screen list, but without its 100-row display cap
+  // - this is what an export should contain, not a preview-sized slice.
+  const filteredRows = useMemo(
+    () => preToneRows.filter((row) => matchesToneFilter(row.content, toneFilter)),
     [preToneRows, toneFilter],
   );
+  const rows = useMemo(() => filteredRows.slice(0, 100), [filteredRows]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -271,9 +279,16 @@ function PerformancePage() {
   function handleExportCsv() {
     if (!data) return;
     const stamp = new Date().toISOString().slice(0, 10);
+    // The "Posts" section reflects the same search/activity/tone filters
+    // currently applied on screen (unlike the aggregate totals, which stay
+    // scoped to the selected campaign only) - an export must never show a
+    // different set of posts than what the operator was just looking at.
     downloadCsv(
       `smait-performance-${stamp}.csv`,
-      performanceCsv(data, (handle) => lookupAccount(handle)?.displayName || handle),
+      performanceCsv(
+        { ...data, rows: filteredRows },
+        (handle) => lookupAccount(handle)?.displayName || handle,
+      ),
     );
     toast.success("Performance data downloaded.");
   }
@@ -312,13 +327,24 @@ function PerformancePage() {
             label="Last refreshed"
             value={
               data?.lastRefreshed
-                ? new Date(data.lastRefreshed).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                ? new Date(data.lastRefreshed).toLocaleString([], {
+                    dateStyle: "medium",
+                    timeStyle: "short",
                   })
                 : "—"
             }
           />
+          <RailStat label="Timezone" value={localTimeZone} />
+          {data && data.sourceCoverage.executedPosts > 0 && (
+            <RailStat
+              label="Source coverage"
+              value={
+                data.sourceCoverage.postsWithMetrics >= data.sourceCoverage.executedPosts
+                  ? `All ${data.sourceCoverage.executedPosts} sent posts synced`
+                  : `${data.sourceCoverage.postsWithMetrics} of ${data.sourceCoverage.executedPosts} sent posts synced`
+              }
+            />
+          )}
         </RailStatList>
       </RailCard>
 
@@ -530,7 +556,7 @@ function PerformancePage() {
                 },
                 {
                   id: "reach",
-                  title: "Reach",
+                  title: totals.reachIncludesEstimates ? "Reach (includes estimates)" : "Reach",
                   value: report
                     ? `${formatCount(totals.reach)} · ${report.headline.personas} accounts`
                     : formatCount(totals.reach),
@@ -540,7 +566,9 @@ function PerformancePage() {
                 {
                   id: "engagements",
                   title: "Engagements",
-                  value: `${formatCount(totals.engagements)} · ${totals.engagementRate}% rate`,
+                  value: totals.engagementRateAvailable
+                    ? `${formatCount(totals.engagements)} · ${totals.engagementRate}% rate`
+                    : `${formatCount(totals.engagements)} · rate not available`,
                   colorClassName: "bg-emerald-600",
                   icon: Activity,
                 },
@@ -590,8 +618,15 @@ function PerformancePage() {
                               </Tooltip>
                             </dt>
                             <dd className="type-card mt-1 font-semibold">
-                              {report.headline.engagementRate}%
+                              {totals.engagementRateAvailable
+                                ? `${report.headline.engagementRate}%`
+                                : "Not available"}
                             </dd>
+                            {!totals.engagementRateAvailable ? (
+                              <p className="mt-1 type-meta text-muted-foreground">
+                                No impressions have been reported for this scope yet.
+                              </p>
+                            ) : null}
                           </div>
                           <div className="rounded-xl bg-muted/50 p-3">
                             <dt className="type-meta text-muted-foreground">Campaigns measured</dt>
@@ -606,10 +641,15 @@ function PerformancePage() {
                             </dd>
                           </div>
                           <div className="rounded-xl bg-muted/50 p-3">
-                            <dt className="type-meta text-muted-foreground">Earned media value</dt>
+                            <dt className="type-meta text-muted-foreground">
+                              Estimated earned media value
+                            </dt>
                             <dd className="type-card mt-1 font-semibold">
                               {formatUsd(report.headline.aveUsd)}
                             </dd>
+                            <p className="mt-1 type-meta text-muted-foreground">
+                              Modelled from a standard CPM, not a platform or advertiser figure.
+                            </p>
                           </div>
                         </dl>
                       ) : null}
@@ -617,7 +657,11 @@ function PerformancePage() {
                     {report ? (
                       <div className="mx-auto max-w-60 rounded-full shadow-[0_0_50px_-12px] shadow-primary/30 ring-1 ring-primary/15">
                         <ActivityGauge
-                          title={`${report.headline.engagementRate}%`}
+                          title={
+                            totals.engagementRateAvailable
+                              ? `${report.headline.engagementRate}%`
+                              : "—"
+                          }
                           subtitle="Engagement rate"
                           data={[
                             {

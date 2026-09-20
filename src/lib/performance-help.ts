@@ -34,7 +34,7 @@ export const PERFORMANCE_GLOSSARY: { group: string; terms: PerformanceTerm[] }[]
       {
         term: "Reach",
         definition:
-          "Estimated number of distinct people who saw the posts. Repeat views by the same person count only once.",
+          "Distinct people who saw the posts. Uses the platform's own view count when it has been reported; when a post has no reported views yet, an amplification-based estimate is used instead and the figure is labelled 'includes estimates'.",
       },
       {
         term: "Impressions",
