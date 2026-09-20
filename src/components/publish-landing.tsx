@@ -11,7 +11,14 @@ import { CampaignActionLoading } from "@/components/campaign-loading";
  * Single front door for campaign creation. Keep the choice small and familiar:
  * choose the publishing outcome first, then complete the relevant workflow.
  */
-export function PublishLanding({ startChoosing = true }: { startChoosing?: boolean }) {
+export function PublishLanding({
+  startChoosing = true,
+  text,
+}: {
+  startChoosing?: boolean;
+  /** Prefill carried over from wherever campaign creation was opened. */
+  text?: string | undefined;
+}) {
   const [loadingGoal, setLoadingGoal] = useState<string | null>(null);
 
   if (loadingGoal) return <CampaignActionLoading label={loadingGoal} />;
@@ -32,7 +39,7 @@ export function PublishLanding({ startChoosing = true }: { startChoosing?: boole
         </Button>
       </div>
 
-      <PublishGoalGrid onPick={(title) => setLoadingGoal(title)} />
+      <PublishGoalGrid onPick={(title) => setLoadingGoal(title)} text={text} />
 
       <div className="flex items-start gap-3 border-t border-border pt-4">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

@@ -45,6 +45,7 @@ import { Route as AuthenticatedPublishRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
 import { Route as AuthenticatedSharedRouteImport } from './routes/_authenticated/shared'
 import { Route as AuthenticatedTestingRouteImport } from './routes/_authenticated/testing'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedWatchlistRouteImport } from './routes/_authenticated/watchlist'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -267,6 +268,11 @@ const AuthenticatedSharedRoute = AuthenticatedSharedRouteImport.update({
 const AuthenticatedTestingRoute = AuthenticatedTestingRouteImport.update({
   id: '/testing',
   path: '/testing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedWatchlistRoute = AuthenticatedWatchlistRouteImport.update({
@@ -504,6 +510,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof AuthenticatedSetupRoute
   '/shared': typeof AuthenticatedSharedRoute
   '/testing': typeof AuthenticatedTestingRoute
+  '/today': typeof AuthenticatedTodayRoute
   '/watchlist': typeof AuthenticatedWatchlistRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -575,6 +582,7 @@ export interface FileRoutesByTo {
   '/setup': typeof AuthenticatedSetupRoute
   '/shared': typeof AuthenticatedSharedRoute
   '/testing': typeof AuthenticatedTestingRoute
+  '/today': typeof AuthenticatedTodayRoute
   '/watchlist': typeof AuthenticatedWatchlistRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -648,6 +656,7 @@ export interface FileRoutesById {
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/shared': typeof AuthenticatedSharedRoute
   '/_authenticated/testing': typeof AuthenticatedTestingRoute
+  '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/watchlist': typeof AuthenticatedWatchlistRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -721,6 +730,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/shared'
     | '/testing'
+    | '/today'
     | '/watchlist'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -792,6 +802,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/shared'
     | '/testing'
+    | '/today'
     | '/watchlist'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -864,6 +875,7 @@ export interface FileRouteTypes {
     | '/_authenticated/setup'
     | '/_authenticated/shared'
     | '/_authenticated/testing'
+    | '/_authenticated/today'
     | '/_authenticated/watchlist'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1184,6 +1196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTestingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/watchlist': {
       id: '/_authenticated/watchlist'
       path: '/watchlist'
@@ -1470,6 +1489,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
   AuthenticatedSharedRoute: typeof AuthenticatedSharedRoute
   AuthenticatedTestingRoute: typeof AuthenticatedTestingRoute
+  AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedWatchlistRoute: typeof AuthenticatedWatchlistRoute
   AuthenticatedAdminAccountsRoute: typeof AuthenticatedAdminAccountsRoute
   AuthenticatedAdminActivityRoute: typeof AuthenticatedAdminActivityRoute
@@ -1515,6 +1535,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
   AuthenticatedSharedRoute: AuthenticatedSharedRoute,
   AuthenticatedTestingRoute: AuthenticatedTestingRoute,
+  AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedWatchlistRoute: AuthenticatedWatchlistRoute,
   AuthenticatedAdminAccountsRoute: AuthenticatedAdminAccountsRoute,
   AuthenticatedAdminActivityRoute: AuthenticatedAdminActivityRoute,
