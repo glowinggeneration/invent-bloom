@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveWorkspaceId } from "./workspace.server";
+import { assertAdmin } from "./access";
 
 const MONTH_START = () => {
   const d = new Date();
@@ -69,17 +70,18 @@ const setBudgetSchema = z.object({
 });
 
 /**
- * Workspace-scoped, not role-gated - matches the same enforcement level as
- * every other workspace-settings server function in this codebase
- * (updateProjectContext, setKnowledgeApprovalStatus, etc). Server-side
- * admin-only gating doesn't exist anywhere in this codebase yet (see the
- * §6.4 MFA exception register row) - introducing one just for this function
- * would be an unverified, inconsistent one-off rather than a real fix.
+ * Admin-gated with the same `assertAdmin` check already used for
+ * comparable administrative settings elsewhere in this codebase
+ * (saveDecisionLogItem, saveXAccount, syncAccountHandles). An earlier
+ * version of this function claimed no such server-side check existed
+ * anywhere in the app - that was wrong; assertAdmin was already an
+ * established, real pattern this function should have used from the start.
  */
 export const setWorkspaceBudget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => setBudgetSchema.parse(input))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    assertAdmin(context as any);
     const workspaceId = await resolveWorkspaceId(context);
     const { error } = await (context.supabase as any).from("workspace_budgets").upsert(
       {

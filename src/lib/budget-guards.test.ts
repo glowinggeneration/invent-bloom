@@ -19,6 +19,27 @@ describe("workspace_budgets RLS", () => {
   });
 });
 
+describe("setWorkspaceBudget is admin-gated, matching the assertAdmin pattern already used elsewhere", () => {
+  const source = read("src/lib/budget.functions.ts");
+
+  it("calls assertAdmin before touching workspace_budgets", () => {
+    const fnBody = source.slice(source.indexOf("export const setWorkspaceBudget"));
+    const assertIdx = fnBody.indexOf("assertAdmin(context as any)");
+    const upsertIdx = fnBody.indexOf('.from("workspace_budgets")');
+    expect(assertIdx).toBeGreaterThan(-1);
+    expect(upsertIdx).toBeGreaterThan(assertIdx);
+  });
+});
+
+describe("AiBudgetCard hides the edit control from non-admins", () => {
+  const source = read("src/components/ai-budget-card.tsx");
+
+  it("checks isAdminEmail before rendering the Set limit / editing controls", () => {
+    expect(source).toMatch(/const isAdmin = isAdminEmail\(profile\?\.email\)/);
+    expect(source).toMatch(/!isAdmin \?/);
+  });
+});
+
 describe("createSupabaseIdempotencyStore satisfies idempotency_keys.workspace_id's real NOT NULL constraint", () => {
   const source = read("src/lib/platform/idempotency.server.ts");
 
