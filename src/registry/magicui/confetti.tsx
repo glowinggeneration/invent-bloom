@@ -5,15 +5,12 @@ import type { CreateTypes, Options as ConfettiOptions } from "canvas-confetti";
 import { cn } from "@/lib/utils";
 
 /**
- * SMAIT brand palette, converted from the app's oklch design tokens
- * (src/styles.css, .dark block) to literal hex — canvas-confetti can't
- * read CSS custom properties.
- *   --brand-pink oklch(0.647 0.241 13.3) -> #fe2762
- *   --primary    oklch(0.595 0.241 13.3) -> #ea0053
- *   --x-blue     oklch(0.68  0.18  245)  -> #009ffe
- *   --brand-navy oklch(0.218 0.054 244)  -> #001c31
+ * Apple's own system-color set (systemBlue, systemGreen, systemOrange,
+ * systemPurple) — canvas-confetti can't read CSS custom properties, so
+ * these are the literal hex values rather than a reference to
+ * src/styles.css's oklch tokens.
  */
-const SMAIT_CONFETTI_COLORS = ["#fe2762", "#ea0053", "#009ffe", "#001c31"];
+const SMAIT_CONFETTI_COLORS = ["#0A84FF", "#30D158", "#FF9F0A", "#BF5AF2"];
 
 export interface ConfettiRef {
   fire: (options?: ConfettiOptions) => void;
