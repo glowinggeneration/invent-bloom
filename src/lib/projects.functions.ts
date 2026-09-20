@@ -25,11 +25,32 @@ export type ProjectReference = {
   updatedAt: string;
 };
 
+/** Concrete, serialisable shape of a saved brief - mirrors
+ *  InvestigationBrief in investigation-brief.functions.ts, but every field
+ *  is optional since older/empty rows never had one generated. */
+export type SavedInvestigationBrief = {
+  question?: string;
+  observedFacts?: { text: string; evidenceKeys: string[] }[];
+  interpretation?: string[];
+  suggestedActions?: string[];
+  coverageGaps?: string[];
+  generatedAt?: string;
+  evidenceCount?: number;
+};
+
+export type SavedEvidenceRef = { key: string; kind: string };
+
 export type ProjectInvestigation = {
   id: string;
   projectId: string | null;
   name: string;
   topic: string;
+  /** Generated brief - see investigation-brief.functions.ts. Empty object
+   *  when this investigation was saved before a brief was ever generated. */
+  brief: SavedInvestigationBrief;
+  /** Source items the brief was built from, preserved even if the live
+   *  source later disappears. */
+  evidence: SavedEvidenceRef[];
   createdAt: string;
   updatedAt: string;
 };
@@ -85,6 +106,8 @@ function mapInvestigation(row: any): ProjectInvestigation {
     projectId: row.project_id,
     name: row.name,
     topic: row.topic,
+    brief: (row.brief ?? {}) as SavedInvestigationBrief,
+    evidence: (Array.isArray(row.evidence) ? row.evidence : []) as SavedEvidenceRef[],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -421,6 +444,26 @@ const saveInvestigationSchema = z.object({
   name: z.string().trim().min(1).max(200),
   topic: z.string().trim().min(1).max(2000),
   projectId: z.string().uuid().optional(),
+  // Optional generated brief/evidence snapshot - see
+  // investigation-brief.functions.ts. Not re-validated here beyond shape,
+  // since it's opaque data the caller already generated server-side.
+  brief: z
+    .object({
+      question: z.string().optional(),
+      observedFacts: z
+        .array(z.object({ text: z.string(), evidenceKeys: z.array(z.string()) }))
+        .optional(),
+      interpretation: z.array(z.string()).optional(),
+      suggestedActions: z.array(z.string()).optional(),
+      coverageGaps: z.array(z.string()).optional(),
+      generatedAt: z.string().optional(),
+      evidenceCount: z.number().optional(),
+    })
+    .optional(),
+  evidence: z
+    .array(z.object({ key: z.string(), kind: z.string() }))
+    .max(60)
+    .optional(),
 });
 
 export const saveInvestigation = createServerFn({ method: "POST" })
@@ -436,6 +479,8 @@ export const saveInvestigation = createServerFn({ method: "POST" })
         user_id: context.userId,
         name: data.name,
         topic: data.topic,
+        brief: data.brief ?? {},
+        evidence: data.evidence ?? [],
       })
       .select("*")
       .single();

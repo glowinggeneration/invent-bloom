@@ -1,23 +1,32 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
+  BadgeCheck,
+  BookOpen,
+  CircleAlert,
   ExternalLink,
   Filter,
+  Lightbulb,
+  ListChecks,
   Loader2,
   MessageSquareReply,
+  Save,
   Sparkles,
   Twitter,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { ClientTweetCard } from "@/registry/magicui/client-tweet-card";
 import { ExternalIdentity } from "@/components/external-identity";
 import { NewsCard } from "@/components/news-card";
 import { SocialMentionCard } from "@/components/social-mention-card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SectionTitle } from "@/components/ui-kit";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { listBrandMentions, type BrandMention } from "@/lib/brand-mentions.functions";
 import {
   listSocialMentions,
@@ -35,6 +44,14 @@ import {
   type MentionImportance,
   type SourceAuthority,
 } from "@/lib/mention-intelligence";
+import {
+  generateInvestigationBrief,
+  type EvidenceItem,
+  type InvestigationBrief,
+} from "@/lib/investigation-brief.functions";
+import { saveInvestigation } from "@/lib/projects.functions";
+import { useCurrentProject } from "@/hooks/use-current-project";
+import { friendlyError } from "@/lib/friendly-errors";
 
 type FocusItem =
   | {
@@ -325,6 +342,78 @@ export function MentionInvestigation({ topic }: { topic: string }) {
   const highImpact = items.filter((item) => IMPORTANCE_RANK[item.importance] >= 3).length;
   const relevant = items.filter((item) => IMPORTANCE_RANK[item.importance] >= 2).length;
 
+  // --- Ask a question: evidence-backed brief over the currently visible set ---
+  const itemsByKey = useMemo(
+    () => new Map(filtered.visible.map((item) => [item.key, item])),
+    [filtered.visible],
+  );
+
+  const [question, setQuestion] = useState("");
+  const [brief, setBrief] = useState<InvestigationBrief | null>(null);
+  const [sheetKey, setSheetKey] = useState<string | null>(null);
+
+  const generateBrief = useServerFn(generateInvestigationBrief);
+  const briefMutation = useMutation({
+    mutationFn: () => {
+      const evidence: EvidenceItem[] = filtered.visible.slice(0, 40).map((item) => {
+        const url =
+          item.kind === "x"
+            ? item.mention.url
+            : item.kind === "news"
+              ? item.article.link
+              : item.social.url;
+        const title =
+          item.kind === "x"
+            ? `@${item.mention.authorHandle.replace(/^@/, "")}`
+            : item.kind === "news"
+              ? item.article.title
+              : (item.social.title ?? item.social.platform);
+        return {
+          key: item.key,
+          kind: item.kind,
+          title: title || "Untitled",
+          snippet: item.text.slice(0, 400),
+          url: url || null,
+          publishedAt: item.time > 0 ? new Date(item.time).toISOString() : null,
+        };
+      });
+      return generateBrief({
+        data: { question: question.trim() || `What's happening with ${topic}?`, evidence },
+      });
+    },
+    onSuccess: (result) => setBrief(result),
+    onError: (error) => toast.error(friendlyError(error)),
+  });
+
+  const queryClient = useQueryClient();
+  const { current: currentProject } = useCurrentProject();
+  const save = useServerFn(saveInvestigation);
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      save({
+        data: {
+          name: brief?.question.slice(0, 200) || topic,
+          topic,
+          ...(currentProject ? { projectId: currentProject.id } : {}),
+          brief: brief ?? {},
+          evidence: filtered.visible
+            .slice(0, 40)
+            .map((item) => ({ key: item.key, kind: item.kind })),
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["investigations"] });
+      toast.success(
+        currentProject
+          ? `Saved to ${currentProject.name}, with its sources.`
+          : "Saved, with its sources. Attach it to a project any time from Projects.",
+      );
+    },
+    onError: (error) => toast.error(friendlyError(error)),
+  });
+
+  const sheetItem = sheetKey ? itemsByKey.get(sheetKey) : null;
+
   return (
     <section className="mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -343,6 +432,132 @@ export function MentionInvestigation({ topic }: { topic: string }) {
             <ArrowLeft className="size-4" /> All mentions
           </Link>
         </Button>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-border bg-background p-3 sm:p-4">
+        <label htmlFor="investigation-question" className="type-meta font-medium">
+          Ask a question about this topic
+        </label>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+          <Input
+            id="investigation-question"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder={`What's happening with ${topic}?`}
+            className="flex-1"
+          />
+          <Button
+            onClick={() => briefMutation.mutate()}
+            disabled={briefMutation.isPending || filtered.visible.length === 0}
+            className="gap-1.5 sm:w-auto"
+          >
+            <Sparkles className="size-4" aria-hidden="true" />
+            {briefMutation.isPending ? "Reading the evidence…" : "Generate brief"}
+          </Button>
+        </div>
+        <p className="mt-2 type-meta text-muted-foreground">
+          Built only from the {filtered.visible.length} item(s) currently shown below - adjust the
+          filters above first if you want a different set considered.
+        </p>
+
+        {brief ? (
+          <div className="mt-4 space-y-4 border-t border-border pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="type-meta text-muted-foreground">
+                Brief for: <span className="font-medium text-foreground">{brief.question}</span>
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending}
+              >
+                <Save className="size-3.5" aria-hidden="true" />
+                {saveMutation.isPending ? "Saving…" : "Save investigation"}
+              </Button>
+            </div>
+
+            {brief.coverageGaps.length > 0 && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                <div className="flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+                  <CircleAlert className="size-4" aria-hidden="true" />
+                  Coverage gaps
+                </div>
+                <ul className="mt-1.5 space-y-1 type-meta text-muted-foreground">
+                  {brief.coverageGaps.map((gap) => (
+                    <li key={gap}>{gap}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <BadgeCheck className="size-4 text-primary" aria-hidden="true" />
+                Observed facts
+              </div>
+              {brief.observedFacts.length === 0 ? (
+                <p className="mt-1.5 type-meta text-muted-foreground">
+                  Nothing in the current evidence could be stated as a directly sourced fact.
+                </p>
+              ) : (
+                <ul className="mt-1.5 space-y-2">
+                  {brief.observedFacts.map((fact, i) => (
+                    <li key={i} className="type-body">
+                      {fact.text}{" "}
+                      {fact.evidenceKeys.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setSheetKey(key)}
+                          className="ml-1 inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 type-meta font-medium text-primary hover:bg-primary/15"
+                        >
+                          <BookOpen className="size-3" aria-hidden="true" />
+                          Source
+                        </button>
+                      ))}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {brief.interpretation.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 font-medium">
+                  <Lightbulb className="size-4 text-amber-500" aria-hidden="true" />
+                  AI interpretation
+                  <span className="type-meta font-normal text-muted-foreground">
+                    — a reading of the pattern, not a sourced fact
+                  </span>
+                </div>
+                <ul className="mt-1.5 space-y-1 type-body text-muted-foreground">
+                  {brief.interpretation.map((line, i) => (
+                    <li key={i}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {brief.suggestedActions.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 font-medium">
+                  <ListChecks className="size-4 text-primary" aria-hidden="true" />
+                  Suggested actions
+                  <span className="type-meta font-normal text-muted-foreground">
+                    — nothing here has been done automatically
+                  </span>
+                </div>
+                <ul className="mt-1.5 space-y-1 type-body text-muted-foreground">
+                  {brief.suggestedActions.map((line, i) => (
+                    <li key={i}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-background p-3">
@@ -406,6 +621,23 @@ export function MentionInvestigation({ topic }: { topic: string }) {
           })}
         </ul>
       )}
+
+      <Sheet open={Boolean(sheetItem)} onOpenChange={(open) => !open && setSheetKey(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Cited source</SheetTitle>
+          </SheetHeader>
+          <ul className="mt-4">
+            {sheetItem?.kind === "x" ? (
+              <XFocusCard item={sheetItem} />
+            ) : sheetItem?.kind === "news" ? (
+              <NewsCard article={sheetItem.article} />
+            ) : sheetItem?.kind === "social" ? (
+              <SocialMentionCard mention={sheetItem.social} />
+            ) : null}
+          </ul>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }
