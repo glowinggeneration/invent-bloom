@@ -60,7 +60,7 @@ function PublishPage() {
       <PageTitle description="Choose the action the campaign should take. Each route remains reviewed and controlled.">
         Create campaign
       </PageTitle>
-      <PublishLanding startChoosing={search.choose !== false} />
+      <PublishLanding startChoosing={search.choose !== false} text={search.text} />
     </WorkspaceShell>
   );
 }

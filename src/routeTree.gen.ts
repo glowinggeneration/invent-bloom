@@ -32,6 +32,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedGovernanceRouteImport } from './routes/_authenticated/governance'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
+import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedLinkedAccountsRouteImport } from './routes/_authenticated/linked-accounts'
 import { Route as AuthenticatedMentionsRouteImport } from './routes/_authenticated/mentions'
 import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
@@ -41,10 +42,12 @@ import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPersonasRouteImport } from './routes/_authenticated/personas'
 import { Route as AuthenticatedPreflightRouteImport } from './routes/_authenticated/preflight'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPublishRouteImport } from './routes/_authenticated/publish'
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
 import { Route as AuthenticatedSharedRouteImport } from './routes/_authenticated/shared'
 import { Route as AuthenticatedTestingRouteImport } from './routes/_authenticated/testing'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedWatchlistRouteImport } from './routes/_authenticated/watchlist'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -57,6 +60,7 @@ import { Route as AuthenticatedCampaignActionRouteImport } from './routes/_authe
 import { Route as AuthenticatedCampaignOverviewRouteImport } from './routes/_authenticated/campaign.overview'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as AuthenticatedPerformanceInsightsRouteImport } from './routes/_authenticated/performance.insights'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedRecommendationsThreadIdRouteImport } from './routes/_authenticated/recommendations.$threadId'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedReportsReportIdRouteImport } from './routes/_authenticated/reports.$reportId'
@@ -201,6 +205,11 @@ const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
   path: '/help',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLinkedAccountsRoute =
   AuthenticatedLinkedAccountsRouteImport.update({
     id: '/linked-accounts',
@@ -249,6 +258,11 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPublishRoute = AuthenticatedPublishRouteImport.update({
   id: '/publish',
   path: '/publish',
@@ -267,6 +281,11 @@ const AuthenticatedSharedRoute = AuthenticatedSharedRouteImport.update({
 const AuthenticatedTestingRoute = AuthenticatedTestingRouteImport.update({
   id: '/testing',
   path: '/testing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedWatchlistRoute = AuthenticatedWatchlistRouteImport.update({
@@ -339,6 +358,11 @@ const AuthenticatedPerformanceInsightsRoute =
     path: '/insights',
     getParentRoute: () => AuthenticatedPerformanceRoute,
   } as any)
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedProjectsRoute,
+} as any)
 const AuthenticatedRecommendationsThreadIdRoute =
   AuthenticatedRecommendationsThreadIdRouteImport.update({
     id: '/recommendations/$threadId',
@@ -491,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/governance': typeof AuthenticatedGovernanceRoute
   '/help': typeof AuthenticatedHelpRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
   '/mentions': typeof AuthenticatedMentionsRoute
   '/new': typeof AuthenticatedNewRoute
@@ -500,10 +525,12 @@ export interface FileRoutesByFullPath {
   '/personas': typeof AuthenticatedPersonasRoute
   '/preflight': typeof AuthenticatedPreflightRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/publish': typeof AuthenticatedPublishRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/shared': typeof AuthenticatedSharedRoute
   '/testing': typeof AuthenticatedTestingRoute
+  '/today': typeof AuthenticatedTodayRoute
   '/watchlist': typeof AuthenticatedWatchlistRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -516,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
   '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/reports/builder': typeof AuthenticatedReportsBuilderRoute
@@ -562,6 +590,7 @@ export interface FileRoutesByTo {
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/governance': typeof AuthenticatedGovernanceRoute
   '/help': typeof AuthenticatedHelpRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
   '/mentions': typeof AuthenticatedMentionsRoute
   '/new': typeof AuthenticatedNewRoute
@@ -571,10 +600,12 @@ export interface FileRoutesByTo {
   '/personas': typeof AuthenticatedPersonasRoute
   '/preflight': typeof AuthenticatedPreflightRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/publish': typeof AuthenticatedPublishRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/shared': typeof AuthenticatedSharedRoute
   '/testing': typeof AuthenticatedTestingRoute
+  '/today': typeof AuthenticatedTodayRoute
   '/watchlist': typeof AuthenticatedWatchlistRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -587,6 +618,7 @@ export interface FileRoutesByTo {
   '/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
   '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/reports/builder': typeof AuthenticatedReportsBuilderRoute
@@ -635,6 +667,7 @@ export interface FileRoutesById {
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/governance': typeof AuthenticatedGovernanceRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
+  '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/linked-accounts': typeof AuthenticatedLinkedAccountsRoute
   '/_authenticated/mentions': typeof AuthenticatedMentionsRoute
   '/_authenticated/new': typeof AuthenticatedNewRoute
@@ -644,10 +677,12 @@ export interface FileRoutesById {
   '/_authenticated/personas': typeof AuthenticatedPersonasRoute
   '/_authenticated/preflight': typeof AuthenticatedPreflightRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/publish': typeof AuthenticatedPublishRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/shared': typeof AuthenticatedSharedRoute
   '/_authenticated/testing': typeof AuthenticatedTestingRoute
+  '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/watchlist': typeof AuthenticatedWatchlistRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -660,6 +695,7 @@ export interface FileRoutesById {
   '/_authenticated/campaign/overview': typeof AuthenticatedCampaignOverviewRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/performance/insights': typeof AuthenticatedPerformanceInsightsRoute
+  '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/recommendations/$threadId': typeof AuthenticatedRecommendationsThreadIdRoute
   '/_authenticated/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/_authenticated/reports/builder': typeof AuthenticatedReportsBuilderRoute
@@ -708,6 +744,7 @@ export interface FileRouteTypes {
     | '/decisions'
     | '/governance'
     | '/help'
+    | '/knowledge'
     | '/linked-accounts'
     | '/mentions'
     | '/new'
@@ -717,10 +754,12 @@ export interface FileRouteTypes {
     | '/personas'
     | '/preflight'
     | '/profile'
+    | '/projects'
     | '/publish'
     | '/setup'
     | '/shared'
     | '/testing'
+    | '/today'
     | '/watchlist'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -733,6 +772,7 @@ export interface FileRouteTypes {
     | '/campaign/overview'
     | '/chat/$threadId'
     | '/performance/insights'
+    | '/projects/$id'
     | '/recommendations/$threadId'
     | '/reports/$reportId'
     | '/reports/builder'
@@ -779,6 +819,7 @@ export interface FileRouteTypes {
     | '/decisions'
     | '/governance'
     | '/help'
+    | '/knowledge'
     | '/linked-accounts'
     | '/mentions'
     | '/new'
@@ -788,10 +829,12 @@ export interface FileRouteTypes {
     | '/personas'
     | '/preflight'
     | '/profile'
+    | '/projects'
     | '/publish'
     | '/setup'
     | '/shared'
     | '/testing'
+    | '/today'
     | '/watchlist'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -804,6 +847,7 @@ export interface FileRouteTypes {
     | '/campaign/overview'
     | '/chat/$threadId'
     | '/performance/insights'
+    | '/projects/$id'
     | '/recommendations/$threadId'
     | '/reports/$reportId'
     | '/reports/builder'
@@ -851,6 +895,7 @@ export interface FileRouteTypes {
     | '/_authenticated/decisions'
     | '/_authenticated/governance'
     | '/_authenticated/help'
+    | '/_authenticated/knowledge'
     | '/_authenticated/linked-accounts'
     | '/_authenticated/mentions'
     | '/_authenticated/new'
@@ -860,10 +905,12 @@ export interface FileRouteTypes {
     | '/_authenticated/personas'
     | '/_authenticated/preflight'
     | '/_authenticated/profile'
+    | '/_authenticated/projects'
     | '/_authenticated/publish'
     | '/_authenticated/setup'
     | '/_authenticated/shared'
     | '/_authenticated/testing'
+    | '/_authenticated/today'
     | '/_authenticated/watchlist'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -876,6 +923,7 @@ export interface FileRouteTypes {
     | '/_authenticated/campaign/overview'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/performance/insights'
+    | '/_authenticated/projects/$id'
     | '/_authenticated/recommendations/$threadId'
     | '/_authenticated/reports/$reportId'
     | '/_authenticated/reports/builder'
@@ -1093,6 +1141,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHelpRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/knowledge': {
+      id: '/_authenticated/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof AuthenticatedKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/linked-accounts': {
       id: '/_authenticated/linked-accounts'
       path: '/linked-accounts'
@@ -1156,6 +1211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/publish': {
       id: '/_authenticated/publish'
       path: '/publish'
@@ -1182,6 +1244,13 @@ declare module '@tanstack/react-router' {
       path: '/testing'
       fullPath: '/testing'
       preLoaderRoute: typeof AuthenticatedTestingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/watchlist': {
@@ -1267,6 +1336,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/performance/insights'
       preLoaderRoute: typeof AuthenticatedPerformanceInsightsRouteImport
       parentRoute: typeof AuthenticatedPerformanceRoute
+    }
+    '/_authenticated/projects/$id': {
+      id: '/_authenticated/projects/$id'
+      path: '/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedProjectsRoute
     }
     '/_authenticated/recommendations/$threadId': {
       id: '/_authenticated/recommendations/$threadId'
@@ -1440,6 +1516,19 @@ const AuthenticatedPerformanceRouteWithChildren =
     AuthenticatedPerformanceRouteChildren,
   )
 
+interface AuthenticatedProjectsRouteChildren {
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+}
+
+const AuthenticatedProjectsRouteChildren: AuthenticatedProjectsRouteChildren = {
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+}
+
+const AuthenticatedProjectsRouteWithChildren =
+  AuthenticatedProjectsRoute._addFileChildren(
+    AuthenticatedProjectsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountHealthRoute: typeof AuthenticatedAccountHealthRoute
   AuthenticatedAlwaysOnRoute: typeof AuthenticatedAlwaysOnRoute
@@ -1457,6 +1546,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
   AuthenticatedGovernanceRoute: typeof AuthenticatedGovernanceRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
+  AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedLinkedAccountsRoute: typeof AuthenticatedLinkedAccountsRoute
   AuthenticatedMentionsRoute: typeof AuthenticatedMentionsRoute
   AuthenticatedNewRoute: typeof AuthenticatedNewRoute
@@ -1466,10 +1556,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPersonasRoute: typeof AuthenticatedPersonasRoute
   AuthenticatedPreflightRoute: typeof AuthenticatedPreflightRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedPublishRoute: typeof AuthenticatedPublishRoute
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
   AuthenticatedSharedRoute: typeof AuthenticatedSharedRoute
   AuthenticatedTestingRoute: typeof AuthenticatedTestingRoute
+  AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedWatchlistRoute: typeof AuthenticatedWatchlistRoute
   AuthenticatedAdminAccountsRoute: typeof AuthenticatedAdminAccountsRoute
   AuthenticatedAdminActivityRoute: typeof AuthenticatedAdminActivityRoute
@@ -1502,6 +1594,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
   AuthenticatedGovernanceRoute: AuthenticatedGovernanceRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
+  AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedLinkedAccountsRoute: AuthenticatedLinkedAccountsRoute,
   AuthenticatedMentionsRoute: AuthenticatedMentionsRoute,
   AuthenticatedNewRoute: AuthenticatedNewRoute,
@@ -1511,10 +1604,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPersonasRoute: AuthenticatedPersonasRoute,
   AuthenticatedPreflightRoute: AuthenticatedPreflightRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedPublishRoute: AuthenticatedPublishRoute,
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
   AuthenticatedSharedRoute: AuthenticatedSharedRoute,
   AuthenticatedTestingRoute: AuthenticatedTestingRoute,
+  AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedWatchlistRoute: AuthenticatedWatchlistRoute,
   AuthenticatedAdminAccountsRoute: AuthenticatedAdminAccountsRoute,
   AuthenticatedAdminActivityRoute: AuthenticatedAdminActivityRoute,

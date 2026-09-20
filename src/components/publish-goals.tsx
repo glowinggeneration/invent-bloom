@@ -84,9 +84,13 @@ const TONES: Record<Goal["tone"], string> = {
 /** Outcome grid. Each card makes the execution path and next step explicit. */
 export function PublishGoalGrid({
   onPick,
+  text,
 }: {
   /** Called with the goal title so the caller can show a branded loading screen. */
   onPick?: (title: string) => void;
+  /** Carried over from wherever the picker was opened (e.g. Today's composer), so the
+   *  chosen workflow starts with what the operator already typed instead of a blank form. */
+  text?: string | undefined;
 }) {
   return (
     <div className="grid gap-3 md:grid-cols-3">
@@ -95,6 +99,7 @@ export function PublishGoalGrid({
           key={goal.key}
           to="/campaign/$action"
           params={{ action: goal.action }}
+          search={{ text }}
           onClick={() => onPick?.(goal.title)}
           style={{ animationDelay: `${i * 60}ms` }}
           className={cn(

@@ -8,18 +8,26 @@ import {
   AtSign,
   BarChart3,
   Bell,
+  BookOpen,
+  Building2,
   CalendarClock,
   CalendarDays,
   ChevronDown,
   ClipboardCheck,
+  Compass,
   CreditCard,
   Eye,
   FileCheck2,
+  FolderKanban,
+  FilePlus2,
   FileText,
   Gauge,
+  GitCompareArrows,
   HelpCircle,
   History,
   LayoutDashboard,
+  LayoutGrid,
+  ListChecks,
   LogOut,
   Moon,
   Plus,
@@ -27,6 +35,7 @@ import {
   Settings2,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   SquarePen,
   UsersRound,
 } from "lucide-react";
@@ -37,6 +46,7 @@ import { AboutPopover } from "@/components/core/about-popover";
 import { OfficialPostAlert } from "@/components/official-post-alert";
 import { IdleSessionGuard } from "@/components/idle-session-guard";
 import { QuickAccessDock } from "@/components/quick-access-dock";
+import { ProjectSwitcher } from "@/components/project-switcher";
 import { AnimatedThemeToggler } from "@/registry/magicui/animated-theme-toggler";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
@@ -77,6 +87,7 @@ import {
 } from "@/components/ui/sidebar";
 import { initialsOf } from "@/lib/initials";
 import { cn } from "@/lib/utils";
+import { GROUP_EXTRA_PREFIXES, isSectionActive, type DestinationGroupKey } from "@/lib/navigation";
 
 type NavItem = { to: string; label: string; icon: ComponentType<{ className?: string }> };
 
@@ -120,7 +131,11 @@ function NavGroup({
                       "bg-sidebar-primary/10 font-medium text-sidebar-primary hover:bg-sidebar-primary/15 hover:text-sidebar-primary data-[active=true]:bg-sidebar-primary/10 data-[active=true]:text-sidebar-primary",
                   )}
                 >
-                  <Link to={item.to} aria-current={isActive ? "page" : undefined}>
+                  <Link
+                    to={item.to}
+                    aria-current={isActive ? "page" : undefined}
+                    aria-label={item.label}
+                  >
                     {isActive && (
                       <span
                         aria-hidden="true"
@@ -140,13 +155,190 @@ function NavGroup({
   );
 }
 
+/**
+ * The five primary destinations. `Today` is a single hub page; the other four
+ * are collapsible groups of existing pages, regrouped by job-to-be-done
+ * rather than by when they were built. Secondary/operational tools live in
+ * `useSecondaryTools` below, reachable through the compact "More tools" menu
+ * instead of the primary rail.
+ */
+function useDestinations(isAdmin: boolean) {
+  const today: NavItem = { to: "/today", label: "Today", icon: Compass };
+  const projectsNav: NavItem = { to: "/projects", label: "Projects", icon: FolderKanban };
+
+  const groupsBase: {
+    key: DestinationGroupKey;
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+    items: NavItem[];
+  }[] = [
+    {
+      key: "intelligence",
+      label: "Intelligence",
+      icon: LayoutDashboard,
+      items: [
+        { to: "/overview", label: "Overview", icon: LayoutDashboard },
+        { to: "/mentions", label: "Mentions", icon: AtSign },
+        { to: "/watchlist", label: "Watchlist", icon: Eye },
+        { to: "/crisis", label: "Crisis Command", icon: ShieldAlert },
+        { to: "/brief", label: "Executive Brief", icon: FileText },
+        { to: "/personas", label: "Personas", icon: BarChart3 },
+        { to: "/decisions", label: "Decision Log", icon: ClipboardCheck },
+      ],
+    },
+    {
+      key: "studio",
+      label: "Studio",
+      icon: SquarePen,
+      items: [
+        { to: "/new", label: "Response Studio", icon: SquarePen },
+        { to: "/compare", label: "Compare Messages", icon: GitCompareArrows },
+        { to: "/archive", label: "Test Archive", icon: Archive },
+      ],
+    },
+    {
+      key: "campaigns",
+      label: "Campaigns",
+      icon: Gauge,
+      items: [
+        { to: "/campaign-manager", label: "Campaign Manager", icon: Gauge },
+        { to: "/campaign-calendar", label: "Campaign Calendar", icon: CalendarDays },
+        { to: "/preflight", label: "Campaign Preflight", icon: ShieldCheck },
+        { to: "/campaign-proof", label: "Campaign Proof", icon: FileCheck2 },
+        { to: "/campaign-history", label: "Campaign History", icon: History },
+        ...(isAdmin ? [{ to: "/always-on", label: "Content Planning", icon: CalendarClock }] : []),
+      ],
+    },
+    {
+      key: "results",
+      label: "Results",
+      icon: FileText,
+      items: [
+        ...(isAdmin
+          ? [
+              { to: "/performance", label: "Performance", icon: Activity },
+              { to: "/performance/insights", label: "Performance Insights", icon: Sparkles },
+            ]
+          : []),
+        { to: "/reports", label: "Reports", icon: FileText },
+        { to: "/reports/builder", label: "Custom Report Builder", icon: FilePlus2 },
+      ],
+    },
+  ];
+
+  // Nested/detail routes (e.g. /campaign/post, /chat/$threadId) don't share a
+  // URL prefix with any member item, so each group's active-matching also
+  // checks its extra prefixes - see src/lib/navigation.ts.
+  const groups = groupsBase.map((group) => ({
+    ...group,
+    matchPrefixes: [...group.items.map((item) => item.to), ...GROUP_EXTRA_PREFIXES[group.key]],
+  }));
+
+  return { today, projectsNav, groups };
+}
+
+/** Secondary/operational tools, reachable through the compact "More tools" menu. */
+function useSecondaryTools(isAdmin: boolean) {
+  return [
+    { to: "/knowledge", label: "Knowledge Library", icon: BookOpen },
+    { to: "/notifications", label: "Notifications", icon: Bell },
+    { to: "/governance", label: "Governance & Data", icon: ShieldCheck },
+    { to: "/changelog", label: "Changelog", icon: History },
+    { to: "/help", label: "Help Centre", icon: HelpCircle },
+    ...(isAdmin
+      ? [
+          { to: "/linked-accounts", label: "Linked Accounts", icon: UsersRound },
+          { to: "/account-health", label: "X Account Health", icon: Activity },
+          { to: "/admin/accounts", label: "Manage Connections", icon: Settings },
+          { to: "/admin/activity", label: "Operational Activity", icon: ListChecks },
+          { to: "/admin/health", label: "System Health", icon: ShieldCheck },
+          { to: "/admin/workspaces", label: "Workspaces", icon: Building2 },
+        ]
+      : []),
+  ];
+}
+
+function CollapsibleNavGroup({
+  group,
+  pathname,
+  isCompactRail,
+  open,
+  onToggle,
+}: {
+  group: {
+    key: DestinationGroupKey;
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+    items: NavItem[];
+    matchPrefixes: string[];
+  };
+  pathname: string;
+  isCompactRail: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const groupActive = isSectionActive(pathname, group.matchPrefixes);
+  const isOpen = open || groupActive;
+  const panelId = `nav-group-${group.key}`;
+
+  if (isCompactRail) {
+    // No room for a group header at 80px width - items render flat with tooltips,
+    // same treatment the always-visible groups already use.
+    return <NavGroup label="" items={group.items} pathname={pathname} isCompactRail />;
+  }
+
+  return (
+    <div>
+      <SidebarMenu className="px-2">
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            onClick={onToggle}
+            aria-expanded={isOpen}
+            aria-controls={panelId}
+            className={cn(
+              "min-h-11",
+              groupActive ? "font-medium text-sidebar-primary" : "text-muted-foreground",
+            )}
+          >
+            <group.icon className="size-4 shrink-0" aria-hidden="true" />
+            <span className="flex-1 text-left">{group.label}</span>
+            <ChevronDown
+              aria-hidden="true"
+              className={cn("size-4 shrink-0 transition-transform", isOpen ? "" : "-rotate-90")}
+            />
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            id={panelId}
+            initial={reduceMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={reduceMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <NavGroup label="" items={group.items} pathname={pathname} isCompactRail={false} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function AppSidebar() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { isAdmin, profile } = useNavAreas();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const profilePath = isAdmin ? "/admin/profile" : "/profile";
-  const [showMore, setShowMore] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [secondaryOpen, setSecondaryOpen] = useState(false);
+  const { today, projectsNav, groups } = useDestinations(isAdmin);
+  const secondaryTools = useSecondaryTools(isAdmin);
+  const secondaryActive = secondaryTools.some((item) => pathname.startsWith(item.to));
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -155,55 +347,20 @@ function AppSidebar() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const workspaceItems: NavItem[] = [
-    { to: "/overview", label: "Overview", icon: LayoutDashboard },
-    { to: "/mentions", label: "Mentions", icon: AtSign },
-  ];
-
-  const workItems: NavItem[] = [
-    { to: "/campaign-manager", label: "Campaigns", icon: Gauge },
-    { to: "/campaign-calendar", label: "Campaign Calendar", icon: CalendarDays },
-    { to: "/new", label: "Response Studio", icon: SquarePen },
-    ...(isAdmin ? [{ to: "/performance", label: "Performance", icon: Activity }] : []),
-    { to: "/reports", label: "Reports", icon: FileText },
-  ];
-
-  const moreItems: NavItem[] = [
-    { to: "/personas", label: "Personas", icon: BarChart3 },
-    { to: "/brief", label: "Executive Brief", icon: FileText },
-    { to: "/watchlist", label: "Watchlist", icon: Eye },
-    { to: "/crisis", label: "Crisis Command", icon: ShieldAlert },
-    { to: "/decisions", label: "Decision Log", icon: ClipboardCheck },
-    { to: "/preflight", label: "Campaign Preflight", icon: ShieldCheck },
-    { to: "/campaign-proof", label: "Campaign Proof", icon: FileCheck2 },
-    { to: "/campaign-history", label: "Campaign History", icon: History },
-    { to: "/archive", label: "Test Archive", icon: Archive },
-    ...(isAdmin
-      ? [
-          { to: "/linked-accounts", label: "Linked Accounts", icon: UsersRound },
-          { to: "/account-health", label: "X Account Health", icon: Activity },
-          { to: "/always-on", label: "Content Planning", icon: CalendarClock },
-          { to: "/admin/health", label: "System Health", icon: ShieldCheck },
-        ]
-      : []),
-  ];
-
-  const moreActive = moreItems.some((item) => pathname.startsWith(item.to));
-  const moreOpen = showMore || moreActive;
-  const reduceMotion = useReducedMotion();
   // Single source of truth for "is this the 80px icon-only rail" — every
   // child below reads this, never the raw `collapsed`/`state` value, so
   // the mobile drawer (which shares `state="collapsed"` sometimes) never
   // inherits the compact rendering.
   const { state, isMobile } = useSidebar();
   const isCompactRail = state === "collapsed" && !isMobile;
+  const todayActive = pathname.startsWith(today.to);
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className={cn("border-b border-sidebar-border p-3", isCompactRail && "px-3")}>
         <Link
-          to="/overview"
-          aria-label="SMAIT, go to overview"
+          to="/today"
+          aria-label="SMAIT, go to Today"
           className={cn("flex items-center gap-3", isCompactRail && "justify-center")}
         >
           {isCompactRail ? (
@@ -236,6 +393,7 @@ function AppSidebar() {
             <SidebarMenuButton
               onClick={() => navigate({ to: "/publish", search: { choose: true } })}
               tooltip="New campaign"
+              aria-label="New campaign"
               className={cn(
                 "bg-primary text-primary-foreground hover:bg-primary/90",
                 isCompactRail ? "!size-12 !p-0 justify-center" : "min-h-11",
@@ -247,63 +405,93 @@ function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
 
+        {/* Today: standalone primary destination, always visible, never collapsible. */}
+        <SidebarMenu className={cn("px-2 pt-1", isCompactRail && "items-center")}>
+          <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
+            <SidebarMenuButton
+              asChild
+              isActive={todayActive}
+              tooltip="Today"
+              className={cn(
+                "relative overflow-hidden",
+                isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11",
+                todayActive &&
+                  "bg-sidebar-primary/10 font-medium text-sidebar-primary hover:bg-sidebar-primary/15 hover:text-sidebar-primary data-[active=true]:bg-sidebar-primary/10 data-[active=true]:text-sidebar-primary",
+              )}
+            >
+              <Link
+                to={today.to}
+                aria-current={todayActive ? "page" : undefined}
+                aria-label="Today"
+              >
+                {todayActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-sidebar-primary"
+                  />
+                )}
+                <today.icon className={cn("shrink-0", isCompactRail ? "size-5" : "size-4")} />
+                {!isCompactRail && <span>Today</span>}
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
+        {/* Projects: standalone, next to Today - not one of the four
+            collapsible groups, and deliberately not a mobile tab either
+            (see MobileTabBar) - reachable there via the header switcher
+            and command search instead, to keep five tabs, not six. */}
         <NavGroup
-          label="Workspace"
-          items={workspaceItems}
-          pathname={pathname}
-          isCompactRail={isCompactRail}
-        />
-        <NavGroup
-          label="Work"
-          items={workItems}
+          label=""
+          items={[{ ...projectsNav, label: "Projects" }]}
           pathname={pathname}
           isCompactRail={isCompactRail}
         />
 
         <SidebarSeparator className="mx-4 my-1" />
+
+        {groups.map((group) => (
+          <CollapsibleNavGroup
+            key={group.key}
+            group={group}
+            pathname={pathname}
+            isCompactRail={isCompactRail}
+            open={Boolean(openGroups[group.key])}
+            onToggle={() =>
+              setOpenGroups((current) => ({ ...current, [group.key]: !current[group.key] }))
+            }
+          />
+        ))}
+
+        <SidebarSeparator className="mx-4 my-1" />
         <SidebarMenu className={cn("px-2", isCompactRail && "items-center")}>
           <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
             <SidebarMenuButton
-              onClick={() => setShowMore((v) => !v)}
-              tooltip="More"
-              aria-expanded={moreOpen}
-              aria-controls="workspace-more-navigation"
+              onClick={() => setSecondaryOpen((v) => !v)}
+              tooltip="More tools"
+              aria-label="More tools"
+              aria-expanded={secondaryActive || secondaryOpen}
+              aria-controls="secondary-tools-navigation"
               className={cn(
                 "text-muted-foreground",
                 isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11",
               )}
             >
-              <ChevronDown
-                aria-hidden="true"
-                className={cn(
-                  "shrink-0 transition-transform",
-                  isCompactRail ? "size-5" : "size-4",
-                  moreOpen ? "" : "-rotate-90",
-                )}
-              />
-              {!isCompactRail && <span>More</span>}
+              <LayoutGrid className={cn("shrink-0", isCompactRail ? "size-5" : "size-4")} />
+              {!isCompactRail && <span>More tools</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <AnimatePresence initial={false}>
-          {moreOpen && (
-            <motion.div
-              id="workspace-more-navigation"
-              initial={reduceMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={reduceMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
-              className="overflow-hidden"
-            >
-              <NavGroup
-                label=""
-                items={moreItems}
-                pathname={pathname}
-                isCompactRail={isCompactRail}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {isCompactRail ? (
+          <NavGroup label="" items={secondaryTools} pathname={pathname} isCompactRail />
+        ) : (
+          <CollapsibleSecondaryTools
+            id="secondary-tools-navigation"
+            items={secondaryTools}
+            pathname={pathname}
+            open={secondaryActive || secondaryOpen}
+          />
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
@@ -315,24 +503,15 @@ function AppSidebar() {
           <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
             <SidebarMenuButton
               asChild
-              isActive={pathname.startsWith("/help")}
-              tooltip="Help"
-              className={isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11"}
-            >
-              <Link to="/help" aria-current={pathname.startsWith("/help") ? "page" : undefined}>
-                <HelpCircle className={cn("shrink-0", isCompactRail ? "size-5" : "size-4")} />
-                {!isCompactRail && <span>Help</span>}
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem className={cn(isCompactRail && "w-auto")}>
-            <SidebarMenuButton
-              asChild
               isActive={pathname === profilePath}
               tooltip={isAdmin ? "Admin Profile" : "Profile"}
               className={isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11"}
             >
-              <Link to={profilePath} aria-current={pathname === profilePath ? "page" : undefined}>
+              <Link
+                to={profilePath}
+                aria-current={pathname === profilePath ? "page" : undefined}
+                aria-label={isAdmin ? "Admin Profile" : "Profile"}
+              >
                 {isCompactRail ? (
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-positive text-[10px] font-semibold text-navy-foreground">
                     {initialsOf(profile?.fullName)}
@@ -352,6 +531,7 @@ function AppSidebar() {
             <SidebarMenuButton
               onClick={handleSignOut}
               tooltip="Log out"
+              aria-label="Log out"
               className={cn(
                 "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
                 isCompactRail ? "!size-11 !p-0 justify-center" : "min-h-11",
@@ -367,46 +547,54 @@ function AppSidebar() {
   );
 }
 
+function CollapsibleSecondaryTools({
+  id,
+  items,
+  pathname,
+  open,
+}: {
+  id: string;
+  items: NavItem[];
+  pathname: string;
+  open: boolean;
+}) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <AnimatePresence initial={false}>
+      {open && (
+        <motion.div
+          id={id}
+          initial={reduceMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={reduceMotion ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
+          className="overflow-hidden"
+        >
+          <NavGroup label="" items={items} pathname={pathname} isCompactRail={false} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function MobileTabBar({ isAdmin, pathname }: { isAdmin: boolean; pathname: string }) {
-  const standardItems: NavItem[] = [
-    { to: "/overview", label: "Overview", icon: LayoutDashboard },
-    { to: "/mentions", label: "Mentions", icon: AtSign },
+  const { today, groups } = useDestinations(isAdmin);
+  const secondaryTools = useSecondaryTools(isAdmin);
+
+  // Five primary destinations, one tab each. A group's tab links to its
+  // first/most-used member page; the tab still lights up for every route
+  // inside that group, including nested ones, via the same startsWith check.
+  const tabs: (NavItem & { matches: string[] })[] = [
+    { ...today, matches: [today.to] },
+    ...groups.map((group) => ({
+      to: group.items[0]!.to,
+      label: group.label,
+      icon: group.icon,
+      matches: group.matchPrefixes,
+    })),
   ];
-  const trailingItems: NavItem[] = [
-    { to: "/campaign-manager", label: "Campaigns", icon: Gauge },
-    { to: "/campaign-calendar", label: "Campaign Calendar", icon: CalendarDays },
-    ...(isAdmin
-      ? [{ to: "/performance", label: "Performance", icon: Activity }]
-      : [{ to: "/reports", label: "Reports", icon: FileText }]),
-  ];
-  const secondaryItems: NavItem[] = [
-    { to: "/new", label: "Response Studio", icon: SquarePen },
-    { to: "/reports", label: "Reports", icon: FileText },
-    { to: "/personas", label: "Personas", icon: BarChart3 },
-    { to: "/brief", label: "Executive Brief", icon: FileText },
-    { to: "/watchlist", label: "Watchlist", icon: Eye },
-    { to: "/crisis", label: "Crisis Command", icon: ShieldAlert },
-    { to: "/decisions", label: "Decision Log", icon: ClipboardCheck },
-    { to: "/preflight", label: "Campaign Preflight", icon: ShieldCheck },
-    { to: "/campaign-proof", label: "Campaign Proof", icon: FileCheck2 },
-    { to: "/campaign-history", label: "Campaign History", icon: History },
-    { to: "/archive", label: "Test Archive", icon: Archive },
-    { to: "/help", label: "Help Centre", icon: HelpCircle },
-    {
-      to: isAdmin ? "/admin/profile" : "/profile",
-      label: isAdmin ? "Admin Profile" : "Profile",
-      icon: Settings,
-    },
-    ...(isAdmin
-      ? [
-          { to: "/linked-accounts", label: "Linked Accounts", icon: UsersRound },
-          { to: "/account-health", label: "X Account Health", icon: Activity },
-          { to: "/always-on", label: "Content Planning", icon: CalendarClock },
-          { to: "/admin/health", label: "System Health", icon: ShieldCheck },
-        ]
-      : []),
-  ];
-  const activeSecondary = secondaryItems.find((item) => pathname.startsWith(item.to));
+
+  const activeSecondary = secondaryTools.find((item) => pathname.startsWith(item.to));
 
   const itemClass = (active: boolean) =>
     cn(
@@ -421,50 +609,21 @@ function MobileTabBar({ isAdmin, pathname }: { isAdmin: boolean; pathname: strin
     >
       {activeSecondary ? (
         <span className="absolute -top-8 left-3 rounded-t-lg border border-b-0 border-border bg-background px-3 py-1 type-meta font-semibold text-foreground shadow-sm">
-          More · {activeSecondary.label}
+          More tools · {activeSecondary.label}
         </span>
       ) : null}
       <ul className="grid grid-cols-5">
-        {standardItems.map((item) => {
-          const active = pathname.startsWith(item.to);
+        {tabs.map((tab) => {
+          const active = isSectionActive(pathname, tab.matches);
           return (
-            <li key={item.to}>
+            <li key={tab.label}>
               <Link
-                to={item.to}
+                to={tab.to}
                 aria-current={active ? "page" : undefined}
                 className={itemClass(active)}
               >
-                <item.icon className="size-5" aria-hidden="true" />
-                <span className="max-w-full truncate">{item.label}</span>
-              </Link>
-            </li>
-          );
-        })}
-
-        <li>
-          <Link
-            to="/publish"
-            search={{ choose: true }}
-            className="flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-1.5 type-meta font-semibold text-foreground"
-          >
-            <span className="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm">
-              <Plus className="size-5" />
-            </span>
-            <span>Create</span>
-          </Link>
-        </li>
-
-        {trailingItems.map((item) => {
-          const active = pathname.startsWith(item.to);
-          return (
-            <li key={item.to}>
-              <Link
-                to={item.to}
-                aria-current={active ? "page" : undefined}
-                className={itemClass(active)}
-              >
-                <item.icon className="size-5" aria-hidden="true" />
-                <span className="max-w-full truncate">{item.label}</span>
+                <tab.icon className="size-5" aria-hidden="true" />
+                <span className="max-w-full truncate">{tab.label}</span>
               </Link>
             </li>
           );
@@ -702,6 +861,7 @@ export function WorkspaceShell({
               aria-label="Page actions"
             >
               {actions}
+              <ProjectSwitcher />
               <GlobalCommandPalette />
               <Button asChild className="hidden h-10 shrink-0 gap-1.5 lg:inline-flex">
                 <Link to="/publish" search={{ choose: true }} title="Create campaign">

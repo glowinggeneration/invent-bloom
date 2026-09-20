@@ -56,6 +56,19 @@ export type Analysis = {
   classification?: Classification;
   /** Legal review of the message the user submitted. */
   legal?: LegalSafety;
+  /**
+   * Approved Knowledge Library entries the tested message or a suggested
+   * rewrite appears to conflict with. Populated only when the workspace has
+   * approved entries to check against - absence never implies "no conflict
+   * exists", only "nothing was checked".
+   */
+  knowledgeConflicts?: KnowledgeConflict[];
+};
+
+export type KnowledgeConflict = {
+  entryId: string;
+  entryTitle: string;
+  note: string;
 };
 
 export type ChatMessage = {

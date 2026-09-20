@@ -1,0 +1,76 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+function read(path: string) {
+  return readFileSync(resolve(process.cwd(), path), "utf8");
+}
+
+describe("getActiveKnowledgeEntries only ever returns approved, current entries", () => {
+  const source = read("src/lib/knowledge.server.ts");
+
+  it("filters to approval_status = approved", () => {
+    expect(source).toMatch(/\.eq\("approval_status",\s*"approved"\)/);
+  });
+
+  it("excludes entries past their expiry date", () => {
+    expect(source).toMatch(/expiry_date\.gte\.\$\{today\}/);
+  });
+});
+
+describe("knowledge conflict ids from the model are checked against real entries", () => {
+  const source = read("src/lib/smait.server.ts");
+
+  it("looks up every claimed conflict id in the entries actually supplied as context", () => {
+    const fnBody = source.slice(
+      source.indexOf("const knowledgeConflicts ="),
+      source.indexOf("const knowledgeConflicts =") + 800,
+    );
+    expect(fnBody).toMatch(/knowledgeById\.get\(/);
+    expect(fnBody).toMatch(/if \(!entry\) return null;/);
+  });
+});
+
+describe("every knowledge table gets a workspace-scoped RLS policy", () => {
+  const migration = read("supabase/migrations/20260920140000_knowledge_library.sql");
+
+  for (const table of ["knowledge_entries", "knowledge_entry_versions"]) {
+    it(`${table} has RLS enabled and a can_access_workspace policy`, () => {
+      expect(migration).toMatch(
+        new RegExp(`ALTER TABLE public\\.${table} ENABLE ROW LEVEL SECURITY`),
+      );
+      const tableSection = migration.slice(migration.indexOf(`CREATE TABLE public.${table}`));
+      const nextTableIdx = tableSection.indexOf("CREATE TABLE public.", 1);
+      const scoped = nextTableIdx === -1 ? tableSection : tableSection.slice(0, nextTableIdx);
+      expect(scoped).toMatch(/private\.can_access_workspace\(workspace_id\)/);
+    });
+  }
+});
+
+describe("createKnowledgeEntry and deleteKnowledgeEntry enforce their stated invariants", () => {
+  const source = read("src/lib/knowledge.functions.ts");
+
+  it("createKnowledgeEntry checks the target project's workspace before attaching an entry", () => {
+    const fnBody = source.slice(
+      source.indexOf("export const createKnowledgeEntry"),
+      source.indexOf("const updateEntrySchema"),
+    );
+    expect(fnBody).toMatch(/project\.workspace_id\s*!==\s*workspaceId/);
+  });
+
+  it("deleteKnowledgeEntry can only remove pending or rejected entries, never approved/superseded", () => {
+    const fnBody = source.slice(
+      source.indexOf("export const deleteKnowledgeEntry"),
+      source.indexOf("export const listKnowledgeEntryVersions"),
+    );
+    expect(fnBody).toMatch(/\.in\("approval_status",\s*\["pending",\s*"rejected"\]\)/);
+  });
+
+  it("updateKnowledgeEntry drops a substantively-edited entry back to pending review", () => {
+    const fnBody = source.slice(
+      source.indexOf("export const updateKnowledgeEntry"),
+      source.indexOf("const statusSchema"),
+    );
+    expect(fnBody).toMatch(/patch\["approval_status"\]\s*=\s*"pending"/);
+  });
+});

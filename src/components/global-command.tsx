@@ -5,7 +5,10 @@ import {
   Archive,
   AtSign,
   Bell,
+  BarChart3,
+  BookOpen,
   ClipboardCheck,
+  Compass,
   Eye,
   FileCheck2,
   FilePlus2,
@@ -32,118 +35,184 @@ import { ProgressiveBlur } from "@/components/core/progressive-blur";
 import { useProfile } from "@/hooks/use-profile";
 import { isAdminEmail } from "@/lib/access";
 
+/**
+ * Grouped to match the five sidebar destinations exactly (`group` is a
+ * display heading here, not a route) so command search and navigation never
+ * disagree about where something lives. "Secondary" mirrors the sidebar's
+ * compact "More tools" menu.
+ */
 const BASE_COMMANDS = [
+  {
+    label: "Today",
+    description: "Start an investigation, a message test or a campaign",
+    to: "/today",
+    icon: Compass,
+    group: "Today",
+  },
   {
     label: "Overview",
     description: "Executive brand health and intelligence",
     to: "/overview",
     icon: LayoutDashboard,
+    group: "Intelligence",
   },
   {
     label: "Executive Brief",
     description: "Leadership summary of what changed and what to do next",
     to: "/brief",
     icon: FileText,
+    group: "Intelligence",
   },
   {
     label: "Crisis Command",
     description: "Fast-moving risks, amplification and response actions",
     to: "/crisis",
     icon: ShieldAlert,
+    group: "Intelligence",
   },
   {
     label: "Mentions",
     description: "Investigate monitored posts and articles",
     to: "/mentions",
     icon: AtSign,
+    group: "Intelligence",
   },
   {
     label: "Monitoring Watchlist",
     description: "Prioritise sources, people, organisations and keywords",
     to: "/watchlist",
     icon: Eye,
+    group: "Intelligence",
   },
   {
-    label: "Notifications",
-    description: "Official-post opportunities, campaign updates and priority risks",
-    to: "/notifications",
-    icon: Bell,
-  },
-  {
-    label: "Response Studio",
-    description: "Test a message with personas",
-    to: "/new",
-    icon: SquarePen,
-  },
-  {
-    label: "Compare messages",
-    description: "Test two or three variants side by side",
-    to: "/compare",
-    icon: GitCompareArrows,
-  },
-  { label: "Personas", description: "Browse the persona panel", to: "/personas", icon: UsersRound },
-  {
-    label: "Campaign Preflight",
-    description: "Check readiness and risk before campaign launch",
-    to: "/preflight",
-    icon: ShieldCheck,
-  },
-  {
-    label: "Campaigns",
-    description: "Track running and completed campaigns",
-    to: "/campaign-manager",
-    icon: Gauge,
-  },
-  {
-    label: "Campaign Proof",
-    description: "Execution and result record for each campaign",
-    to: "/campaign-proof",
-    icon: FileCheck2,
+    label: "Personas",
+    description: "Browse the persona panel",
+    to: "/personas",
+    icon: BarChart3,
+    group: "Intelligence",
   },
   {
     label: "Decision Log",
     description: "Record intelligence decisions, owners and results",
     to: "/decisions",
     icon: ClipboardCheck,
+    group: "Intelligence",
+  },
+  {
+    label: "Response Studio",
+    description: "Test a message with personas",
+    to: "/new",
+    icon: SquarePen,
+    group: "Studio",
+  },
+  {
+    label: "Compare messages",
+    description: "Test two or three variants side by side",
+    to: "/compare",
+    icon: GitCompareArrows,
+    group: "Studio",
+  },
+  {
+    label: "Archive",
+    description: "Past message tests",
+    to: "/archive",
+    icon: Archive,
+    group: "Studio",
+  },
+  {
+    label: "Campaign Manager",
+    description: "Track running and completed campaigns",
+    to: "/campaign-manager",
+    icon: Gauge,
+    group: "Campaigns",
+  },
+  {
+    label: "Campaign Calendar",
+    description: "Plan timing around X's rate limits",
+    to: "/campaign-calendar",
+    icon: FileCheck2,
+    group: "Campaigns",
+  },
+  {
+    label: "Campaign Preflight",
+    description: "Check readiness and risk before campaign launch",
+    to: "/preflight",
+    icon: ShieldCheck,
+    group: "Campaigns",
+  },
+  {
+    label: "Campaign Proof",
+    description: "Execution and result record for each campaign",
+    to: "/campaign-proof",
+    icon: FileCheck2,
+    group: "Campaigns",
+  },
+  {
+    label: "Campaign History",
+    description: "Which posts actually went out, by account and time",
+    to: "/campaign-history",
+    icon: History,
+    group: "Campaigns",
   },
   {
     label: "Reports",
     description: "Automated and managed reports",
     to: "/reports",
     icon: FileText,
+    group: "Results",
   },
   {
     label: "Custom Report Builder",
     description: "Choose report sections and generate a PDF",
     to: "/reports/builder",
     icon: FilePlus2,
+    group: "Results",
   },
-  { label: "Archive", description: "Past message tests", to: "/archive", icon: Archive },
+  {
+    label: "Knowledge Library",
+    description: "Approved facts, terminology and positioning Studio checks drafts against",
+    to: "/knowledge",
+    icon: BookOpen,
+    group: "Secondary",
+  },
+  {
+    label: "Notifications",
+    description: "Official-post opportunities, campaign updates and priority risks",
+    to: "/notifications",
+    icon: Bell,
+    group: "Secondary",
+  },
   {
     label: "Governance & Data",
     description: "Responsible use, privacy and data handling",
     to: "/governance",
     icon: ShieldCheck,
+    group: "Secondary",
   },
   {
     label: "Changelog",
     description: "Material product improvements",
     to: "/changelog",
     icon: History,
+    group: "Secondary",
   },
   {
     label: "Help Centre",
     description: "Search platform guidance and troubleshooting",
     to: "/help",
     icon: HelpCircle,
+    group: "Secondary",
   },
   {
     label: "My Profile",
     description: "Your identity, appearance and personal preferences",
     to: "/profile",
     icon: UserRound,
+    group: "Secondary",
   },
 ] as const;
+
+const GROUP_ORDER = ["Today", "Intelligence", "Studio", "Campaigns", "Results", "Secondary"];
 
 export function GlobalCommandPalette() {
   const navigate = useNavigate();
@@ -171,6 +240,7 @@ export function GlobalCommandPalette() {
         to: "/publish",
         search: { choose: true } as Record<string, unknown>,
         icon: Plus,
+        group: "Today",
       },
       ...BASE_COMMANDS.map((item) => ({ ...item, search: undefined })),
       ...(isAdmin
@@ -181,6 +251,7 @@ export function GlobalCommandPalette() {
               to: "/admin/profile",
               search: undefined,
               icon: Settings,
+              group: "Secondary",
             },
             {
               label: "Performance",
@@ -188,6 +259,7 @@ export function GlobalCommandPalette() {
               to: "/performance",
               search: undefined,
               icon: Activity,
+              group: "Results",
             },
             {
               label: "Performance insights",
@@ -195,6 +267,15 @@ export function GlobalCommandPalette() {
               to: "/performance/insights",
               search: undefined,
               icon: Sparkles,
+              group: "Results",
+            },
+            {
+              label: "Content Planning",
+              description: "Always-on editorial plan across linked accounts",
+              to: "/always-on",
+              search: undefined,
+              icon: FileText,
+              group: "Campaigns",
             },
             {
               label: "Linked Accounts",
@@ -202,6 +283,7 @@ export function GlobalCommandPalette() {
               to: "/linked-accounts",
               search: undefined,
               icon: UsersRound,
+              group: "Secondary",
             },
             {
               label: "Manage account connections",
@@ -209,6 +291,7 @@ export function GlobalCommandPalette() {
               to: "/admin/accounts",
               search: undefined,
               icon: Settings,
+              group: "Secondary",
             },
             {
               label: "X Account Health",
@@ -217,6 +300,7 @@ export function GlobalCommandPalette() {
               to: "/account-health",
               search: undefined,
               icon: Activity,
+              group: "Secondary",
             },
             {
               label: "System Health",
@@ -224,6 +308,7 @@ export function GlobalCommandPalette() {
               to: "/admin/health",
               search: undefined,
               icon: ShieldCheck,
+              group: "Secondary",
             },
             {
               label: "Operational Activity",
@@ -231,6 +316,7 @@ export function GlobalCommandPalette() {
               to: "/admin/activity",
               search: undefined,
               icon: ListChecks,
+              group: "Secondary",
             },
           ]
         : []),
@@ -240,6 +326,18 @@ export function GlobalCommandPalette() {
       ? list.filter((item) => `${item.label} ${item.description}`.toLowerCase().includes(q))
       : list;
   }, [isAdmin, query]);
+
+  const groupedCommands = useMemo(() => {
+    const byGroup = new Map<string, typeof commands>();
+    for (const command of commands) {
+      const list = byGroup.get(command.group) ?? [];
+      list.push(command);
+      byGroup.set(command.group, list);
+    }
+    return GROUP_ORDER.map((group) => ({ group, items: byGroup.get(group) ?? [] })).filter(
+      (section) => section.items.length > 0,
+    );
+  }, [commands]);
 
   function run(command: (typeof commands)[number]) {
     setOpen(false);
@@ -297,29 +395,47 @@ export function GlobalCommandPalette() {
           </div>
           <div className="relative min-h-0 overflow-hidden">
             <div className="max-h-[55vh] overflow-y-auto px-2 pb-8 pt-5">
-              {commands.length ? (
-                <div className="grid gap-1">
-                  {commands.map((command) => {
-                    const Icon = command.icon;
-                    return (
-                      <button
-                        key={command.label}
-                        type="button"
-                        onClick={() => run(command)}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              {groupedCommands.length ? (
+                <div className="grid gap-4">
+                  {groupedCommands.map((section) => (
+                    <div
+                      key={section.group}
+                      role="group"
+                      aria-labelledby={`cmd-group-${section.group}`}
+                    >
+                      <p
+                        id={`cmd-group-${section.group}`}
+                        className="px-3 pb-1.5 type-meta font-semibold uppercase tracking-wide text-muted-foreground"
                       >
-                        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
-                          <Icon className="size-4 text-muted-foreground" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block type-body font-semibold">{command.label}</span>
-                          <span className="block truncate type-meta text-muted-foreground">
-                            {command.description}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
+                        {section.group}
+                      </p>
+                      <div className="grid gap-1">
+                        {section.items.map((command) => {
+                          const Icon = command.icon;
+                          return (
+                            <button
+                              key={command.label}
+                              type="button"
+                              onClick={() => run(command)}
+                              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
+                                <Icon className="size-4 text-muted-foreground" />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block type-body font-semibold">
+                                  {command.label}
+                                </span>
+                                <span className="block truncate type-meta text-muted-foreground">
+                                  {command.description}
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <p className="p-6 text-center type-meta text-muted-foreground">

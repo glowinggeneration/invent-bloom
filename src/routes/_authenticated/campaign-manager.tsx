@@ -473,12 +473,12 @@ function CampaignManagerPage() {
   );
 
   return (
-    <WorkspaceShell title="Campaigns" wide>
+    <WorkspaceShell title="Campaign Manager" wide>
       <PageTitle
         description="Plan, run and review campaigns from one place."
         actions={mode === "ready" || mode === "filtered-empty" ? createCampaignAction : undefined}
       >
-        Campaigns
+        Campaign Manager
       </PageTitle>
 
       {mode === "loading" ? <CampaignManagerSkeleton /> : null}
