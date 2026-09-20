@@ -28,7 +28,6 @@ import {
   ShieldAlert,
   ShieldCheck,
   SquarePen,
-  Sun,
   UsersRound,
 } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
@@ -38,6 +37,7 @@ import { AboutPopover } from "@/components/core/about-popover";
 import { OfficialPostAlert } from "@/components/official-post-alert";
 import { IdleSessionGuard } from "@/components/idle-session-guard";
 import { QuickAccessDock } from "@/components/quick-access-dock";
+import { AnimatedThemeToggler } from "@/registry/magicui/animated-theme-toggler";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 import { useTheme } from "@/hooks/use-theme";
@@ -721,20 +721,13 @@ export function WorkspaceShell({
               </Button>
 
               <NotificationsBell />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden size-10 sm:inline-flex"
+              <AnimatedThemeToggler
+                isDark={theme === "dark"}
+                toggle={toggle}
+                className="hidden size-10 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
                 aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
                 title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-                onClick={toggle}
-              >
-                {theme === "dark" ? (
-                  <Sun className="size-[18px]" aria-hidden="true" />
-                ) : (
-                  <Moon className="size-[18px]" aria-hidden="true" />
-                )}
-              </Button>
+              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
