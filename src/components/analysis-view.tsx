@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, Download, TriangleAlert } from "lucide-react";
+import { BookOpen, ChevronDown, Download, Info, TriangleAlert } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -314,6 +314,11 @@ export function AnalysisView({
 
   return (
     <div className="space-y-4">
+      <p className="flex items-start gap-1.5 type-meta text-muted-foreground">
+        <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+        Persona reactions below are simulated feedback from an AI panel modelled on real audience
+        segments - not measured public opinion or an actual survey.
+      </p>
       <Card className="p-4">
         <p className="type-body text-foreground">{analysis.summary}</p>
         <Button

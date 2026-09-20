@@ -108,6 +108,9 @@ function ExecutiveSummary({ analysis, threadId }: { analysis: Analysis; threadId
         </div>
       ) : null}
       <p className="mt-4 type-body text-muted-foreground">{analysis.summary}</p>
+      <p className="mt-2 type-meta text-muted-foreground">
+        Simulated feedback from an AI persona panel - not measured public opinion.
+      </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {Object.entries(analysis.metrics).map(([key, value]) => (
