@@ -851,7 +851,7 @@ export function WorkspaceShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <header
             aria-label="Page header"
-            className="sticky top-0 z-20 flex h-[68px] items-center gap-2 border-b border-border/80 bg-background px-3 sm:gap-3 sm:px-4 lg:px-5"
+            className="material-chrome sticky top-0 z-20 flex h-[68px] items-center gap-2 border-b border-border/80 px-3 sm:gap-3 sm:px-4 lg:px-5"
           >
             <SidebarTrigger className="size-10" />
             <p className="min-w-0 flex-1 truncate type-card font-semibold">{title ?? "SMAIT"}</p>
