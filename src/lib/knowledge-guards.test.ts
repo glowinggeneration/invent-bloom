@@ -75,20 +75,50 @@ describe("createKnowledgeEntry and deleteKnowledgeEntry enforce their stated inv
   });
 });
 
-describe("the approval trust boundary is admin-gated, matching decision_log/managed_reports", () => {
+describe("the approval trust boundary is enforced at the database layer, not just in application code", () => {
   const source = read("src/lib/knowledge.functions.ts");
+  const migration = read(
+    "supabase/migrations/20260920200000_knowledge_approval_trust_boundary.sql",
+  );
 
-  it("setKnowledgeApprovalStatus calls assertAdmin before writing", () => {
+  it("the trigger rejects a non-service-role change to approval_status unless it's a demotion to pending", () => {
+    expect(migration).toMatch(/CREATE TRIGGER knowledge_entries_approval_admin_only/);
+    expect(migration).toMatch(/auth\.role\(\) <> 'service_role'/);
+    expect(migration).toMatch(/NEW\.approval_status <> 'pending'/);
+  });
+
+  it("the trigger rejects any non-service-role change to superseded_by, no exceptions", () => {
+    expect(migration).toMatch(
+      /NEW\.superseded_by IS DISTINCT FROM OLD\.superseded_by[\s\S]{0,80}RAISE EXCEPTION/,
+    );
+  });
+
+  it("setKnowledgeApprovalStatus calls assertAdmin AND writes through the service-role client (context.supabase alone would now be rejected by the trigger)", () => {
     const fnBody = source.slice(
       source.indexOf("export const setKnowledgeApprovalStatus"),
       source.indexOf("const supersedeSchema"),
     );
     expect(fnBody).toMatch(/assertAdmin\(context as any\)/);
+    expect(fnBody).toMatch(/supabaseAdmin as any/);
+    expect(fnBody).not.toMatch(
+      /context\.supabase as any\)\s*\n\s*\.from\("knowledge_entries"\)\s*\n\s*\.update/,
+    );
   });
 
-  it("supersedeKnowledgeEntry calls assertAdmin before writing", () => {
+  it("supersedeKnowledgeEntry calls assertAdmin AND writes through the service-role client", () => {
     const fnBody = source.slice(source.indexOf("export const supersedeKnowledgeEntry"));
     expect(fnBody).toMatch(/assertAdmin\(context as any\)/);
+    expect(fnBody).toMatch(/supabaseAdmin as any/);
+  });
+
+  it("updateKnowledgeEntry (member-open) only ever demotes approval_status to 'pending', never elevates it", () => {
+    const fnBody = source.slice(
+      source.indexOf("export const updateKnowledgeEntry"),
+      source.indexOf("const statusSchema"),
+    );
+    expect(fnBody).toMatch(/patch\["approval_status"\]\s*=\s*"pending"/);
+    expect(fnBody).not.toMatch(/approval_status"\]\s*=\s*"approved"/);
+    expect(fnBody).not.toMatch(/superseded_by/);
   });
 
   it("drafting (create/update) stays open to any workspace member - only approval is restricted", () => {
