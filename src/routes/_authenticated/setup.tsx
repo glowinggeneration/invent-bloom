@@ -238,7 +238,7 @@ function SetupPage() {
   useEffect(() => {
     if (!status || hydrated.current) return;
     if (!status.needsSetup && !edit) {
-      navigate({ to: "/mentions", replace: true });
+      navigate({ to: "/today", replace: true });
       return;
     }
     setFullName(status.fullName);
@@ -311,7 +311,10 @@ function SetupPage() {
           ? `Setup saved — ${result.keywordsAdded} new monitoring term${result.keywordsAdded === 1 ? "" : "s"} added.`
           : "Setup saved.",
       );
-      navigate({ to: "/mentions", replace: true });
+      // Today, not Mentions - it's the actual "pick one useful thing to do
+      // next" destination (objective composer, priorities, quick actions),
+      // not a raw feed. This redirect predates the Today refinement.
+      navigate({ to: "/today", replace: true });
     },
     onError: (e: Error) => toast.error(friendlyError(e, { action: "save your setup" })),
   });
@@ -320,7 +323,7 @@ function SetupPage() {
     mutationFn: () => skip(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["setup-status"] });
-      navigate({ to: "/mentions", replace: true });
+      navigate({ to: "/today", replace: true });
     },
     onError: (e: Error) => toast.error(friendlyError(e, { action: "skip setup" })),
   });

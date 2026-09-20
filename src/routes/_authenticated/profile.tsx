@@ -29,6 +29,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedBackground } from "@/components/core/animated-background";
 import { TransitionPanel } from "@/components/core/transition-panel";
 import { ContactSupportButton } from "@/components/contact-support";
+import { AiBudgetCard } from "@/components/ai-budget-card";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -658,6 +659,8 @@ function ProfilePage() {
                           className="mt-5 min-h-11 w-full rounded-xl"
                         />
                       </article>
+
+                      <AiBudgetCard />
                     </div>
 
                     <div className="mt-5 rounded-2xl border border-border p-5">

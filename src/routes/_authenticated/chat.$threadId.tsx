@@ -13,7 +13,7 @@ import {
   Send,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { AnalysisView } from "@/components/analysis-view";
 import { AnalysisRail, Meter } from "@/components/analysis-rail";
@@ -237,6 +237,11 @@ function ThreadPage() {
     queryClient.invalidateQueries({ queryKey: ["threads"] });
   };
 
+  // Rotated after a successful submit so a network retry or double-click
+  // returns the original result instead of running the test (and being
+  // charged for it) twice - same convention as post-campaign.tsx/new.tsx.
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
+
   const mutation = useMutation({
     mutationFn: async (payload: ComposerPayload) =>
       send({
@@ -245,6 +250,7 @@ function ThreadPage() {
           text: payload.text,
           imageDataUrl: payload.imageDataUrl,
           attachments: payload.attachments,
+          idempotencyKey: idempotencyKeyRef.current,
         },
       }),
     onMutate: (payload: ComposerPayload) => {
@@ -252,6 +258,7 @@ function ThreadPage() {
       startActiveTest({ threadId, text: payload.text });
     },
     onSuccess: (...args: Parameters<typeof refresh>) => {
+      idempotencyKeyRef.current = crypto.randomUUID();
       setAnalysisStatus("completed");
       completeActiveTest(threadId);
       return refresh(...args);
