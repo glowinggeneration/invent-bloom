@@ -723,6 +723,54 @@ export type Database = {
           },
         ]
       }
+      investigations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          project_id: string | null
+          topic: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          project_id?: string | null
+          topic: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          project_id?: string | null
+          topic?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investigations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investigations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       legal_reviews: {
         Row: {
           approval_required: string
@@ -812,6 +860,7 @@ export type Database = {
           like_target: boolean
           max_replies_per_run: number
           name: string
+          project_id: string | null
           spread_hours: number
           summary: string
           updated_at: string
@@ -832,6 +881,7 @@ export type Database = {
           like_target?: boolean
           max_replies_per_run?: number
           name: string
+          project_id?: string | null
           spread_hours?: number
           summary?: string
           updated_at?: string
@@ -852,6 +902,7 @@ export type Database = {
           like_target?: boolean
           max_replies_per_run?: number
           name?: string
+          project_id?: string | null
           spread_hours?: number
           summary?: string
           updated_at?: string
@@ -859,6 +910,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "listening_campaigns_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "listening_campaigns_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -880,6 +938,7 @@ export type Database = {
           file_size: number
           file_type: string
           id: string
+          project_id: string | null
           reporting_period_end: string | null
           reporting_period_start: string | null
           status: string
@@ -902,6 +961,7 @@ export type Database = {
           file_size?: number
           file_type: string
           id?: string
+          project_id?: string | null
           reporting_period_end?: string | null
           reporting_period_start?: string | null
           status?: string
@@ -924,6 +984,7 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          project_id?: string | null
           reporting_period_end?: string | null
           reporting_period_start?: string | null
           status?: string
@@ -936,6 +997,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "managed_reports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "managed_reports_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -1547,6 +1615,104 @@ export type Database = {
           },
         ]
       }
+      project_references: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          excluded: boolean
+          id: string
+          project_id: string
+          title: string
+          updated_at: string
+          url: string | null
+          workspace_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          excluded?: boolean
+          id?: string
+          project_id: string
+          title: string
+          updated_at?: string
+          url?: string | null
+          workspace_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          excluded?: boolean
+          id?: string
+          project_id?: string
+          title?: string
+          updated_at?: string
+          url?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_references_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_references_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          brief: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          objective: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          brief?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          objective?: string
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          brief?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          objective?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       publish_actions: {
         Row: {
           account_id: string | null
@@ -1628,6 +1794,7 @@ export type Database = {
           name_is_custom: boolean
           objective_mode: boolean
           objective_text: string
+          project_id: string | null
           status: string
           summary: string
           target_tweet_url: string | null
@@ -1649,6 +1816,7 @@ export type Database = {
           name_is_custom?: boolean
           objective_mode?: boolean
           objective_text?: string
+          project_id?: string | null
           status?: string
           summary?: string
           target_tweet_url?: string | null
@@ -1670,6 +1838,7 @@ export type Database = {
           name_is_custom?: boolean
           objective_mode?: boolean
           objective_text?: string
+          project_id?: string | null
           status?: string
           summary?: string
           target_tweet_url?: string | null
@@ -1679,6 +1848,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "publish_jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "publish_jobs_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -1731,6 +1907,7 @@ export type Database = {
           period_end: string
           period_start: string
           personas: Json
+          project_id: string | null
           recommendations: Json
           report_date: string
           source_errors: Json
@@ -1752,6 +1929,7 @@ export type Database = {
           period_end: string
           period_start: string
           personas?: Json
+          project_id?: string | null
           recommendations?: Json
           report_date: string
           source_errors?: Json
@@ -1773,6 +1951,7 @@ export type Database = {
           period_end?: string
           period_start?: string
           personas?: Json
+          project_id?: string | null
           recommendations?: Json
           report_date?: string
           source_errors?: Json
@@ -1782,6 +1961,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "reports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reports_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -1921,6 +2107,7 @@ export type Database = {
           id: string
           org: string
           pinned: boolean
+          project_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -1932,6 +2119,7 @@ export type Database = {
           id?: string
           org?: string
           pinned?: boolean
+          project_id?: string | null
           title?: string
           updated_at?: string
           user_id: string
@@ -1943,6 +2131,7 @@ export type Database = {
           id?: string
           org?: string
           pinned?: boolean
+          project_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -1950,6 +2139,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "threads_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "threads_workspace_id_fkey"
             columns: ["workspace_id"]
