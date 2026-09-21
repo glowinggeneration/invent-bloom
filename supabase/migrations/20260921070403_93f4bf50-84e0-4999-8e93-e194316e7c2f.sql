@@ -1,0 +1,1 @@
+ALTER FUNCTION private.can_access_workspace(uuid) SECURITY INVOKER;
