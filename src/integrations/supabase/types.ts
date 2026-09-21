@@ -2155,6 +2155,71 @@ export type Database = {
           },
         ]
       }
+      today_priorities: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          defer_reason: string | null
+          defer_until: string | null
+          href: string
+          id: string
+          item_id: string | null
+          item_type: string
+          note: string
+          position: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          defer_reason?: string | null
+          defer_until?: string | null
+          href: string
+          id?: string
+          item_id?: string | null
+          item_type: string
+          note?: string
+          position?: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          defer_reason?: string | null
+          defer_until?: string | null
+          href?: string
+          id?: string
+          item_id?: string | null
+          item_type?: string
+          note?: string
+          position?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "today_priorities_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tweet_metrics: {
         Row: {
           account_id: string | null
