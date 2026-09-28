@@ -27,11 +27,11 @@ export const Route = createFileRoute("/auth")({
     ],
     links: [{ rel: "canonical", href: "https://smait.lovable.app/auth" }],
   }),
-  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+  validateSearch: (s: Record<string, unknown>): { next?: string; mode?: "signup" } => {
     const raw = s["next"];
     const safe =
       typeof raw === "string" && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined;
-    return safe ? { next: safe } : {};
+    return s["mode"] === "signup" ? { next: safe, mode: "signup" } : safe ? { next: safe } : {};
   },
   component: AuthPage,
 });
@@ -49,8 +49,10 @@ const SOFTWARE_APPLICATION_JSON_LD = JSON.stringify({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next } = Route.useSearch();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
+  const { next, mode: initialMode } = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(
+    initialMode === "signup" ? "signup" : "signin",
+  );
   const [resetSent, setResetSent] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
